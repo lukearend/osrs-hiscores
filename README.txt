@@ -14,24 +14,26 @@ Project organization
     │   ├── processed      <- The final, canonical data sets for modeling.
     │   └── raw            <- The original, immutable data dump.
     │
-    ├── models             <- Trained and serialized models, model predictions, or model summaries
+    ├── models             <- Trained and serialized models, model predictions, or model summaries.
     │
     ├── notebooks          <- Jupyter notebooks. Naming convention is a number (for ordering)
     │   │                     and a short `-` delimited description, e.g. `1.0-explore-raw-data`.
     │   └── reports        <- Notebooks that reproduce figures in reports.
     │
     ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
-    │   └── figures        <- Generated graphics and figures to be used in reporting
+    │   └── figures        <- Generated graphics and figures to be used in reporting.
     │
-    ├── requirements.txt   <- The dependencies file for reproducing the project environment
+    ├── reference          <- Lookup files, reference manuals, etc.
     │
-    ├── setup.py           <- Setup file for project pip install
+    ├── requirements.txt   <- The dependencies file for reproducing the project environment.
+    │
+    ├── setup.py           <- Setup file for project pip install.
     │
     └── hiscores           <- Source code for use in this project.
-        ├── data           <- Scripts to download or generate data
-        ├── features       <- Scripts to turn raw data into features for modeling
-        ├── models         <- Scripts to train models and use trained models to make predictions
-        └── visualization  <- Scripts to create exploratory and results oriented visualizations
+        ├── data           <- Scripts to download or generate data.
+        ├── features       <- Scripts to turn raw data into features for modeling.
+        ├── models         <- Scripts to train models and use trained models to make predictions.
+        └── visualization  <- Scripts to create exploratory and results oriented visualizations.
 
 Installation and usage
 ----------------------

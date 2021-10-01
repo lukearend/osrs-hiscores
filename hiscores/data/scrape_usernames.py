@@ -62,7 +62,7 @@ def run_workers_once(pages_to_process):
 def main():
     # Assume location codes are written as a pickled list of integers.
     # These were obtained by parsing the output of `expresso locations`.
-    with open('../../data/external/locations.pkl', 'rb') as f:
+    with open('../../reference/locations.pkl', 'rb') as f:
         locations = pickle.load(f)
 
     while True:

@@ -12,7 +12,7 @@ OUT_PKL_FILE = '../../data/interim/stats-tmp.pkl'
 
 
 def main():
-    with open('../../data/external/skills.csv', 'r') as f:
+    with open('../../reference/skills.csv', 'r') as f:
         skills = f.read().strip().split('\n')
 
     fieldnames = ['username']

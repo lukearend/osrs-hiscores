@@ -4,26 +4,33 @@ export PYTHONPATH := $(shell pwd)
 all: init build-data
 
 activate: env		## Activate virtual environment.
-
+	source env/bin/activate
 
 build-data:			## Download and build hiscores dataset.
 build-data: data/processed/stats.csv
 
-clean: 				## Remove virtual environment.
-	rm -rf env
+clean-data:         ## Remove downloaded data.
+	@rm data/external/* && \
+	rm data/interim/* && \
+	rm data/processed/* && \
+	rm data/raw/*
+
+clean-env: 			## Remove virtual environment.
+	@rm -rf env
 
 env: 				## Build virtual environment.
 	@python3 -m venv env && \
 	source env/bin/activate && \
 	pip3 install --upgrade pip && \
 	pip3 install -r requirements.txt && \
+	rm -rf *.egg_info && \
 	source env/bin/activate
 
 help: 				## Show this help.
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
 init: 				## Initialize repository.
-init: clean env nbextensions lint
+init: clean-env env nbextensions lint
 
 data/raw/stats-raw.csv: data/raw/usernames.csv
 	@source env/bin/activate && \
@@ -59,4 +66,4 @@ nbextensions: env	## Install jupyter notebook extensions.
 
 # Note: remove data/raw/stats-raw.csv from .PHONY when it is complete
 .PHONY: data/raw/stats-raw.csv
-.PHONY: all build-data clean help init lint nbextensions
+.PHONY: all build-data clean-data clean-env help init lint nbextensions

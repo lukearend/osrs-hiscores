@@ -63,9 +63,6 @@ def run_workers_once(names_to_process):
 
 
 def main():
-    with open('../../data/external/locations.pkl', 'rb') as f:
-        locations = pickle.load(f)
-
     # Read user rankings file to see which usernames need to be processed.
     with open(IN_FILE, 'r') as f:
         reader = csv.reader(f)
