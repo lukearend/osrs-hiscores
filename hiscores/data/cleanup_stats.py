@@ -67,6 +67,7 @@ def main():
             'usernames': list(usernames),
             'features': fieldnames[1:]
             'stats': stats
+        }
 
         pickle.dump(payload, f)
 

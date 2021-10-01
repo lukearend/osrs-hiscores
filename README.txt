@@ -20,8 +20,6 @@ Project organization
     │   │                     and a short `-` delimited description, e.g. `1.0-explore-raw-data`.
     │   └── reports        <- Notebooks that reproduce figures in reports.
     │
-    ├── references         <- Data dictionaries, manuals, and all other explanatory materials.
-    │
     ├── reports            <- Generated analysis as HTML, PDF, LaTeX, etc.
     │   └── figures        <- Generated graphics and figures to be used in reporting
     │

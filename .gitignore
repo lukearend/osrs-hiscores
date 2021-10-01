@@ -3,5 +3,6 @@ env
 /data/
 .DS_Store
 .ipynb_checkpoints
+*.egg-info
 __pycache__
 

@@ -3,27 +3,27 @@ export PYTHONPATH := $(shell pwd)
 
 all: init build-data
 
-build-data:	## Download and build hiscores dataset.
+activate: env		## Activate virtual environment.
+
+
+build-data:			## Download and build hiscores dataset.
 build-data: data/processed/stats.csv
 
-clean: 		## Delete all data and packages.
-	rm -rf env &&
-	rm -rf data/raw/* &&
-	rm -rf data/interim/* &&
-	rm -rf data/processed/*
+clean: 				## Remove virtual environment.
+	rm -rf env
 
-env: 		## Build virtual environment.
+env: 				## Build virtual environment.
 	@python3 -m venv env && \
 	source env/bin/activate && \
 	pip3 install --upgrade pip && \
 	pip3 install -r requirements.txt && \
 	source env/bin/activate
 
-help: 		## Show this help.
+help: 				## Show this help.
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
-init: 		## Initialize repository.
-init: env jupyter lint
+init: 				## Initialize repository.
+init: clean env nbextensions lint
 
 data/raw/stats-raw.csv: data/raw/usernames.csv
 	@source env/bin/activate && \
@@ -41,7 +41,12 @@ data/raw/usernames.csv: data/raw/usernames-raw.csv
 	@source env/bin/activate && \
 	cd hiscores/data && python3 cleanup_usernames.py
 
-jupyter:
+lint: 				## Run code style checker.
+	@source env/bin/activate && \
+	pycodestyle hiscores --ignore=E501 && \
+	echo "ok"
+
+nbextensions: env	## Install jupyter notebook extensions.
 	mkdir -p $(shell jupyter --data-dir)/nbextensions
 	pushd $(shell jupyter --data-dir)/nbextensions && \
 	rm -rf vim_binding && \
@@ -52,11 +57,6 @@ jupyter:
 	jupyter nbextension enable toggle_all_line_numbers/main
 	jupyter nbextension enable varInspector/main
 
-lint: 		## Run code style checker.
-	@source env/bin/activate && \
-	pycodestyle hiscores --ignore=E501 && \
-	echo "ok"
-
 # Note: remove data/raw/stats-raw.csv from .PHONY when it is complete
 .PHONY: data/raw/stats-raw.csv
-.PHONY: all build-data clean help init jupyter lint
+.PHONY: all build-data clean help init lint nbextensions
