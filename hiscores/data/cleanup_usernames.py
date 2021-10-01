@@ -9,6 +9,8 @@ OUT_FILE = '../../data/interim/usernames.csv'
 
 
 def main():
+    print("cleaning up usernames...")
+
     # Read rows from file and sort.
     with open(IN_FILE, 'r') as f:
         reader = csv.reader(f)
@@ -33,7 +35,7 @@ def main():
         for rank, (name, total_level) in enumerate(players, 1):
             f.write('{},{},{}\n'.format(rank, name, total_level))
 
-    print('done cleaning up usernames')
+    print("done cleaning up usernames")
 
 
 if __name__ == '__main__':

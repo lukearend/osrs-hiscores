@@ -7,8 +7,8 @@ import numpy as np
 
 
 IN_FILE = '../../data/raw/stats-raw.csv'
-OUT_CSV_FILE = '../../data/interim/stats-tmp.csv'
-OUT_PKL_FILE = '../../data/interim/stats-tmp.pkl'
+OUT_CSV_FILE = '../../data/processed/stats.csv'
+OUT_PKL_FILE = '../../data/processed/stats.pkl'
 
 
 def main():
@@ -22,7 +22,7 @@ def main():
         fieldnames.append('{}_xp'.format(skill))
 
     with open(IN_FILE, 'r') as f:
-        print("reading raw data...")
+        print("reading raw stats data...")
         reader = csv.reader(f)
 
         usernames = []
@@ -50,6 +50,9 @@ def main():
     stats = stats[inds]
     usernames = usernames[inds]
 
+    # Rewrite ranks with this new sorting.
+    stats[:, 0] = np.arange(1, stats.shape[0] + 1)
+
     with open(OUT_CSV_FILE, 'w') as f:
         print("writing results to CSV...")
         writer = csv.DictWriter(f, fieldnames)
@@ -60,18 +63,18 @@ def main():
             line = dict(zip(fieldnames, line))
             writer.writerow(line)
 
-    with open(OUT_PKL_FILE, 'w') as f:
+    with open(OUT_PKL_FILE, 'wb') as f:
         print("pickling results...")
 
         payload = {
             'usernames': list(usernames),
-            'features': fieldnames[1:]
+            'features': fieldnames[1:],
             'stats': stats
         }
 
         pickle.dump(payload, f)
 
-    print("done")
+    print("done cleaning up stats")
 
 
 if __name__ == '__main__':

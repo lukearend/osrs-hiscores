@@ -8,7 +8,7 @@ import subprocess
 from queue import Queue
 from threading import Thread, Lock
 
-from web import request_page, parse_page
+from hiscores.data import request_page, parse_page
 
 
 NUM_WORKERS = 32

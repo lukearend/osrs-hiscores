@@ -6,7 +6,7 @@ import subprocess
 from queue import Queue
 from threading import Thread, Lock
 
-from web import request_stats, parse_stats
+from hiscores.data import request_stats, parse_stats
 
 
 NUM_WORKERS = 32
@@ -84,6 +84,7 @@ def main():
         return
 
     run_workers_once(names_to_process)
+    print("done scraping stats")
 
 
 if __name__ == '__main__':
