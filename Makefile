@@ -64,6 +64,10 @@ nbextensions: env	## Install jupyter notebook extensions.
 	jupyter nbextension enable toggle_all_line_numbers/main
 	jupyter nbextension enable varInspector/main
 
+notebook: env		## Start a local jupyter notebook server.
+	@source env/bin/activate && \
+	jupyter notebook
+
 # Note: remove data/raw/stats-raw.csv from .PHONY when it is complete
 .PHONY: data/raw/stats-raw.csv
-.PHONY: all build-data clean-data clean-env help init lint nbextensions
+.PHONY: all build-data clean-data clean-env help init lint nbextensions notebook
