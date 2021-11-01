@@ -21,21 +21,22 @@ def main():
         fieldnames.append('{}_level'.format(skill))
         fieldnames.append('{}_xp'.format(skill))
 
+    from tqdm import tqdm
     with open(IN_FILE, 'r') as f:
         print("reading raw stats data...")
         reader = csv.reader(f)
 
         usernames = []
         stats = []
-        for line in reader:
+        for line in tqdm(reader):
             if len(line) < 73:
                 continue
 
             usernames.append(line[0])
             stats.append(np.array([int(i) for i in line[1:73]]))
 
-        usernames = np.array(usernames)
-        stats = np.array(stats)
+    usernames = np.array(usernames)
+    stats = np.array(stats)
 
     print("cleaning data...")
 
@@ -58,8 +59,8 @@ def main():
         writer = csv.DictWriter(f, fieldnames)
 
         writer.writeheader()
-        for username, stats in zip(usernames, stats):
-            line = [username, *stats]
+        for username, user_stats in tqdm(zip(usernames, stats)):
+            line = [username, *user_stats]
             line = dict(zip(fieldnames, line))
             writer.writerow(line)
 

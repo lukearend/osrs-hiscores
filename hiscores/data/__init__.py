@@ -1,7 +1,11 @@
-#!/usr/bin/env python3
+import pathlib
+import pickle
 
+import numpy as np
+import pandas as pd
 import requests
 from bs4 import BeautifulSoup
+from scipy.stats import pearsonr
 
 
 def request_page(page_number, max_attempts=5):
@@ -117,3 +121,47 @@ def parse_stats(stats_csv):
         }
 
     return result
+
+
+def load_hiscores_data():
+    print("loading hiscores data... ", end='')
+
+    data_file = pathlib.Path(__file__).parent.parent.parent / 'data/processed/stats.pkl'
+    with open(data_file.resolve(), 'rb') as f:
+        dataset = pickle.load(f)
+        
+    # Unpack dataset keys: row names, col names and data values themselves.
+    usernames = dataset['usernames']
+    cols = dataset['features']
+    data = dataset['stats']
+
+    # Create three separate arrays, one each for rank, level and xp data.
+    rank_data = data[:, 0::3]
+    level_data = data[:, 1::3]
+    xp_data = data[:, 2::3]
+    skills = [col_name[:-len('_rank')] for col_name in cols[::3]]
+
+    # Promote the arrays to dataframes.
+    ranks = pd.DataFrame(data=rank_data, index=usernames, columns=skills)
+    levels = pd.DataFrame(data=level_data, index=usernames, columns=skills)
+    xp = pd.DataFrame(data=xp_data, index=usernames, columns=skills)
+
+    print("done")
+
+    return ranks, levels, xp
+
+
+def exclude_missing(data):
+    return data[data != -1]
+
+
+def correlate_skills(skill_a, skill_b):
+    levels_a = stats[:, features[skill_a + '_level']]
+    levels_b = stats[:, features[skill_b + '_level']]
+    keep_inds_a = levels_a > 0
+    keep_inds_b = levels_b > 0
+    keep_inds = np.logical_and(keep_inds_a, keep_inds_b)
+    levels_a = levels_a[keep_inds]
+    levels_b = levels_b[keep_inds]
+    r_value, _ = pearsonr(levels_a, levels_b)
+    return r_value

@@ -20,7 +20,7 @@ env: 				## Build virtual environment.
 	source env/bin/activate && \
 	pip3 install --upgrade pip && \
 	pip3 install -r requirements.txt && \
-	rm -rf *.egg_info && \
+	rm -rf *.egg-info && \
 	source env/bin/activate
 
 help: 				## Show this help.
@@ -52,7 +52,7 @@ lint: 				## Run code style checker.
 
 nbextensions:		## Install jupyter notebook extensions.
 	@source env/bin/activate && \
-	mkdir -p $(shell jupyter --data-dir)/nbextensions && \
+	jupyter contrib nbextensions install && \
 	cd $(shell jupyter --data-dir)/nbextensions && \
 	rm -rf vim_binding && \
 	git clone https://github.com/lambdalisue/jupyter-vim-binding vim_binding && \
