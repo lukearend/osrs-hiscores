@@ -152,7 +152,16 @@ def load_hiscores_data():
 
 
 def exclude_missing(data):
-    return data[data != -1]
+    if len(data.shape) == 1:
+        return data[data != -1]
+
+    elif len(data.shape) == 2:
+        keep_inds = []
+        for i, row in enumerate(np.array(data)):
+            if -1 in row or np.any(np.isnan(row)):
+                continue
+            keep_inds.append(i)
+        return data[keep_inds]
 
 
 def correlate_skills(skill_a, skill_b):
