@@ -29,6 +29,14 @@ help: 				## Show this help.
 init: 				## Initialize repository.
 init: clean-env env nbextensions lint
 
+data/raw/usernames-raw.csv:
+	@source env/bin/activate && \
+	cd hiscores/data && python3 scrape_usernames.py
+
+data/interim/usernames.csv: data/raw/usernames-raw.csv
+	@source env/bin/activate && \
+	cd hiscores/data && python3 cleanup_usernames.py
+
 data/raw/stats-raw.csv: data/interim/usernames.csv
 	@source env/bin/activate && \
 	cd hiscores/data && python3 scrape_stats.py
@@ -37,13 +45,17 @@ data/processed/stats.csv: data/raw/stats-raw.csv
 	@source env/bin/activate && \
 	cd hiscores/data && python3 cleanup_stats.py
 
-data/raw/usernames-raw.csv:
+data/processed/clusters.csv: data/raw/clusters.pkl data/processed/stats.csv
 	@source env/bin/activate && \
-	cd hiscores/data && python3 scrape_usernames.py
+	cd hiscores/data && python3 write_cluster_csv.py
 
-data/interim/usernames.csv: data/raw/usernames-raw.csv
+data/processed/clusters.pkl: data/raw/clusters.pkl
 	@source env/bin/activate && \
-	cd hiscores/data && python3 cleanup_usernames.py
+	cd hiscores/data && python3 process_cluster_data.py
+
+data/processed/centroids.pkl: data/processed/clusters.pkl data/processed/stats.csv
+	@source env/bin/activate && \
+	cd hiscores/data && python3 compute_cluster_centroids.py
 
 lint: 				## Run code style checker.
 	@source env/bin/activate && \
