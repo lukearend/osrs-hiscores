@@ -1,6 +1,7 @@
 env
 /models/
 /data/
+/reports/scatterplots
 .DS_Store
 .ipynb_checkpoints
 *.egg-info
