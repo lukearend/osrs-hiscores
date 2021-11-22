@@ -3,11 +3,6 @@ osrs-hiscores
 
 An in-depth analysis of the OSRS hiscores, complete with open-source dataset and code.
 
-Results
--------
-
-Let's start by looking at some analytics for the OSRS player populations. To skip to the project description and installation, [click here](todo).
-
 Project organization
 --------------------
 
