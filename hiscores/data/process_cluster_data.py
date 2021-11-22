@@ -23,17 +23,17 @@ def main():
 
         num_clusters = np.max(cluster_ids)
         cluster_sizes, _ = np.histogram(cluster_ids, num_clusters)
-        
+
         results[split] = {
             'cluster_ids': cluster_ids,
             'num_clusters': num_clusters,
             'cluster_sizes': cluster_sizes
         }
-        
+
         sorted_inds = np.argsort(cluster_sizes)
         sorted_cluster_sizes = cluster_sizes[sorted_inds]
         uniqueness_scores = np.cumsum(sorted_cluster_sizes[::-1])[::-1]
-        
+
         num_players = len(cluster_ids)
         uniqueness_percentiles = {}
         for size in tqdm(sorted_cluster_sizes):
@@ -51,7 +51,7 @@ def main():
             uniqueness[cluster_id] = uniqueness_percentiles[cluster_size]
         uniqueness = sorted(uniqueness.items())
         uniqueness = [item[1] for item in uniqueness]
-        
+
         results[split]['percent_uniqueness'] = np.array(uniqueness)
 
     with open(OUT_FILE, 'wb') as f:

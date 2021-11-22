@@ -129,7 +129,7 @@ def load_hiscores_data():
     data_file = pathlib.Path(__file__).parent.parent.parent / 'data/processed/stats.pkl'
     with open(data_file.resolve(), 'rb') as f:
         dataset = pickle.load(f)
-        
+
     # Unpack dataset keys: row names, col names and data values themselves.
     usernames = dataset['usernames']
     cols = dataset['features']

@@ -56,7 +56,6 @@ def player_skills_histogram(levels_df, skill, out_file, annotations=None):
         for level, annotation in annotations.items():
             _annotate_level(ax, level, counts[level], annotation, ymax)
 
-
     fig.savefig(out_file, bbox_inches='tight')
     plt.show()
     plt.close(fig)
