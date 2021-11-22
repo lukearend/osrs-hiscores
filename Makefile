@@ -49,6 +49,7 @@ data/processed/stats.csv: data/raw/stats-raw.csv
 clean-results:		## Removes all results computed from scraped data.
 	rm data/processed/stats.pkl
 	rm data/processed/clusters.csv
+	rm data/processed/clusters.pkl
 	rm data/processed/centroids.pkl
 	rm data/processed/dimreduced.pkl
 

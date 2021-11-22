@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-""" Compute percentile-based centroids for each cluster given its members. """
+""" Compute percentile-based centroids for each cluster. """
 
 import pickle
 

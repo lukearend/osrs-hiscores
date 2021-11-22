@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+""" Cleanup usernames scraped from OSRS hiscores. """
+
 import csv
 from collections import defaultdict
 

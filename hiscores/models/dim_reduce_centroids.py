@@ -12,7 +12,7 @@ import umap
 
 CLUSTERS_FILE = '../../data/processed/clusters.pkl'
 CENTROIDS_FILE = '../../data/processed/centroids.pkl'
-PARAMS_FILE = '../../reference/umap_params.json'
+PARAMS_FILE = '../../reference/params.json'
 OUT_FILE = '../../data/processed/dimreduced.pkl'
 
 

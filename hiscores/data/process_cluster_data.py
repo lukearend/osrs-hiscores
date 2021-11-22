@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+""" Augment raw clustering results by computing per-cluster metrics. """
+
 import pickle
 
 import numpy as np
