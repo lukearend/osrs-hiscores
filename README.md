@@ -35,6 +35,12 @@ Project organization
         ├── models         <- Scripts to train models and use trained models to make predictions.
         └── visualization  <- Scripts to create exploratory and results oriented visualizations.
 
+Ships with the following two important data files:
+
+1. `data/processed/stats.csv`: Rank, levels, xp, clues and achievements stats for top 2 million OSRS players. This file is *not currently in the repo* due to github file size restraints, and must be downloaded separately and added to the repo. To do this, run `wget TODO: get stats.csv from Google Drive or S3 bucket and place in repo` or (i) click TODO: [here]() to download and (ii) copy the downloaded file into the folder `data/processed/` under the top-level repo directory.
+
+2. `data/processed/clusters.csv`: A segmentation of the 2 million players into several thousand distinct clusters for each of three data splits: all skills, combat skills only, non-combat skills only.
+
 Installation and usage
 ----------------------
 

@@ -7,20 +7,12 @@ build-data:			## Download and build hiscores dataset.
 build-data: data/processed/stats.csv data/processed/stats.pkl
 
 # Givens:
-# data/processed/clusters.pkl
+# data/raw/clusters.pkl
 # data/processed/clusters.csv
 # data/processed/stats.csv
 
 init: 				## Initialize repository.
 init: clean-env env nbextensions lint
-
-lint: 				## Run code style checker.
-	@source env/bin/activate && \
-	pycodestyle hiscores --ignore=E501 && \
-	echo "ok"
-
-clean-env: 			## Remove virtual environment.
-	@rm -rf env
 
 env: 				## Build virtual environment.
 	@python3 -m venv env && \
@@ -30,7 +22,12 @@ env: 				## Build virtual environment.
 	rm -rf *.egg-info && \
 	source env/bin/activate
 
-clean-scrape:       ## WARNING: Removes all scraped data.
+clean-env: 			## Remove virtual environment.
+	@rm -rf env
+
+scrape: data/processed/stats.csv
+
+clean-scrape:       		## Removes all scraped data (WARNING: be sure you want to do this).
 	rm data/raw/usernames-raw.csv
 	rm data/interim/usernames.csv
 	rm data/raw/stats-raw.csv
@@ -51,7 +48,9 @@ data/processed/stats.csv: data/raw/stats-raw.csv
 	@source env/bin/activate && \
 	cd hiscores/data && python3 cleanup_stats.py
 
-clean-results:		## Removes all results computed from scraped data.
+analytics: data/processed/dimreduced.pkl
+
+clean-analytics:		## Removes all analytic results computed from scraped data.
 	rm data/processed/stats.pkl
 	rm data/processed/clusters.csv
 	rm data/processed/clusters.pkl
@@ -78,7 +77,7 @@ data/processed/dimreduced.pkl: data/processed/clusters.pkl data/processed/centro
 	@source env/bin/activate && \
 	cd hiscores/models && python3 dim_reduce_centroids.py
 
-nbextensions:		## Install jupyter notebook extensions.
+nbextensions:			## Install jupyter notebook extensions.
 	@source env/bin/activate && \
 	jupyter contrib nbextensions install && \
 	cd $(shell jupyter --data-dir)/nbextensions && \
@@ -94,7 +93,12 @@ notebook:			## Start a local jupyter notebook server.
 	cd notebooks && \
 	jupyter notebook
 
+lint: 				## Run code style checker.
+	@source env/bin/activate && \
+	pycodestyle hiscores --ignore=E501 && \
+	echo "ok"
+
 help: 				## Show this help.
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
-.PHONY: all clean-data clean-env help init lint nbextensions notebook
+.PHONY: all clean-data clean-env help init lint nbextensions notebook scrape
