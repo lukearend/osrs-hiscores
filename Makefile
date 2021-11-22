@@ -14,6 +14,11 @@ build-data: data/processed/stats.csv data/processed/stats.pkl
 init: 				## Initialize repository.
 init: clean-env env nbextensions lint
 
+lint: 				## Run code style checker.
+	@source env/bin/activate && \
+	pycodestyle hiscores --ignore=E501 && \
+	echo "ok"
+
 clean-env: 			## Remove virtual environment.
 	@rm -rf env
 
@@ -72,11 +77,6 @@ data/processed/centroids.pkl: data/processed/clusters.pkl data/processed/stats.p
 data/processed/dimreduced.pkl: data/processed/clusters.pkl data/processed/centroids.pkl
 	@source env/bin/activate && \
 	cd hiscores/models && python3 dim_reduce_centroids.py
-
-lint: 				## Run code style checker.
-	@source env/bin/activate && \
-	pycodestyle hiscores --ignore=E501 && \
-	echo "ok"
 
 nbextensions:		## Install jupyter notebook extensions.
 	@source env/bin/activate && \
