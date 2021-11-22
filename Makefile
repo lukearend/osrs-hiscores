@@ -6,11 +6,13 @@ all: init build-data
 build-data:			## Download and build hiscores dataset.
 build-data: data/processed/stats.csv data/processed/stats.pkl
 
-clean-data:         ## Remove downloaded data.
-	@rm data/external/* && \
-	rm data/interim/* && \
-	rm data/processed/* && \
-	rm data/raw/*
+# Givens:
+# data/processed/clusters.pkl
+# data/processed/clusters.csv
+# data/processed/stats.csv
+
+init: 				## Initialize repository.
+init: clean-env env nbextensions lint
 
 clean-env: 			## Remove virtual environment.
 	@rm -rf env
@@ -23,11 +25,10 @@ env: 				## Build virtual environment.
 	rm -rf *.egg-info && \
 	source env/bin/activate
 
-help: 				## Show this help.
-	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
-
-init: 				## Initialize repository.
-init: clean-env env nbextensions lint
+clean-scrape:       ## WARNING: Removes all scraped data.
+	rm data/raw/usernames-raw.csv
+	rm data/interim/usernames.csv
+	rm data/raw/stats-raw.csv
 
 data/raw/usernames-raw.csv:
 	@source env/bin/activate && \
@@ -45,7 +46,17 @@ data/processed/stats.csv: data/raw/stats-raw.csv
 	@source env/bin/activate && \
 	cd hiscores/data && python3 cleanup_stats.py
 
-data/processed/clusters.csv: data/raw/clusters.pkl data/processed/stats.csv
+clean-results:		## Removes all results computed from scraped data.
+	rm data/processed/stats.pkl
+	rm data/processed/clusters.csv
+	rm data/processed/centroids.pkl
+	rm data/processed/dimreduced.pkl
+
+data/processed/stats.pkl: data/processed/stats.csv
+	@source env/bin/activate && \
+	cd hiscores/data && python3 write_stats_pkl.py
+
+data/processed/clusters.csv: data/raw/clusters.pkl data/processed/stats.pkl
 	@source env/bin/activate && \
 	cd hiscores/data && python3 write_cluster_csv.py
 
@@ -53,9 +64,13 @@ data/processed/clusters.pkl: data/raw/clusters.pkl
 	@source env/bin/activate && \
 	cd hiscores/data && python3 process_cluster_data.py
 
-data/processed/centroids.pkl: data/processed/clusters.pkl data/processed/stats.csv
+data/processed/centroids.pkl: data/processed/clusters.pkl data/processed/stats.pkl
 	@source env/bin/activate && \
-	cd hiscores/data && python3 compute_cluster_centroids.py
+	cd hiscores/features && python3 compute_cluster_centroids.py
+
+data/processed/dimreduced.pkl: data/processed/clusters.pkl data/processed/centroids.pkl
+	@source env/bin/activate && \
+	cd hiscores/models && python3 dim_reduce_centroids.py
 
 lint: 				## Run code style checker.
 	@source env/bin/activate && \
@@ -77,5 +92,8 @@ notebook:			## Start a local jupyter notebook server.
 	@source env/bin/activate && \
 	cd notebooks && \
 	jupyter notebook
+
+help: 				## Show this help.
+	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
 
 .PHONY: all clean-data clean-env help init lint nbextensions notebook

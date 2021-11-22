@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+""" Cleanup stats data scraped from hiscores and write to CSV. """
+
 import csv
 import pickle
 
@@ -8,8 +10,7 @@ from tqdm import tqdm
 
 
 IN_FILE = '../../data/raw/stats-raw.csv'
-OUT_CSV_FILE = '../../data/processed/stats.csv'
-OUT_PKL_FILE = '../../data/processed/stats.pkl'
+OUT_FILE = '../../data/processed/stats.csv'
 
 
 def main():
@@ -48,7 +49,7 @@ def main():
     # Rewrite ranks with this new sorting.
     stats[:, 0] = np.arange(1, stats.shape[0] + 1)
 
-    with open(OUT_CSV_FILE, 'w') as f:
+    with open(OUT_FILE, 'w') as f:
         print("writing results to CSV...")
         writer = csv.DictWriter(f, fieldnames)
 
@@ -57,17 +58,6 @@ def main():
             line = [username, *user_stats]
             line = dict(zip(fieldnames, line))
             writer.writerow(line)
-
-    with open(OUT_PKL_FILE, 'wb') as f:
-        print("pickling results...")
-
-        payload = {
-            'usernames': list(usernames),
-            'features': fieldnames[1:],
-            'stats': stats
-        }
-
-        pickle.dump(payload, f)
 
     print("done cleaning up stats")
 

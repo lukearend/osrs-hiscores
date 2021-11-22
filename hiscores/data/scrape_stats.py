@@ -1,3 +1,7 @@
+#!/usr/bin/env python3
+
+""" Download stats for the top 2 million players on the OSRS hiscores. """
+
 import csv
 import os
 import pickle

@@ -1,0 +1,14 @@
+{
+    "all": {
+        "n_neighbors": 10,
+        "min_dist": 0.10
+    },
+    "cb": {
+        "n_neighbors": 15,
+        "min_dist": 0.25
+    },
+    "noncb": {
+        "n_neighbors": 10,
+        "min_dist": 0.10
+    }
+}

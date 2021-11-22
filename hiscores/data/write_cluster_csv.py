@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+""" Unpickle clustering results file and write to CSV. """
+
 import csv
 import pickle
 
