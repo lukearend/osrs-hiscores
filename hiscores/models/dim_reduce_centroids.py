@@ -34,9 +34,6 @@ def main():
     with open(PARAMS_FILE, 'r') as f:
         params = json.load(f)
 
-    # For reproducibility.
-    np.random.seed(0)
-
     results = {}
     for split, p in params.items():
 
@@ -50,6 +47,9 @@ def main():
 
         centroids = centroid_data[split][50]    # 50th percentile (median)
         cluster_sizes = cluster_data[split]['cluster_sizes']
+
+        # For reproducibility.
+        np.random.seed(0)
 
         t0 = time.time()
         fit = umap.UMAP(
