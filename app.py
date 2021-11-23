@@ -14,19 +14,18 @@ import pandas as pd
 
 print('loading data...')
 
-with open('../../data/processed/dimreduced.pkl', 'rb') as f:
+with open('data/processed/dimreduced.pkl', 'rb') as f:
     data = pickle.load(f)
-with open('../../data/processed/centroids.pkl', 'rb') as f:
+with open('data/processed/centroids.pkl', 'rb') as f:
     centroids = pickle.load(f)
-with open('../../data/processed/clusters.pkl', 'rb') as f:
+with open('data/processed/clusters.pkl', 'rb') as f:
     clusters = pickle.load(f)
 
 # Convert data into dataframe for plotting.
 for split, xyz_data in data.items():
 
     num_clusters = len(xyz_data)
-    total_levels = np.sum(centroids[split][50], axis=1)
-    total_levels = np.expand_dims(total_levels, axis=1)
+    total_levels = centroids[split][50][:, 0]
     cluster_sizes = clusters[split]['cluster_sizes']
     cluster_sizes = np.expand_dims(cluster_sizes, axis=1)
 
@@ -50,14 +49,12 @@ app.layout = html.Div([
 
     html.Div(children='''
         Each point represents a cluster of OSRS players with similar combat
-        stats. Some clusters contain only a single (highly) unique player;
-        others comprise thousands or tens of thousands of similar accounts.
-        The larger a point is, the more accounts there are in that cluster.
-        The clusters are color-coded from dark (total level 1) to light
-        (total level 2277, a maxed account). Each player traces out some
-        trajectory through this space across the course of their account's
-        development. The closer two points are, the more similar are the
-        accounts in each of those two clusters. Axes are unitless.
+        stats. The closer two clusters are, the more similar are the accounts
+        in each of those two clusters. Some clusters contain only a single
+        (highly) unique player; others comprise thousands or tens of thousands
+        of similar accounts. The size of each point corresponds to the number
+        of players in that cluster. The clusters are color-coded by total
+        level; axes have no meaningful units.
     '''),
 
     dcc.Graph(id="scatter-plot",

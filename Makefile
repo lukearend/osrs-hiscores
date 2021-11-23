@@ -45,7 +45,8 @@ data/processed/stats.csv: data/raw/stats-raw.csv
 	@source env/bin/activate && \
 	cd hiscores/data && python3 cleanup_stats.py
 
-analytics: data/processed/dimreduced.pkl
+analytics: data/processed/clusters.csv data/processed/stats.pkl data/processed/clusters.pkl \
+           data/processed/centroids.pkl data/processed/dimreduced.pkl
 
 clean-analytics:		## Removes all analytic results computed from scraped data.
 	rm data/processed/stats.pkl
@@ -66,24 +67,18 @@ data/processed/clusters.pkl: data/raw/clusters.pkl
 	@source env/bin/activate && \
 	cd hiscores/data && python3 process_cluster_data.py
 
-# TODO: fix this so that centroid data includes total level as first column
 data/processed/centroids.pkl: data/processed/clusters.pkl data/processed/stats.pkl
 	@source env/bin/activate && \
 	cd hiscores/features && python3 compute_cluster_centroids.py
 
-# TODO: fix this so that it excludes total level column (once that's been added)
-# TODO: change generate-scatterplots -> 2.1-umap-params
-# TODO: write generate-scatterplots notebook, plot and save 3 dim reductions.
 data/processed/dimreduced.pkl: data/processed/clusters.pkl data/processed/centroids.pkl
 	@source env/bin/activate && \
 	cd hiscores/models && python3 dim_reduce_centroids.py
 
-# TODO: continue with this once total level column has been added
 # TODO: smaller marker sizes, tooltip lookup of centroids
 app:				## Run visualization app.
-app: data/processed/dimreduced.pkl
-	@source env/bin/activate && \
-	cd hiscores/visualization && python3 app.py
+app: data/processed/clusters.pkl data/processed/centroids.pkl data/processed/dimreduced.pkl
+	@source env/bin/activate && python3 app.py
 
 nbextensions:			## Install jupyter notebook extensions.
 	@source env/bin/activate && \

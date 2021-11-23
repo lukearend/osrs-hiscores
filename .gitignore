@@ -1,7 +1,7 @@
 env
 /models/
 /data/
-/figures/scatterplots
+/figures/scatterplots/player-clusters-*-*.pdf
 .DS_Store
 .ipynb_checkpoints
 *.egg-info

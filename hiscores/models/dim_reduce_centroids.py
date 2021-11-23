@@ -45,7 +45,7 @@ def main():
               .format(n_neighbors, min_dist))
         print("running... ", end='', flush=True)
 
-        centroids = centroid_data[split][50]    # 50th percentile (median)
+        centroids = centroid_data[split][50][:, 1:]    # 50th percentile (median); drop total level
         cluster_sizes = cluster_data[split]['cluster_sizes']
 
         # For reproducibility.

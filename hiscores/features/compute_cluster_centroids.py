@@ -19,7 +19,7 @@ def main():
         contents = pickle.load(f)
 
     players = contents['usernames']
-    skills = np.array(contents['stats'][:, 4::3], dtype='float32')
+    skills = np.array(contents['stats'][:, 1::3], dtype='float32')
     skills[skills < 0] = np.nan
 
     with open(CLUSTERS_FILE, 'rb') as f:
@@ -33,13 +33,13 @@ def main():
 
         if split == 'all':
             dataset = skills
-            cluster_centroids = np.zeros((num_clusters, 23, 3))
+            cluster_centroids = np.zeros((num_clusters, 24, 3))
         elif split == 'cb':
-            dataset = skills[:, :7]
-            cluster_centroids = np.zeros((num_clusters, 7, 3))
+            dataset = skills[:, :8]
+            cluster_centroids = np.zeros((num_clusters, 8, 3))
         else:
-            dataset = skills[:, 7:]
-            cluster_centroids = np.zeros((num_clusters, 16, 3))
+            dataset = np.concatenate([np.expand_dims(skills[:, 0], axis=1), skills[:, 8:]], axis=1)
+            cluster_centroids = np.zeros((num_clusters, 17, 3))
 
         for i in tqdm(range(num_clusters)):
             keep_inds = result['cluster_ids'] == i + 1
