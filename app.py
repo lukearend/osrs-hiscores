@@ -9,6 +9,7 @@ import dash_core_components as dcc
 import dash_html_components as html
 import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
 import pandas as pd
 
 
@@ -25,11 +26,12 @@ with open('data/processed/clusters.pkl', 'rb') as f:
 for split, xyz_data in data.items():
 
     num_clusters = len(xyz_data)
-    total_levels = centroids[split][50][:, 0]
+    total_levels = np.floor(centroids[split][50][:, 0])
     cluster_sizes = clusters[split]['cluster_sizes']
-    cluster_sizes = np.expand_dims(cluster_sizes, axis=1)
 
-    data_array = np.concatenate([xyz_data, total_levels, 0.1 * cluster_sizes], axis=1)
+    total_levels = np.expand_dims(total_levels, axis=1)
+    cluster_sizes = np.expand_dims(cluster_sizes, axis=1)
+    data_array = np.concatenate([xyz_data, total_levels, cluster_sizes], axis=1)
     df = pd.DataFrame(data_array,
                       columns=('x', 'y', 'z', 'Total level', 'size'),
                       index=np.arange(1, num_clusters + 1))
@@ -37,15 +39,36 @@ for split, xyz_data in data.items():
 
 
 # Create Plotly scatter plot from dataframe.
-fig = px.scatter_3d(data['cb'], x='x', y='y', z='z',
+fig = px.scatter_3d(data['all'], x='x', y='y', z='z',
                     color="Total level",
                     hover_data=['size'])
+
+fig.update_layout(
+    margin=dict(b=0, l=0, r=0, t=0),
+    scene=dict(
+        aspectmode='cube',
+        xaxis=dict(title='', showticklabels=False, showgrid=False, zeroline=False,
+                   backgroundcolor='rgb(230, 230, 230)'),
+        yaxis=dict(title='', showticklabels=False, showgrid=False, zeroline=False,
+                   backgroundcolor='rgb(240, 240, 240)'),
+        zaxis=dict(title='', showticklabels=False, showgrid=False, zeroline=False,
+                   backgroundcolor='rgb(200, 200, 200)')
+    )
+)
+
+fig.update_traces(
+    marker=dict(
+        size=3 * np.log(cluster_sizes),
+        line=dict(width=0),
+        opacity=0.5
+    )
+)
 
 
 # Run Dash app displaying Plotly graphics.
 app = dash.Dash(__name__)
 app.layout = html.Div([
-    html.H1(children='OSRS combat skill clusters'),
+    html.H1(children=html.Strong('OSRS combat skill clusters')),
 
     html.Div(children='''
         Each point represents a cluster of OSRS players with similar combat
@@ -58,7 +81,8 @@ app.layout = html.Div([
     '''),
 
     dcc.Graph(id="scatter-plot",
-              figure=fig)
+              figure=fig,
+              style={'height': '100vh'})
 ])
 
 
