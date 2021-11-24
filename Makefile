@@ -3,11 +3,6 @@ export PYTHONPATH := $(shell pwd)
 
 all: init
 
-# Givens:
-# data/raw/clusters.pkl
-# data/processed/clusters.csv
-# data/processed/stats.csv
-
 init: 				## Initialize repository.
 init: clean-env env nbextensions lint
 
