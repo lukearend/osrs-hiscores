@@ -67,12 +67,13 @@ fig.update_traces(
 
 # Run Dash app displaying Plotly graphics.
 app = dash.Dash(__name__)
+
 app.layout = html.Div([
     html.H1(children=html.Strong('OSRS combat skill clusters')),
 
     html.Div(children='''
         Each point represents a cluster of OSRS players with similar combat
-        stats. The closer two clusters are, the more similar are the accounts
+        stats. The closer two clusters are, the more similar the accounts are
         in each of those two clusters. Some clusters contain only a single
         (highly) unique player; others comprise thousands or tens of thousands
         of similar accounts. The size of each point corresponds to the number
