@@ -1,0 +1,54 @@
+annotated histogram above. dropdown menu to choose which skill is displayed.
+
+color coding for plot changes to whatever skill is selected. initially, total level is selected.
+
+can draw bounding box on histogram to select range of levels. clusters are assigned an alpha proportional to the percentage of players in that cluster contained in the selected histogram range.
+
+----------------
+
+for cluster_id in range(num_clusters):
+    skill_i = 0  # attack
+
+    lower = centroids[split][5][cluster_id, skill_i]
+    upper = centroids[split][95][cluster_id, skill_i]
+    median = centroids[split][50][cluster_id, skill_i]
+
+    # 45% of players in this cluster have level between lower and median.
+    # 45% of players in this cluster have level between median and upper.
+    # For sake of plotting, consider both groups of players uniformly
+    # distributed over their respective ranges. Set alpha proportional to
+    # a weighted sum of the overlap each of these ranges has with
+    # the range selected in the histogram above:
+
+    lower_overlap = max(0, min(selection_upper, median) - max(selection_lower, lower))
+    upper_overlap = max(0, min(selection_upper, upper) - max(selection_lower, median))
+    lower_overlap = lower_overlap / (median - lower)
+    upper_overlap = upper_overlap / (higher - median)
+    alpha = 0.5 * lower_overlap + 0.5 * upper_overlap
+
+    # E.g. cluster range is [80, 90, 99]
+    # User selects range [95-99]
+    # lower_overlap = 0 / 11
+    # upper_overlap = 5 / 11
+    # alpha = 0.5 * 0 + 0.5 * 0.45454545 = 0.22727273
+
+# vectorized version:
+
+lower = centroids[split][5][:, skill_i]
+upper = centroids[split][95][:, skill_i]
+median = centroids[split][50][:, skill_i]
+
+lower_overlap = np.minimum(selection_upper, median) - np.maximum(selection_lower, lower)
+upper_overlap = np.minimum(selection_upper, upper) - np.maximum(selection_lower, median)
+
+lower_overlap = np.maximum(lower_overlap, 0)
+upper_overlap = np.maximum(upper_overlap, 0)
+
+lower_overlap = lower_overlap / (median - lower)
+upper_overlap = upper_overlap / (higher - median)
+
+alpha = 0.5 * lower_overlap + 0.5 * upper_overlap
+
+----------------
+
+on left side, a field to enter username and two skill panels. when a player is queried, player's cluster is highlighted (and crosshaired) and the player's stats go in the top skill box. the cluster's stats goes in the lower skill box.

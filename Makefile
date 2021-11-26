@@ -20,9 +20,9 @@ clean-env: 			## Remove virtual environment.
 scrape: data/processed/stats.csv
 
 clean-scrape:       		## Removes all scraped data (WARNING: be sure you want to do this).
-	rm data/raw/usernames-raw.csv
-	rm data/interim/usernames.csv
-	rm data/raw/stats-raw.csv
+	rm -f data/raw/usernames-raw.csv
+	rm -f data/interim/usernames.csv
+	rm -f data/raw/stats-raw.csv
 
 data/raw/usernames-raw.csv:
 	@source env/bin/activate && \
@@ -44,21 +44,21 @@ analytics: data/processed/clusters.csv data/processed/stats.pkl data/processed/c
            data/processed/centroids.pkl data/processed/dimreduced.pkl
 
 clean-analytics:		## Removes all analytic results computed from scraped data.
-	rm data/processed/stats.pkl
-	rm data/processed/clusters.csv
-	rm data/processed/clusters.pkl
-	rm data/processed/centroids.pkl
-	rm data/processed/dimreduced.pkl
+	rm -f data/processed/stats.pkl
+	rm -f data/processed/clusters.csv
+	rm -f data/processed/clusters.pkl
+	rm -f data/processed/centroids.pkl
+	rm -f data/processed/dimreduced.pkl
 
 data/processed/stats.pkl: data/processed/stats.csv
 	@source env/bin/activate && \
 	cd hiscores/data && python3 write_stats_pkl.py
 
-data/processed/clusters.csv: data/raw/clusters.pkl data/processed/stats.pkl
+data/processed/clusters.csv: data/raw/clusters-raw.pkl data/processed/stats.pkl
 	@source env/bin/activate && \
 	cd hiscores/data && python3 write_cluster_csv.py
 
-data/processed/clusters.pkl: data/raw/clusters.pkl
+data/processed/clusters.pkl: data/raw/clusters-raw.pkl
 	@source env/bin/activate && \
 	cd hiscores/data && python3 process_cluster_data.py
 

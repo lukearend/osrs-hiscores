@@ -34,6 +34,8 @@ def main():
     with open(PARAMS_FILE, 'r') as f:
         params = json.load(f)
 
+    print("computing 3d embeddings...")
+
     results = {}
     for split, p in params.items():
 
@@ -50,8 +52,8 @@ def main():
 
         # For reproducibility.
         np.random.seed(0)
-
         t0 = time.time()
+
         fit = umap.UMAP(
             n_neighbors=n_neighbors,
             min_dist=min_dist,
@@ -59,8 +61,8 @@ def main():
             metric='euclidean'
         )
         u = fit.fit_transform(centroids)
-        elapsed = time.time() - t0
 
+        elapsed = time.time() - t0
         print("done ({:.2f} sec)".format(elapsed))
 
         results[split] = u

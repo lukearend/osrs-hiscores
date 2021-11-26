@@ -9,12 +9,12 @@ from tqdm import tqdm
 
 
 STATS_FILE = '../../data/processed/stats.pkl'
-CLUSTERS_FILE = '../../data/raw/clusters.pkl'
+CLUSTERS_FILE = '../../data/raw/clusters-raw.pkl'
 OUT_FILE = '../../data/processed/clusters.csv'
 
 
 def main():
-    print('getting usernames...')
+    print("getting usernames...")
     with open(STATS_FILE, 'rb') as f:
         contents = pickle.load(f)
         usernames = contents['usernames']
@@ -22,7 +22,7 @@ def main():
     with open(CLUSTERS_FILE, 'rb') as f:
         clusters = pickle.load(f)
 
-    print('writing clustering results to CSV...')
+    print("writing clustering results to CSV...")
     with open(OUT_FILE, 'w') as f:
         writer = csv.writer(f)
         writer.writerow(['username', 'all', 'cb', 'noncb'])

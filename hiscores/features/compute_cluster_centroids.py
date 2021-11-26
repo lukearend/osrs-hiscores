@@ -14,9 +14,11 @@ OUT_FILE = '../../data/processed/centroids.pkl'
 
 
 def main():
-    print('loading player stats...')
+    print("loading player stats...")
     with open(STATS_FILE, 'rb') as f:
         contents = pickle.load(f)
+
+    print("computing cluster centroids...")
 
     players = contents['usernames']
     skills = np.array(contents['stats'][:, 1::3], dtype='float32')
@@ -41,12 +43,12 @@ def main():
             dataset = np.concatenate([np.expand_dims(skills[:, 0], axis=1), skills[:, 8:]], axis=1)
             cluster_centroids = np.zeros((num_clusters, 17, 3))
 
-        for i in tqdm(range(num_clusters)):
-            keep_inds = result['cluster_ids'] == i + 1
+        for cluster_id in tqdm(range(num_clusters)):
+            keep_inds = result['cluster_ids'] == cluster_id
             cluster_rows = dataset[keep_inds]
-            cluster_centroids[i, :, 0] = np.nanpercentile(cluster_rows, axis=0, q=5)
-            cluster_centroids[i, :, 1] = np.nanpercentile(cluster_rows, axis=0, q=50)
-            cluster_centroids[i, :, 2] = np.nanpercentile(cluster_rows, axis=0, q=95)
+            cluster_centroids[cluster_id, :, 0] = np.nanpercentile(cluster_rows, axis=0, q=5)
+            cluster_centroids[cluster_id, :, 1] = np.nanpercentile(cluster_rows, axis=0, q=50)
+            cluster_centroids[cluster_id, :, 2] = np.nanpercentile(cluster_rows, axis=0, q=95)
 
         results[split] = {
             5: cluster_centroids[:, :, 0],
