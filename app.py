@@ -98,9 +98,10 @@ def get_scatterplot(split, skill):
 
 # Run Dash app displaying Plotly graphics.
 app = Dash(__name__)
+fig = get_scatterplot(SPLIT, SKILL)
 
 app.layout = dbc.Container([
-    dbc.Row(dbc.Col(html.H1(children=html.Strong('OSRS combat skill clusters')))),
+    dbc.Row(dbc.Col(html.H1(children=html.Strong('OSRS player clusters')))),
 
     dbc.Row(dbc.Col(html.Div(children='''
         Each point represents a cluster of OSRS players with similar combat
@@ -124,11 +125,13 @@ app.layout = dbc.Container([
     # )
 
     dbc.Row([
-        dbc.Col(
-            dcc.Input(id='username-input', type='text', placeholder='input username'),
-            width='auto'
-        ),
+        dbc.Col(dcc.Input(id='username-input', type='text', placeholder='input username')),
         dbc.Col(html.Div(id='selected-user'))
+    ]),
+
+    dbc.Row([
+        dbc.Col(dcc.Input(id='size-input', type='number', placeholder='point size')),
+        dbc.Col(html.Div(id='selected-size'))
     ]),
 
     # TODO: style viewport to have gap on left
@@ -136,7 +139,7 @@ app.layout = dbc.Container([
     # TODO: picture frame holds current selected player on top, cluster on bottom
     dbc.Row(dbc.Col(
         dcc.Graph(id='scatter-plot',
-                  figure=get_scatterplot(SPLIT, SKILL),
+                  figure=fig,
                   style={'height': '90vh'},
                   clear_on_unhover=True),
     )),
@@ -169,6 +172,22 @@ def set_username(value):
         return "'{}' cluster ID: {}".format(name, cluster_id)
 
     return
+
+
+@app.callback(
+    Output('scatter-plot', 'figure'),
+    Input('size-input', 'value'),
+)
+def set_username(value):
+    fig.update_traces(
+        marker=dict(
+            size=value * np.log(clusters[split]['cluster_sizes']),
+            line=dict(width=0),
+            opacity=0.5
+        )
+    )
+
+    return fig
 
 
 @app.callback(
