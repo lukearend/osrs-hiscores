@@ -45,24 +45,24 @@ analytics: data/processed/clusters.csv data/processed/stats.pkl data/processed/c
 
 clean-analytics:		## Removes all analytic results computed from scraped data.
 	rm -f data/processed/stats.pkl
-	rm -f data/processed/clusters.csv
 	rm -f data/processed/clusters.pkl
+	rm -f data/processed/players.pkl
 	rm -f data/processed/centroids.pkl
 	rm -f data/processed/dimreduced.pkl
-
-data/processed/stats.pkl: data/processed/stats.csv
-	@source env/bin/activate && \
-	cd hiscores/data && python3 write_stats_pkl.py
-
-data/processed/clusters.csv: data/raw/clusters-raw.pkl data/processed/stats.pkl
-	@source env/bin/activate && \
-	cd hiscores/data && python3 write_cluster_csv.py
 
 data/processed/clusters.pkl: data/raw/clusters-raw.pkl
 	@source env/bin/activate && \
 	cd hiscores/data && python3 process_cluster_data.py
 
-data/processed/centroids.pkl: data/processed/clusters.pkl data/processed/stats.pkl
+data/processed/stats.pkl: data/processed/stats.csv
+	@source env/bin/activate && \
+	cd hiscores/data && python3 write_stats_pkl.py
+
+data/processed/players.pkl: data/processed/stats.pkl data/processed/clusters.pkl
+	@source env/bin/activate && \
+	cd hiscores/data && python3 write_players_pkl.py
+
+data/processed/centroids.pkl: data/processed/stats.pkl data/processed/clusters.pkl
 	@source env/bin/activate && \
 	cd hiscores/features && python3 compute_cluster_centroids.py
 
@@ -72,7 +72,8 @@ data/processed/dimreduced.pkl: data/processed/clusters.pkl data/processed/centro
 
 # TODO: smaller marker sizes, tooltip lookup of centroids
 app:				## Run visualization app.
-app: data/processed/clusters.pkl data/processed/centroids.pkl data/processed/dimreduced.pkl
+app: data/processed/clusters.pkl data/processed/players.pkl \
+data/processed/centroids.pkl data/processed/dimreduced.pkl
 	@source env/bin/activate && python3 app.py
 
 nbextensions:			## Install jupyter notebook extensions.
