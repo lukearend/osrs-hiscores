@@ -1,7 +1,8 @@
-env
-/models/
 /data/
+/db/volume/*
 /figures/scatterplots/player-clusters-*-*.pdf
+/env
+/models/
 .DS_Store
 .ipynb_checkpoints
 *.egg-info

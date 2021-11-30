@@ -33,13 +33,18 @@ TODO: instructions for downloading both files and adding to repo under the data/
 1. `data/processed/stats.csv`: Rank, levels, xp, clues and achievements stats for the top \~2 million OSRS players. This file is *not currently in the repo* due to github file size restraints, and must be downloaded separately and added to the repo. To do this, run `wget TODO: get stats.csv from Google Drive or S3 bucket and place in repo` from the command line in this directory or (i) click TODO: [here]() to download and (ii) copy the downloaded file into the folder `data/processed/` under the this repo directory.
 
 Usage
-----------------------
+-----
 
 Run `make init` to set up virtual environment. Run `make analytics` to run the full analytics pipeline on the raw data, producing final results (takes about TODO seconds on M1 mac). To launch the visualization, run `make app` and then navigate to `localhost:8050` in the browser.
 
 The virtual environment must be activated to work interactively with python. To do this, run `source env/bin/activate` from the top-level directory. You can then open a notebook server by running `make notebook` and going to `localhost:8888` in the browser. The notebooks in this repository were used to generate the final figures.
 
 Run `make scrape` to download and build the raw dataset by scraping official OSRS hiscores. Note: depends on the `expresso` [tool](https://github.com/sttz/expresso) for ExpressVPN.
+
+Dependencies
+------------
+
+Depends on `docker` to run MongoDB.
 
 --------
 

@@ -4,7 +4,7 @@ export PYTHONPATH := $(shell pwd)
 all: init
 
 init: 				## Initialize repository.
-init: clean-env env nbextensions lint
+init: clean-env env nbextensions lint db-pull
 
 env: 				## Build virtual environment.
 	@python3 -m venv env && \
@@ -19,7 +19,7 @@ clean-env: 			## Remove virtual environment.
 
 scrape: data/processed/stats.csv
 
-clean-scrape:       		## Removes all scraped data (WARNING: be sure you want to do this).
+clean-scrape:       		## Remove all scraped data (WARNING: be sure you want to do this).
 	rm -f data/raw/usernames-raw.csv
 	rm -f data/interim/usernames.csv
 	rm -f data/raw/stats-raw.csv
@@ -43,7 +43,7 @@ data/processed/stats.csv: data/raw/stats-raw.csv
 analytics: data/processed/clusters.csv data/processed/stats.pkl data/processed/clusters.pkl \
            data/processed/centroids.pkl data/processed/dimreduced.pkl
 
-clean-analytics:		## Removes all analytic results computed from scraped data.
+clean-analytics:		## Remove all analytic results computed from scraped data.
 	rm -f data/processed/stats.pkl
 	rm -f data/processed/clusters.pkl
 	rm -f data/processed/players.pkl
@@ -70,11 +70,28 @@ data/processed/dimreduced.pkl: data/processed/clusters.pkl data/processed/centro
 	@source env/bin/activate && \
 	cd hiscores/models && python3 dim_reduce_centroids.py
 
-# TODO: smaller marker sizes, tooltip lookup of centroids
+db: db-pull db-start db-build
+
+clean-db: 
+	docker stop osrs-hiscores ; \
+	docker rm osrs-hiscores ; \
+	rm -rf $(shell pwd)/db/volume/*
+
+db-pull:
+	docker pull mongo
+
+db-start:
+	docker stop osrs-hiscores ; \
+	docker run --rm --name osrs-hiscores -v $(shell pwd)/db/volume:/data/db -d mongo
+
+db-build:
+	@source env/bin/activate && \
+	cd db && python3 build_database.py
+
 app:				## Run visualization app.
-app: data/processed/clusters.pkl data/processed/players.pkl \
-data/processed/centroids.pkl data/processed/dimreduced.pkl
 	@source env/bin/activate && python3 app.py
+
+all: init analytics db app
 
 nbextensions:			## Install jupyter notebook extensions.
 	@source env/bin/activate && \
