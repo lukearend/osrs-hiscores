@@ -46,7 +46,6 @@ analytics: data/processed/clusters.csv data/processed/stats.pkl data/processed/c
 clean-analytics:		## Remove all analytic results computed from scraped data.
 	rm -f data/processed/stats.pkl
 	rm -f data/processed/clusters.pkl
-	rm -f data/processed/players.pkl
 	rm -f data/processed/centroids.pkl
 	rm -f data/processed/dimreduced.pkl
 
@@ -58,11 +57,7 @@ data/processed/stats.pkl: data/processed/stats.csv
 	@source env/bin/activate && \
 	cd hiscores/data && python3 write_stats_pkl.py
 
-data/processed/players.pkl: data/processed/stats.pkl data/processed/clusters.pkl
-	@source env/bin/activate && \
-	cd hiscores/data && python3 write_players_pkl.py
-
-data/processed/centroids.pkl: data/processed/stats.pkl data/processed/clusters.pkl
+data/processed/centroids.pkl: data/processed/clusters.pkl data/processed/stats.pkl
 	@source env/bin/activate && \
 	cd hiscores/features && python3 compute_cluster_centroids.py
 
@@ -82,7 +77,9 @@ db-pull:
 
 db-start:
 	docker stop osrs-hiscores ; \
-	docker run --rm --name osrs-hiscores -v $(shell pwd)/db/volume:/data/db -d mongo
+	docker run --rm -d --name osrs-hiscores \
+	-v $(shell pwd)/db/volume:/data/db \
+	-p 27017:27017 mongo
 
 db-build:
 	@source env/bin/activate && \

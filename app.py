@@ -4,21 +4,28 @@
 
 import pickle
 
-from dash import Dash, no_update
-from dash.dependencies import Input, Output, State
-from dash.exceptions import PreventUpdate
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
-import mydcc
 import numpy as np
 import plotly.express as px
-import plotly.graph_objects as go
 import pandas as pd
+from dash import Dash
+from dash.dependencies import Input, Output, State
+from dash.exceptions import PreventUpdate
+from pymongo import MongoClient
+from pymongo.errors import ServerSelectionTimeoutError
 
 
+db = MongoClient('localhost', 27017, serverSelectionTimeoutMS=5)['osrs-hiscores']
+players = db['players']
+try:
+    db.command('ping')
+except ServerSelectionTimeoutError:
+    raise ValueError("could not connect to mongodb")
+
+print('connected to mongo')
 print('loading data...')
-print(30 * '\n')
 
 with open('data/processed/dimreduced.pkl', 'rb') as f:
     xyz = pickle.load(f)
@@ -26,8 +33,6 @@ with open('data/processed/centroids.pkl', 'rb') as f:
     centroids = pickle.load(f)
 with open('data/processed/clusters.pkl', 'rb') as f:
     clusters = pickle.load(f)
-# with open('data/processed/players.pkl', 'rb') as f:
-#     players = pickle.load(f)
 with open('reference/skills.csv', 'r') as f:
     skills = f.read().strip().split('\n')
 
@@ -64,11 +69,24 @@ for split, xyz_data in xyz.items():
 
 
 # Define main scatterplot figure.
-def get_scatterplot(split, skill):
-    fig = px.scatter_3d(data[split], x='x', y='y', z='z',
-                        color="{}_50".format(skill),
+def get_scatterplot(split, skill, level_range):
+
+    if skill == 'total':
+        color_range = [500, 2277]
+    else:
+        color_range = [1, 99]
+
+    inds = np.where(np.logical_and(
+        data[split]['{}_95'.format(skill)] >= level_range[0],
+        data[split]['{}_5'.format(skill)] <= level_range[1],
+    ))[0]
+    plot_data = data[split].iloc[inds]
+
+    fig = px.scatter_3d(plot_data, x='x', y='y', z='z',
+                        color='{}_50'.format(skill),
+                        range_color=color_range,
                         hover_data={'x': False, 'y': False, 'z': False,
-                                    'cluster': data[split].index, 'size': True,
+                                    'cluster': plot_data.index, 'size': True,
                                     '{}_95'.format(skill): True,
                                     '{}_50'.format(skill): True,
                                     '{}_5'.format(skill): True})
@@ -83,7 +101,8 @@ def get_scatterplot(split, skill):
                        backgroundcolor='rgb(240, 240, 240)'),
             zaxis=dict(title='', showticklabels=False, showgrid=False, zeroline=False,
                        backgroundcolor='rgb(200, 200, 200)')
-        )
+        ),
+        coloraxis_colorbar=dict(title=skill_pretty(skill))
     )
 
     # Point size is proportional to cluster size.
@@ -98,150 +117,177 @@ def get_scatterplot(split, skill):
     return fig
 
 
+def skill_pretty(skill):
+    return skill[0].upper() + skill[1:].replace('_', ' ') + ' level'
+
+def get_level_marks(skill):
+    if skill == 'total':
+        return {i: str(i) for i in [1, 250, 500, 750, 1000, 1250, 1500, 1750, 2000, 2277]}
+    else:
+        return {i: str(i) for i in [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 99]}
+
+
 # Run Dash app displaying graphics.
-app = Dash(__name__)
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+
 app.layout = dbc.Container([
 
-    # Intro matters.
-    dbc.Row(dbc.Col(html.H1(children=html.Strong('OSRS player clusters')))),
+    dbc.Row(
+        dbc.Col([
+            html.Br(),
+            html.H1(children=html.Strong('OSRS player clusters')),
+            html.Div(children='''
+                Each point represents a cluster of OSRS players with similar combat
+                stats. The closer two clusters are, the more similar the accounts are
+                in each of those two clusters. Some clusters contain only a single
+                (highly) unique player; others comprise thousands or tens of thousands
+                of similar accounts. The size of each point corresponds to the number
+                of players in that cluster. Axes have no meaningful interpretation.
+            '''),
+            html.Br(),
+        ])
+    ),
 
-    dbc.Row(dbc.Col(html.Div(children='''
-        Each point represents a cluster of OSRS players with similar combat
-        stats. The closer two clusters are, the more similar the accounts are
-        in each of those two clusters. Some clusters contain only a single
-        (highly) unique player; others comprise thousands or tens of thousands
-        of similar accounts. The size of each point corresponds to the number
-        of players in that cluster. The clusters are color-coded by total
-        level; axes have no meaningful units.
-    '''))),
-
-    # Split selector.
-    dbc.Row(dbc.Col(
-        dcc.Dropdown(
+    dbc.Row([
+        dbc.Col(html.Div(children="Cluster players by:"), width=2),
+        dbc.Col(dcc.Dropdown(
             id='split-dropdown',
             options=[
                 {'label': 'All skills','value': 'all'},
                 {'label': 'Combat skills','value': 'cb'},
                 {'label': 'Non-combat skills','value': 'noncb'},
             ],
-            value='all')
-    )),
-
-    # Skill selector.
-    dbc.Row(dbc.Col(
-        dcc.Dropdown(
+            value='all' 
+        ), width=4),
+        dbc.Col(html.Div(children="Color clusters by:"), width=2),
+        dbc.Col(dcc.Dropdown(
             id='skill-dropdown',
             options=[
-                {'label': skillname[0].upper() + skillname[1:].replace('_', ' '),
-                 'value': skillname} for skillname in skills
+                {'label': skill_pretty(skill),
+                 'value': skill} for skill in skills
             ],
-            value='total')
-    )),
+            value='total'
+        ), width=4)
+    ], align='center', style={'padding-bottom': '1vh'}),
 
-    # Username input.
     dbc.Row([
-        dbc.Col(dcc.Input(id='username-input', type='text', placeholder='input username')),
-        dbc.Col(html.Div(id='selected-user'))
-    ]),
+        dbc.Col(html.Div(children="Show levels:"), width='auto'),
+        dbc.Col(dcc.RangeSlider(
+            id='level-selector',
+            min=1,
+            max=2277,
+            step=1,
+            value=[1, 2277],
+            marks=get_level_marks('total')
+        ))
+    ], align='center', style={'padding-bottom': '1vh'}),
 
-    # Scatterplot.
-    dbc.Row(dbc.Col(
-        dcc.Graph(id='scatter-plot',
-                  figure=get_scatterplot('all', 'total'),
-                  style={'height': '90vh'},
-                  clear_on_unhover=True),
-    )),
-    dcc.Tooltip(id='tooltip'),
-    dbc.Row(dbc.Col(html.Div(id='dummy-content'))),
-    # mydcc.Change_trace_mapbox(id='change-trace', aim='scatter-plot')
+    dbc.Row([
+        dbc.Col(html.Div(children="Lookup player:"), width='auto'),
+        dbc.Col(dcc.Input(id='username-input', type='text', placeholder="e.g. 'snakeylime'"), width='auto'),
+        dbc.Col(html.Div(id='selected-user'), width='auto'),
+    ], align='center', style={'padding-bottom': '1vh'}),
+
+    dbc.Row(
+        dbc.Col([
+            dcc.Graph(id='scatter-plot',
+                      figure=get_scatterplot('all', 'total', [1, 2277]),
+                      style={'height': '80vh'},
+                      clear_on_unhover=True),
+            html.Br()
+        ])
+    ),
+    dcc.Tooltip(id='tooltip')
 ])
 
 
-# Grey out skills in dropdown depending on current split.
+# Callbacks for dynamic updating of Dash app.
+@app.callback(
+    Output('scatter-plot', 'figure'),
+    Input('split-dropdown', 'value'),
+    Input('skill-dropdown', 'value'),
+    Input('level-selector', 'value')
+)
+def redraw_figure(split, skill, level_range):
+    min_level, max_level = level_range
+    return get_scatterplot(split, skill, level_range)
+
+
 @app.callback(
     Output('skill-dropdown', 'options'),
     Output('skill-dropdown', 'value'),
-    Input('split-dropdown', 'value')
+    Input('split-dropdown', 'value'),
+    State('skill-dropdown', 'value')
 )
-def select_split(split):
-    disabled = {
-        'all': [],
-        'cb': skills[8:],
-        'noncb': skills[1:8]
-    }[split]
+def choose_split(split, current_skill):
+    if split:
+        disabled = {
+            'all': [],
+            'cb': skills[8:],
+            'noncb': skills[1:8]
+        }[split]
 
-    options = []
-    for skill in skills:
-        options.append({
-            'label': skill[0].upper() + skill[1:].replace('_', ' '),
-            'value': skill,
-            'disabled': True if skill in disabled else False
-        })
+        options = []
+        for skill in skills:
+            options.append({
+                'label': skill_pretty(skill),
+                'value': skill,
+                'disabled': True if skill in disabled else False
+            })
 
-    return options, 'total'
+        if current_skill in disabled:
+            new_skill = 'total'
+        else:
+            new_skill = current_skill
+
+        return options, new_skill
+
+    raise PreventUpdate
 
 
-# Print out cluster info for selected player.
+@app.callback(
+    Output('level-selector', 'min'),
+    Output('level-selector', 'max'),
+    Output('level-selector', 'value'),
+    Output('level-selector', 'marks'),
+    Input('skill-dropdown', 'value'),
+    State('level-selector', 'value')
+)
+def choose_skill(new_skill, current_range):
+    if new_skill:
+        if current_range == [1, 2277] and new_skill != 'total':
+            new_range = [1, 99]
+        elif new_skill == 'total':
+            new_range = [1, 2277]
+        else:
+            new_range = current_range
+
+        marks = get_level_marks(new_skill)
+
+        if new_skill == 'total':
+            return 1, 2277, new_range, marks
+        return 1, 99, new_range, marks
+
+    raise PreventUpdate
+
+
 @app.callback(
     Output('selected-user', 'children'),
-    [Input('username-input', 'value'), Input('split-dropdown', 'value')],
+    Input('username-input', 'value'),
+    Input('split-dropdown', 'value')
 )
-def select_player(username, split):
+def lookup_player(username, split):
     if username:
-        key = username.lower()
-        try:
-            # cluster_id = players[split][key]['cluster_id']
-            # name = players[split][key]['name']
-            return "no players loaded"
-        except KeyError:
-            return "no player '{}' in dataset".format(value)
-        return "'{}' cluster ID: {}".format(name, cluster_id)
+        player = players.find_one({'_id': username.lower()})
+        if player:
+            username = player['username']
+            cluster_id = player['cluster_id'][split]
+            uniqueness = clusters[split]['percent_uniqueness'][cluster_id]
+            return "'{}': cluster {} ({:.2%} unique)".format(username, cluster_id + 1, uniqueness)
+        else:
+            return "no player '{}' in dataset".format(username)
 
     return ''
-
-
-# Highlight currently hovered point.
-@app.callback(
-    Output('scatter-plot', 'figure'),
-    Input('scatter-plot', 'hoverData'),
-    State('scatter-plot', 'figure'),
-)
-def select_point(hoverData, fig):
-    if hoverData:
-        print(hoverData['points'][0]['pointNumber'])
-
-    return fig
-
-
-# @app.callback(
-#     Output('dummy-content', 'children'),
-#     Input('scatter-plot', 'hoverData'),
-# )
-# def print_stats(hoverData):
-#     if hoverData is None:
-#         return no_update
-
-#     cluster_id = hoverData['points'][0]['pointNumber']
-
-#     median = np.floor(centroids[SPLIT][50][cluster_id]).astype('int')
-#     upper = np.floor(centroids[SPLIT][95][cluster_id]).astype('int')
-#     lower = np.floor(centroids[SPLIT][5][cluster_id]).astype('int')
-
-#     header = "cluster {}: {} players".format(
-#         cluster_id, clusters[SPLIT]['cluster_sizes'][cluster_id])
-
-#     # Clear previous.
-#     print('\033[28A')
-#     print(30 * (30 * ' ' + '\n'))
-
-#     print(header)
-#     print('-' * len(header))
-#     for skill, med, low, up in zip(skills, median, lower, upper):
-#         lvl_text = str(med).ljust(2) + " ({}-{})".format(low, up)
-#         print(skill.ljust(12), lvl_text)
-#     print()
-
-#     return no_update
 
 
 if __name__ == '__main__':
