@@ -10,7 +10,7 @@ import dash_html_components as html
 import numpy as np
 import plotly.express as px
 import pandas as pd
-from dash import Dash
+from dash import Dash, no_update
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from pymongo import MongoClient
@@ -90,6 +90,8 @@ def get_scatterplot(split, skill, level_range):
                                     '{}_95'.format(skill): True,
                                     '{}_50'.format(skill): True,
                                     '{}_5'.format(skill): True})
+
+    fig.update_traces(hoverinfo='none', hovertemplate=None)
 
     fig.update_layout(
         margin=dict(b=0, l=0, r=0, t=0),
@@ -289,6 +291,31 @@ def lookup_player(username, split):
 
     return ''
 
+
+@app.callback(
+    Output('tooltip', 'show'),
+    Output('tooltip', 'bbox'),
+    Output('tooltip', 'children'),
+    Input('scatter-plot', 'hoverData'),
+    State('split-dropdown', 'value'),
+    State('skill-dropdown', 'value')
+)
+def update_tooltip(hover_data, split, skill):
+    if hover_data is None:
+        return False, no_update, no_update
+
+    pt = hover_data['points'][0]
+    bbox = pt['bbox']
+    cluster_id = pt['pointNumber']
+    size = clusters[split]['cluster_sizes'][cluster_id]
+
+    children = [
+        html.Div([
+            html.Div(children=html.Strong("cluster {}".format(cluster_id + 1))),
+            html.Div(children="{} players".format(size))
+        ])
+    ]
+    return True, bbox, children
 
 if __name__ == '__main__':
     app.run_server(debug=True)
