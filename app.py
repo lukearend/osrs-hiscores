@@ -9,8 +9,9 @@ import dash_core_components as dcc
 import dash_html_components as html
 import numpy as np
 import plotly.express as px
+import plotly.graph_objects as go
 import pandas as pd
-from dash import Dash, no_update
+from dash import Dash, callback_context, no_update
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from pymongo import MongoClient
@@ -39,6 +40,7 @@ with open('reference/skills.csv', 'r') as f:
 
 # Convert input data into dataframes for plotting.
 data = {}
+minmax = {}
 for split, xyz_data in xyz.items():
     num_clusters = len(xyz_data)
     cluster_sizes = clusters[split]['cluster_sizes']
@@ -66,10 +68,15 @@ for split, xyz_data in xyz.items():
                       columns=columns,
                       index=np.arange(1, num_clusters + 1))
     data[split] = df
+    minmax[split] = {
+        'x': (np.min(df['x']), np.max(df['x'])),
+        'y': (np.min(df['y']), np.max(df['y'])),
+        'z': (np.min(df['z']), np.max(df['z']))
+    }
 
 
 # Define main scatterplot figure.
-def get_scatterplot(split, skill, level_range):
+def get_figure(split, skill, level_range, highlight_cluster=None):
 
     if skill == 'total':
         color_range = [500, 2277]
@@ -82,6 +89,11 @@ def get_scatterplot(split, skill, level_range):
     ))[0]
     plot_data = data[split].iloc[inds]
 
+    xmin, xmax = minmax[split]['x']
+    ymin, ymax = minmax[split]['y']
+    zmin, zmax = minmax[split]['z']
+
+    # px.scatter_3d color/hover data formatting is better than go.Scatter3d.
     fig = px.scatter_3d(plot_data, x='x', y='y', z='z',
                         color='{}_50'.format(skill),
                         range_color=color_range,
@@ -91,23 +103,24 @@ def get_scatterplot(split, skill, level_range):
                                     '{}_50'.format(skill): True,
                                     '{}_5'.format(skill): True})
 
-    fig.update_traces(hoverinfo='none', hovertemplate=None)
-
     fig.update_layout(
+        uirevision='constant',
         margin=dict(b=0, l=0, r=0, t=0),
         scene=dict(
             aspectmode='cube',
-            xaxis=dict(title='', showticklabels=False, showgrid=False, zeroline=False,
+            xaxis=dict(title='', showticklabels=False, showgrid=False,
+                       zeroline=False, range=[xmin, xmax],
                        backgroundcolor='rgb(230, 230, 230)'),
-            yaxis=dict(title='', showticklabels=False, showgrid=False, zeroline=False,
-                       backgroundcolor='rgb(240, 240, 240)'),
-            zaxis=dict(title='', showticklabels=False, showgrid=False, zeroline=False,
+            yaxis=dict(title='', showticklabels=False, showgrid=False,
+                       zeroline=False, range=[ymin, ymax],
+                       backgroundcolor='rgb(220, 220, 220)'),
+            zaxis=dict(title='', showticklabels=False, showgrid=False,
+                       zeroline=False, range=[zmin, zmax],
                        backgroundcolor='rgb(200, 200, 200)')
         ),
         coloraxis_colorbar=dict(title=skill_pretty(skill))
     )
 
-    # Point size is proportional to cluster size.
     fig.update_traces(
         marker=dict(
             size=3 * np.log(clusters[split]['cluster_sizes']),
@@ -115,6 +128,23 @@ def get_scatterplot(split, skill, level_range):
             opacity=0.5
         )
     )
+
+    if highlight_cluster is not None:
+        x, y, z = xyz[split][highlight_cluster]
+        fig.add_trace(
+            go.Scatter3d(
+                x=[xmin, xmax, None, x, x, None, x, x],
+                y=[y, y, None, ymin, ymax, None, y, y],
+                z=[z, z, None, z, z, None, zmin, zmax],
+                mode='lines',
+                line_color='white',
+                line_width=2,
+                name='crosshairs'
+            )
+        )
+
+    fig.update_traces(hoverinfo='none', hovertemplate=None)
+    fig.update_traces(showlegend=False, selector=dict(name='crosshairs'))
 
     return fig
 
@@ -133,71 +163,119 @@ def get_level_marks(skill):
 app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 app.layout = dbc.Container([
-
     dbc.Row(
-        dbc.Col([
-            html.Br(),
-            html.H1(children=html.Strong('OSRS player clusters')),
-            html.Div(children='''
-                Each point represents a cluster of OSRS players with similar combat
-                stats. The closer two clusters are, the more similar the accounts are
-                in each of those two clusters. Some clusters contain only a single
-                (highly) unique player; others comprise thousands or tens of thousands
-                of similar accounts. The size of each point corresponds to the number
-                of players in that cluster. Axes have no meaningful interpretation.
-            '''),
-            html.Br(),
-        ])
+        dbc.Col(
+            [
+                html.Br(),
+                html.H1(children=html.Strong('OSRS player clusters')),
+                html.Div(children='''
+                    Each point represents a cluster of OSRS players with similar combat
+                    stats. The closer two clusters are, the more similar the accounts are
+                    in each of those two clusters. Some clusters contain only a single
+                    (highly) unique player; others comprise thousands or tens of thousands
+                    of similar accounts. The size of each point corresponds to the number
+                    of players in that cluster. Axes have no meaningful interpretation.
+                '''),
+                html.Br(),
+            ]
+        )
     ),
 
-    dbc.Row([
-        dbc.Col(html.Div(children="Cluster players by:"), width=2),
-        dbc.Col(dcc.Dropdown(
-            id='split-dropdown',
-            options=[
-                {'label': 'All skills','value': 'all'},
-                {'label': 'Combat skills','value': 'cb'},
-                {'label': 'Non-combat skills','value': 'noncb'},
-            ],
-            value='all' 
-        ), width=4),
-        dbc.Col(html.Div(children="Color clusters by:"), width=2),
-        dbc.Col(dcc.Dropdown(
-            id='skill-dropdown',
-            options=[
-                {'label': skill_pretty(skill),
-                 'value': skill} for skill in skills
-            ],
-            value='total'
-        ), width=4)
-    ], align='center', style={'padding-bottom': '1vh'}),
-
-    dbc.Row([
-        dbc.Col(html.Div(children="Show levels:"), width='auto'),
-        dbc.Col(dcc.RangeSlider(
-            id='level-selector',
-            min=1,
-            max=2277,
-            step=1,
-            value=[1, 2277],
-            marks=get_level_marks('total')
-        ))
-    ], align='center', style={'padding-bottom': '1vh'}),
-
-    dbc.Row([
-        dbc.Col(html.Div(children="Lookup player:"), width='auto'),
-        dbc.Col(dcc.Input(id='username-input', type='text', placeholder="e.g. 'snakeylime'"), width='auto'),
-        dbc.Col(html.Div(id='selected-user'), width='auto'),
-    ], align='center', style={'padding-bottom': '1vh'}),
+    dbc.Row(
+        [
+            dbc.Col(
+                html.Div(children="Cluster players by:"),
+                width=2
+            ),
+            dbc.Col(
+                dcc.Dropdown(
+                    id='split-dropdown',
+                    options=[
+                        {'label': 'All skills','value': 'all'},
+                        {'label': 'Combat skills','value': 'cb'},
+                        {'label': 'Non-combat skills','value': 'noncb'},
+                    ],
+                    value='all' 
+                ),
+                width=4
+            ),
+            dbc.Col(
+                html.Div(children="Color clusters by:"),
+                width=2
+            ),
+            dbc.Col(
+                dcc.Dropdown(
+                    id='skill-dropdown',
+                    options=[
+                        {'label': skill_pretty(skill),
+                         'value': skill} for skill in skills
+                    ],
+                    value='total'
+                ),
+                width=4
+            )
+        ],
+        align='center',
+        style={'padding-bottom': '1vh'}
+    ),
 
     dbc.Row(
-        dbc.Col([
-            dcc.Graph(id='scatter-plot',
-                      figure=get_scatterplot('all', 'total', [1, 2277]),
-                      style={'height': '80vh'},
-                      clear_on_unhover=True),
-            html.Br()
-        ])
+        [
+            dbc.Col(
+                html.Div(children="Show levels:"),
+                width='auto'
+            ),
+            dbc.Col(
+                dcc.RangeSlider(
+                    id='level-selector',
+                    min=1,
+                    max=2277,
+                    step=1,
+                    value=[1, 2277],
+                    tooltip={'placement': 'bottom'},
+                    allowCross=False,
+                    marks=get_level_marks('total')
+                )
+            )
+        ],
+        align='center',
+        style={'padding-bottom': '1vh'}
+    ),
+
+    dbc.Row(
+        [
+            dbc.Col(
+                html.Div(children="Lookup player:"),
+                width='auto'
+            ),
+            dbc.Col(
+                dcc.Input(
+                    id='username-input',
+                    type='text',
+                    placeholder="e.g. 'snakeylime'"
+                ),
+                width='auto'
+            ),
+            dbc.Col(
+                html.Div(id='selected-user'),
+                width='auto'),
+        ],
+        align='center',
+        style={'padding-bottom': '1vh'}
+    ),
+
+    dbc.Row(
+        dbc.Col(
+            [
+                dcc.Graph(
+                    id='scatter-plot',
+                    figure=get_figure('all', 'total', [1, 2277]),
+                    style={'height': '80vh'},
+                    clear_on_unhover=True
+                ),
+                html.Br()
+            ]
+        )
     ),
     dcc.Tooltip(id='tooltip')
 ])
@@ -208,12 +286,30 @@ app.layout = dbc.Container([
     Output('scatter-plot', 'figure'),
     Input('split-dropdown', 'value'),
     Input('skill-dropdown', 'value'),
-    Input('level-selector', 'value')
+    Input('level-selector', 'value'),
+    Input('selected-user', 'children')
 )
-def redraw_figure(split, skill, level_range):
+def redraw_figure(split, skill, level_range, user_text):
     min_level, max_level = level_range
-    return get_scatterplot(split, skill, level_range)
 
+    if len(callback_context.triggered) > 1:
+        return get_figure(split, skill, level_range, highlight_cluster=None)
+
+    # If callback was just a failed user lookup, don't change anything.
+    cond1 = callback_context.triggered[0]['prop_id'] == 'selected-user.children'
+    cond2 = user_text.startswith('no player')
+    if cond1 and cond2:
+        raise PreventUpdate
+
+    if user_text == '' or user_text.startswith('no player'):
+        highlight_cluster = None
+    else:
+        # e.g. "'snakeylime': cluster 116 (41.38% unique)" -> 115
+        i = user_text.find('cluster')
+        words = user_text[i:].split(' ')
+        highlight_cluster = int(words[1]) - 1
+
+    return get_figure(split, skill, level_range, highlight_cluster=highlight_cluster)
 
 @app.callback(
     Output('skill-dropdown', 'options'),
@@ -246,7 +342,6 @@ def choose_split(split, current_skill):
 
     raise PreventUpdate
 
-
 @app.callback(
     Output('level-selector', 'min'),
     Output('level-selector', 'max'),
@@ -256,8 +351,9 @@ def choose_split(split, current_skill):
     State('level-selector', 'value')
 )
 def choose_skill(new_skill, current_range):
+    callback_context.triggered[0]['value']
     if new_skill:
-        if current_range == [1, 2277] and new_skill != 'total':
+        if current_range[0] > 98 or current_range[1] > 99 == [1, 2277] and new_skill != 'total':
             new_range = [1, 99]
         elif new_skill == 'total':
             new_range = [1, 2277]
@@ -271,7 +367,6 @@ def choose_skill(new_skill, current_range):
         return 1, 99, new_range, marks
 
     raise PreventUpdate
-
 
 @app.callback(
     Output('selected-user', 'children'),
@@ -291,7 +386,6 @@ def lookup_player(username, split):
 
     return ''
 
-
 @app.callback(
     Output('tooltip', 'show'),
     Output('tooltip', 'bbox'),
@@ -300,14 +394,18 @@ def lookup_player(username, split):
     State('split-dropdown', 'value'),
     State('skill-dropdown', 'value')
 )
-def update_tooltip(hover_data, split, skill):
+def hover_tooltip(hover_data, split, skill):
     if hover_data is None:
         return False, no_update, no_update
 
+    # Hovered cluster has curveNumber 0, hovered line has curveNumber 1.
     pt = hover_data['points'][0]
+    if pt['curveNumber'] == 1:
+        return False, no_update, no_update
+
     bbox = pt['bbox']
     cluster_id = pt['pointNumber']
-    size = clusters[split]['cluster_sizes'][cluster_id]
+    size, upper, median, lower = pt['customdata'][1:5]
 
     children = [
         html.Div([
@@ -316,6 +414,7 @@ def update_tooltip(hover_data, split, skill):
         ])
     ]
     return True, bbox, children
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
