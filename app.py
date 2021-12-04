@@ -3,6 +3,7 @@
 """ Visualize 3d-embedded cluster data with a Dash application. """
 
 import pickle
+import string
 
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
@@ -108,22 +109,31 @@ def get_figure(split, skill, level_range, highlight_cluster=None):
         margin=dict(b=0, l=0, r=0, t=0),
         scene=dict(
             aspectmode='cube',
-            xaxis=dict(title='', showticklabels=False, showgrid=False,
-                       zeroline=False, range=[xmin, xmax],
-                       backgroundcolor='rgb(230, 230, 230)'),
-            yaxis=dict(title='', showticklabels=False, showgrid=False,
-                       zeroline=False, range=[ymin, ymax],
-                       backgroundcolor='rgb(220, 220, 220)'),
-            zaxis=dict(title='', showticklabels=False, showgrid=False,
-                       zeroline=False, range=[zmin, zmax],
-                       backgroundcolor='rgb(200, 200, 200)')
+            xaxis=dict(
+                title='', showticklabels=False, showgrid=False,
+                zeroline=False, range=[xmin, xmax],
+                backgroundcolor='rgb(230, 230, 230)'),
+            yaxis=dict(
+                title='', showticklabels=False, showgrid=False,
+                zeroline=False, range=[ymin, ymax],
+                backgroundcolor='rgb(220, 220, 220)'),
+            zaxis=dict(
+                title='', showticklabels=False, showgrid=False,
+                zeroline=False, range=[zmin, zmax],
+                backgroundcolor='rgb(200, 200, 200)')
         ),
-        coloraxis_colorbar=dict(title=skill_pretty(skill))
+        coloraxis_colorbar=dict(
+            title=dict(
+                text=skill_pretty(skill).replace(' ', '\n'),
+                side='right'
+            ),
+            xanchor='right'
+        )
     )
 
     fig.update_traces(
         marker=dict(
-            size=3 * np.log(clusters[split]['cluster_sizes']),
+            size=3 * np.log(clusters[split]['cluster_sizes'][inds] + 1),
             line=dict(width=0),
             opacity=0.5
         )
@@ -169,9 +179,9 @@ app.layout = dbc.Container([
                 html.Br(),
                 html.H1(children=html.Strong('OSRS player clusters')),
                 html.Div(children='''
-                    Each point represents a cluster of OSRS players with similar combat
-                    stats. The closer two clusters are, the more similar the accounts are
-                    in each of those two clusters. Some clusters contain only a single
+                    Each point represents a cluster of OSRS players with similar stats.
+                    The closer two clusters are, the more similar the accounts are in
+                    each of those two clusters. Some clusters contain only a single
                     (highly) unique player; others comprise thousands or tens of thousands
                     of similar accounts. The size of each point corresponds to the number
                     of players in that cluster. Axes have no meaningful interpretation.
@@ -184,35 +194,51 @@ app.layout = dbc.Container([
     dbc.Row(
         [
             dbc.Col(
-                html.Div(children="Cluster players by:"),
-                width=2
-            ),
-            dbc.Col(
-                dcc.Dropdown(
-                    id='split-dropdown',
-                    options=[
-                        {'label': 'All skills','value': 'all'},
-                        {'label': 'Combat skills','value': 'cb'},
-                        {'label': 'Non-combat skills','value': 'noncb'},
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            html.Div(children="Cluster by:"),
+                            width=3
+                        ),
+                        dbc.Col(
+                            dcc.Dropdown(
+                                id='split-dropdown',
+                                options=[
+                                    {'label': 'All skills','value': 'all'},
+                                    {'label': 'Combat skills','value': 'cb'},
+                                    {'label': 'Non-combat skills','value': 'noncb'},
+                                ],
+                                value='all' ,
+                                clearable=False
+                            )
+                        )
                     ],
-                    value='all' 
+                    align='center'
                 ),
-                width=4
+                width=6
             ),
             dbc.Col(
-                html.Div(children="Color clusters by:"),
-                width=2
-            ),
-            dbc.Col(
-                dcc.Dropdown(
-                    id='skill-dropdown',
-                    options=[
-                        {'label': skill_pretty(skill),
-                         'value': skill} for skill in skills
+                dbc.Row(
+                    [
+                        dbc.Col(
+                            html.Div(children="Color by:"),
+                            width=3
+                        ),
+                        dbc.Col(
+                            dcc.Dropdown(
+                                id='skill-dropdown',
+                                options=[
+                                    {'label': skill_pretty(skill),
+                                     'value': skill} for skill in skills
+                                ],
+                                value='total',
+                                clearable=False
+                            )
+                        )
                     ],
-                    value='total'
+                    align='center'
                 ),
-                width=4
+                width=6
             )
         ],
         align='center',
@@ -257,8 +283,8 @@ app.layout = dbc.Container([
                 width='auto'
             ),
             dbc.Col(
-                html.Div(id='selected-user'),
-                width='auto'),
+                html.Div(id='selected-user')
+            ),
         ],
         align='center',
         style={'padding-bottom': '1vh'}
@@ -290,18 +316,18 @@ app.layout = dbc.Container([
     Input('selected-user', 'children')
 )
 def redraw_figure(split, skill, level_range, user_text):
-    min_level, max_level = level_range
 
-    if len(callback_context.triggered) > 1:
+    # All four input triggers are fired at initialization.
+    triggers = [trigger['prop_id'] for trigger in callback_context.triggered]
+    if len(triggers) == 4:
         return get_figure(split, skill, level_range, highlight_cluster=None)
 
-    # If callback was just a failed user lookup, don't change anything.
-    cond1 = callback_context.triggered[0]['prop_id'] == 'selected-user.children'
-    cond2 = user_text.startswith('no player')
-    if cond1 and cond2:
+    no_player = user_text.startswith('no player')
+    invalid_player = 'not a valid username' in user_text
+    if 'selected-user.children' in triggers and (no_player or invalid_player):
         raise PreventUpdate
 
-    if user_text == '' or user_text.startswith('no player'):
+    if not user_text or no_player or invalid_player:
         highlight_cluster = None
     else:
         # e.g. "'snakeylime': cluster 116 (41.38% unique)" -> 115
@@ -318,29 +344,30 @@ def redraw_figure(split, skill, level_range, user_text):
     State('skill-dropdown', 'value')
 )
 def choose_split(split, current_skill):
-    if split:
-        disabled = {
-            'all': [],
-            'cb': skills[8:],
-            'noncb': skills[1:8]
-        }[split]
+    if not split:
+        print('x')
+        raise PreventUpdate
 
-        options = []
-        for skill in skills:
-            options.append({
-                'label': skill_pretty(skill),
-                'value': skill,
-                'disabled': True if skill in disabled else False
-            })
+    disabled = {
+        'all': [],
+        'cb': skills[8:],
+        'noncb': skills[1:8]
+    }[split]
 
-        if current_skill in disabled:
-            new_skill = 'total'
-        else:
-            new_skill = current_skill
+    options = []
+    for skill in skills:
+        options.append({
+            'label': skill_pretty(skill),
+            'value': skill,
+            'disabled': True if skill in disabled else False
+        })
 
-        return options, new_skill
+    if current_skill in disabled:
+        new_skill = 'total'
+    else:
+        new_skill = current_skill
 
-    raise PreventUpdate
+    return options, new_skill
 
 @app.callback(
     Output('level-selector', 'min'),
@@ -351,30 +378,41 @@ def choose_split(split, current_skill):
     State('level-selector', 'value')
 )
 def choose_skill(new_skill, current_range):
-    callback_context.triggered[0]['value']
-    if new_skill:
-        if current_range[0] > 98 or current_range[1] > 99 == [1, 2277] and new_skill != 'total':
-            new_range = [1, 99]
-        elif new_skill == 'total':
-            new_range = [1, 2277]
-        else:
-            new_range = current_range
+    if not new_skill:
+        raise PreventUpdate
 
-        marks = get_level_marks(new_skill)
+    if current_range[0] > 98 or current_range[1] > 99 == [1, 2277] and new_skill != 'total':
+        new_range = [1, 99]
+    elif new_skill == 'total':
+        new_range = [1, 2277]
+    else:
+        new_range = no_update
 
-        if new_skill == 'total':
-            return 1, 2277, new_range, marks
-        return 1, 99, new_range, marks
+    marks = get_level_marks(new_skill)
 
-    raise PreventUpdate
+    if new_skill == 'total':
+        return 1, 2277, new_range, marks
+
+    return 1, 99, new_range, marks
+
+valid_chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + ' -_'
+def is_valid(username):
+    if len(username) > 12:
+        return False
+    if username.strip(valid_chars):
+        return False
+    return True
 
 @app.callback(
     Output('selected-user', 'children'),
     Input('username-input', 'value'),
-    Input('split-dropdown', 'value')
+    State('split-dropdown', 'value')
 )
 def lookup_player(username, split):
     if username:
+        if not is_valid(username):
+            return "'{}' is not a valid username".format(username[:64])
+
         player = players.find_one({'_id': username.lower()})
         if player:
             username = player['username']
