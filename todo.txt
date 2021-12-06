@@ -1,6 +1,0 @@
-todo:
-add username validation (must be <= 12 chars, alphanumeric or hyphen/underscore/space)
-left-justify colormap title
-design tooltip
-add skill ranges chart below that changes on hover
-add player and cluster level panels on left side

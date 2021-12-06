@@ -1,14 +1,21 @@
 #!/usr/bin/env python3
 
-""" Download stats for the top 2 million players on the OSRS hiscores. """
+""" Download stats for the top 2 million players on the OSRS hiscores.
+    Like the previous scraping script, this script operates in an
+    append-only manner and running it will do nothing once the output
+    file contains a complete results set.
+"""
 
 import csv
 import os
 import pickle
 import random
 import subprocess
+import sys
 from queue import Queue
 from threading import Thread, Lock
+
+from tqdm import tqdm
 
 from hiscores.data import request_stats, parse_stats
 
@@ -18,8 +25,8 @@ IN_FILE = '../../data/interim/usernames.csv'
 OUT_FILE = '../../data/raw/stats-raw.csv'
 
 
-def process_pages(job_queue, file_lock):
-    with open(OUT_FILE, 'a', buffering=1) as f:
+def process_pages(job_queue, out_file, file_lock):
+    with open(out_file, 'a', buffering=1) as f:
         while True:
             username = job_queue.get()
             if username == 'stop':
@@ -46,7 +53,7 @@ def process_pages(job_queue, file_lock):
             print('processed user {}'.format(username))
 
 
-def run_workers_once(names_to_process):
+def run_workers_once(names_to_process, out_file):
     file_lock = Lock()
     job_queue = Queue()
     for username in names_to_process:
@@ -55,7 +62,7 @@ def run_workers_once(names_to_process):
     workers = []
     for i in range(NUM_WORKERS):
         worker = Thread(target=process_pages,
-                        args=(job_queue, file_lock),
+                        args=(job_queue, out_file, file_lock),
                         daemon=True)
         workers.append(worker)
         job_queue.put('stop')
@@ -66,30 +73,36 @@ def run_workers_once(names_to_process):
         worker.join()
 
 
-def main():
+def main(in_file, out_file):
+    print("scraping stats...")
+
     # Read user rankings file to see which usernames need to be processed.
-    with open(IN_FILE, 'r') as f:
+    print("reading file of usernames to scrape...")
+    with open(in_file, 'r') as f:
         reader = csv.reader(f)
-        names_to_process = [line[1] for line in reader]
+        names_to_process = [line[1] for line in tqdm(reader)]
+    num_players = len(names_to_process)
 
     # Check which usernames have been processed already.
-    print("checking stats progress so far...")
-    if os.path.isfile(OUT_FILE):
-        with open(OUT_FILE, 'r') as f:
+    if os.path.isfile(out_file):
+
+        print("output file detected, reading existing results...")
+        with open(out_file, 'r') as f:
             reader = csv.reader(f)
-            processed_names = [line[0] for line in reader]
+            processed_names = [line[0] for line in tqdm(reader)]
 
         names_to_process = set(names_to_process) - set(processed_names)
 
-    print("found {} users to process".format(len(names_to_process)))
+    print("{}/{} users left to process".format(len(names_to_process), num_players))
 
     if not names_to_process:
         print("done scraping stats")
         return
 
-    run_workers_once(names_to_process)
+    run_workers_once(names_to_process, out_file)
     print("done scraping stats")
 
 
 if __name__ == '__main__':
-    main()
+    in_file, out_file = sys.argv[1], sys.argv[2]
+    main(in_file, out_file)

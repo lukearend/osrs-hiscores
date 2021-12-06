@@ -1,24 +1,30 @@
 #!/usr/bin/env python3
 
-""" Download usernames for the top 2 million players on the OSRS hiscores. """
+""" Download usernames for the top 2 million players on the OSRS hiscores.
+    This script is made so it can be run repeatedly and will only append
+    new results to the output file, skipping any pages previously scraped.
+    Once the output file is complete, running this script will do nothing.
+"""
 
 import csv
 import os
 import pickle
 import random
 import subprocess
+import sys
 from queue import Queue
 from threading import Thread, Lock
+
+from tqdm import tqdm
 
 from hiscores.data import request_page, parse_page
 
 
 NUM_WORKERS = 32
-OUT_FILE = '../../data/raw/usernames-raw.csv'
 
 
-def process_pages(job_queue, file_lock):
-    with open(OUT_FILE, 'a', buffering=1) as f:
+def process_pages(job_queue, out_file, file_lock):
+    with open(out_file, 'a', buffering=1) as f:
         while True:
             page_number = job_queue.get()
             if page_number == 'stop':
@@ -28,8 +34,7 @@ def process_pages(job_queue, file_lock):
                 page = request_page(page_number)
                 result = parse_page(page)
             except ValueError as e:
-                print('could not process page {}: {}'
-                      .format(page_number, e))
+                print('could not process page {}: {}'.format(page_number, e))
                 return
 
             file_lock.acquire()
@@ -41,7 +46,7 @@ def process_pages(job_queue, file_lock):
             print('processed page {}'.format(page_number))
 
 
-def run_workers_once(pages_to_process):
+def run_workers_once(pages_to_process, out_file):
     file_lock = Lock()
     job_queue = Queue()
     for page in pages_to_process:
@@ -50,7 +55,7 @@ def run_workers_once(pages_to_process):
     workers = []
     for i in range(NUM_WORKERS):
         worker = Thread(target=process_pages,
-                        args=(job_queue, file_lock),
+                        args=(job_queue, out_file, file_lock),
                         daemon=True)
         workers.append(worker)
         job_queue.put('stop')
@@ -61,11 +66,13 @@ def run_workers_once(pages_to_process):
         worker.join()
 
 
-def main():
-    # Assume location codes are written as a pickled list of integers.
+def main(out_file):
+    # VPN location codes are written as a pickled list of integers.
     # These were obtained by parsing the output of `expresso locations`.
-    with open('../../reference/locations.pkl', 'rb') as f:
+    with open('../../reference/vpnlocations.pkl', 'rb') as f:
         locations = pickle.load(f)
+
+    print("scraping usernames...")
 
     while True:
         # There are 80,000 pages, giving rankings 1-25, 26-50, ..., etc.
@@ -74,16 +81,17 @@ def main():
 
         # Write user rankings as they are processed in a CSV file.
         # If file is already there, skip the pages it already contains.
-        print("checking username progress so far...")
-        if os.path.isfile(OUT_FILE):
-            with open(OUT_FILE, 'r') as f:
+        if os.path.isfile(out_file):
+
+            print("output file detected, reading existing results...")
+            with open(out_file, 'r') as f:
                 reader = csv.reader(f)
-                processed_pages = [int(line[1]) for line in reader]
+                processed_pages = [int(line[1]) for line in tqdm(reader)]
 
             processed_pages = set(processed_pages)
             pages_to_process -= processed_pages
 
-        print("found {} pages to process".format(len(pages_to_process)))
+        print("{}/80000 pages left to process".format(len(pages_to_process)))
 
         if not pages_to_process:
             break
@@ -95,10 +103,11 @@ def main():
         print("resetting vpn connection...")
         location = random.choice(locations)
         subprocess.run(['expresso', 'connect', '--change', '--random', location])
-        run_workers_once(pages_to_process)
+        run_workers_once(pages_to_process, out_file)
 
     print("done scraping usernames")
 
 
 if __name__ == '__main__':
-    main()
+    out_file = sys.argv[1]
+    main(out_file)

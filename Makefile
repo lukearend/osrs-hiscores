@@ -1,10 +1,15 @@
 export SHELL := /bin/bash
-export PYTHONPATH := $(shell pwd)
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+DATA_RAW:=$(ROOT_DIR)/data/raw
+DATA_TMP:=$(ROOT_DIR)/data/interim
+DATA_FINAL:=$(ROOT_DIR)/data/processed
 
-all: init
+.PHONY: all
+all: init analytics db app
 
-init: 				## Initialize repository.
-init: clean-env env nbextensions lint db-pull
+
+.PHONY: init env clean-env
+init: clean-env env nbextensions lint db-pull				## Initialize repository.
 
 env: 				## Build virtual environment.
 	@python3 -m venv env && \
@@ -17,31 +22,56 @@ env: 				## Build virtual environment.
 clean-env: 			## Remove virtual environment.
 	@rm -rf env
 
-scrape: data/processed/stats.csv
 
-clean-scrape:       		## Remove all scraped data (WARNING: be sure you want to do this).
-	rm -f data/raw/usernames-raw.csv
-	rm -f data/interim/usernames.csv
-	rm -f data/raw/stats-raw.csv
+.PHONY: scrape scrape-usernames scrape-stats clean-scrape
+scrape: $(DATA_FINAL)/stats.csv				## Run full data scraping process.
 
-data/raw/usernames-raw.csv:
+scrape-usernames:			## Scrape player usernames from the hiscores pages.
 	@source env/bin/activate && \
-	cd hiscores/data && python3 scrape_usernames.py
+	cd src/data && python3 scrape_usernames.py $(DATA_RAW)/usernames-raw.csv
 
-data/interim/usernames.csv: data/raw/usernames-raw.csv
+scrape-stats: $(DATA_TMP)/usernames.csv			## Scrape stats data given the list of usernames.
 	@source env/bin/activate && \
-	cd hiscores/data && python3 cleanup_usernames.py
+	cd src/data && python3 scrape_stats.py $< $(DATA_RAW)/stats-raw.csv
 
-data/raw/stats-raw.csv: data/interim/usernames.csv
+$(DATA_RAW)/usernames-raw.csv: scrape-usernames
+
+$(DATA_RAW)/stats-raw.csv: scrape-stats
+
+$(DATA_TMP)/usernames.csv: $(DATA_RAW)/usernames-raw.csv
 	@source env/bin/activate && \
-	cd hiscores/data && python3 scrape_stats.py
+	cd src/data && python3 cleanup_usernames.py $< $@
 
-data/processed/stats.csv: data/raw/stats-raw.csv
+$(DATA_FINAL)/stats.csv: $(DATA_RAW)/stats-raw.csv
 	@source env/bin/activate && \
-	cd hiscores/data && python3 cleanup_stats.py
+	cd src/data && python3 cleanup_stats.py $< $@
 
-analytics: data/processed/clusters.csv data/processed/stats.pkl data/processed/clusters.pkl \
-           data/processed/centroids.pkl data/processed/dimreduced.pkl
+clean-scrape:       		## Remove scraped data (WARNING: be sure you want to do this).
+	rm -f $(DATA_RAW)/usernames-raw.csv
+	rm -f $(DATA_TMP)/usernames.csv
+	rm -f $(DATA_RAW)/stats-raw.csv
+
+
+.PHONY: analytics
+analytics:			## Run full processing pipeline on scraped data.
+analytics: $(DATA_FINAL)/stats.pkl $(DATA_FINAL)/clusters.pkl \
+           $(DATA_FINAL)/centroids.pkl $(DATA_FINAL)/dimreduced.pkl
+
+$(DATA_FINAL)/stats.pkl: $(DATA_FINAL)/stats.csv
+	@source env/bin/activate && \
+	cd src/data && python3 write_stats_pkl.py $< $@
+
+$(DATA_FINAL)/clusters.pkl: $(DATA_RAW)/clusters-raw.pkl
+	@source env/bin/activate && \
+	cd src/data && python3 process_cluster_data.py $< $@
+
+$(DATA_FINAL)/centroids.pkl: $(DATA_FINAL)/clusters.pkl $(DATA_FINAL)/stats.pkl
+	@source env/bin/activate && \
+	cd src/features && python3 compute_cluster_centroids.p $^ $@
+
+$(DATA_FINAL)/dimreduced.pkl: $(DATA_FINAL)/clusters.pkl $(DATA_FINAL)/centroids.pkl
+	@source env/bin/activate && \
+	cd src/models && python3 dim_reduce_centroids.py $^ $@
 
 clean-analytics:		## Remove all analytic results computed from scraped data.
 	rm -f data/processed/stats.pkl
@@ -49,47 +79,43 @@ clean-analytics:		## Remove all analytic results computed from scraped data.
 	rm -f data/processed/centroids.pkl
 	rm -f data/processed/dimreduced.pkl
 
-data/processed/clusters.pkl: data/raw/clusters-raw.pkl
+
+.PHONY: app
+app: $(DATA_FINAL)/appdata.pkl db-start			## Run visualization app.
+	@source env/bin/activate && python3 app
+
+$(DATA_FINAL)/appdata.pkl: $(DATA_FINAL)/dimreduced.pkl $(DATA_FINAL)/clusters.pkl \
+                           $(DATA_FINAL)/centroids.pkl
 	@source env/bin/activate && \
-	cd hiscores/data && python3 process_cluster_data.py
+	cd src/visuals && python3 build_appdata.py $^ $@
 
-data/processed/stats.pkl: data/processed/stats.csv
-	@source env/bin/activate && \
-	cd hiscores/data && python3 write_stats_pkl.py
 
-data/processed/centroids.pkl: data/processed/clusters.pkl data/processed/stats.pkl
-	@source env/bin/activate && \
-	cd hiscores/features && python3 compute_cluster_centroids.py
-
-data/processed/dimreduced.pkl: data/processed/clusters.pkl data/processed/centroids.pkl
-	@source env/bin/activate && \
-	cd hiscores/models && python3 dim_reduce_centroids.py
-
-db: db-pull db-start db-build
-
-clean-db: 
-	docker stop osrs-hiscores ; \
-	docker rm osrs-hiscores ; \
-	rm -rf $(shell pwd)/db/volume/*
+.PHONY: db db-pull db-start db-stop db-build clean-db
+db: db-pull db-start db-build db-stop
 
 db-pull:
 	docker pull mongo
 
 db-start:
 	docker stop osrs-hiscores ; \
+	mkdir -p volume
 	docker run --rm -d --name osrs-hiscores \
-	-v $(shell pwd)/db/volume:/data/db \
+	-v $(shell pwd)/volume:/data/db \
 	-p 27017:27017 mongo
 
-db-build:
+db-stop:
+	docker stop osrs-hiscores ; \
+	docker rm osrs-hiscores
+
+db-build: $(DATA_FINAL)/stats.pkl $(DATA_FINAL)/clusters.pkl
 	@source env/bin/activate && \
 	cd db && python3 build_database.py
 
-app:				## Run visualization app.
-	@source env/bin/activate && python3 app.py
+clean-db: db-stop
+	rm -rf $(shell pwd)/db/volume/*
 
-all: init analytics db app
 
+.PHONY: nbextensions notebook lint help
 nbextensions:			## Install jupyter notebook extensions.
 	@source env/bin/activate && \
 	jupyter contrib nbextensions install && \
@@ -113,6 +139,3 @@ lint: 				## Run code style checker.
 
 help: 				## Show this help.
 	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
-
-.PHONY: all analytics app clean-analytics clean-env clean-scrape
-.PHONY: env help init lint nbextensions notebook scrape

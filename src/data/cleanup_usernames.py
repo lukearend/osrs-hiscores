@@ -3,21 +3,20 @@
 """ Cleanup usernames scraped from OSRS hiscores. """
 
 import csv
+import sys
 from collections import defaultdict
 
-
-IN_FILE = '../../data/raw/usernames-raw.csv'
-OUT_FILE = '../../data/interim/usernames.csv'
+from tqdm import tqdm
 
 
-def main():
+def main(in_file, out_file):
     print("cleaning up usernames...")
 
     # Read rows from file and sort.
-    with open(IN_FILE, 'r') as f:
+    with open(in_file, 'r') as f:
         reader = csv.reader(f)
         rows = []
-        for line in reader:
+        for line in tqdm(reader):
             rows.append((int(line[0]), int(line[1]), line[2], int(line[3])))
 
     rows = sorted(set(rows))
@@ -33,12 +32,14 @@ def main():
     # Sort players by total level and write to file.
     players = sorted(players.items(), key=lambda item: item[1], reverse=True)
 
-    with open(OUT_FILE, 'w') as f:
-        for rank, (name, total_level) in enumerate(players, 1):
+    print("writing results to CSV...")
+    with open(out_file, 'w') as f:
+        for rank, (name, total_level) in tqdm(enumerate(players, 1)):
             f.write('{},{},{}\n'.format(rank, name, total_level))
 
     print("done cleaning up usernames")
 
 
 if __name__ == '__main__':
-    main()
+    in_file, out_file = sys.argv[1], sys.argv[2]
+    main(in_file, out_file)

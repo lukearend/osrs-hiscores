@@ -8,23 +8,18 @@ from pymongo import MongoClient
 from tqdm import tqdm
 
 
-STATS_FILE = '../data/processed/stats.pkl'
-CLUSTERS_FILE = '../data/processed/clusters.pkl'
+def main(stats_file, clusters_file):
 
-
-def main():
     print("connecting to database")
-
-    client = MongoClient('localhost:27017')
-    db = client['osrs-hiscores']
+    db = MongoClient('localhost', 27017)['osrs-hiscores']
     collection = db['players']
 
     print("reading usernames...")
-    with open(STATS_FILE, 'rb') as f:
+    with open(stats_file, 'rb') as f:
         usernames = pickle.load(f)['usernames']
 
     print("reading cluster data...")
-    with open(CLUSTERS_FILE, 'rb') as f:
+    with open(clusters_file, 'rb') as f:
         clusters = pickle.load(f)
 
     print("writing player cluster IDs to database...")
@@ -43,4 +38,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(*sys.argv[1:])

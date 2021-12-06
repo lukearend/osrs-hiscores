@@ -3,6 +3,7 @@
 """ Augment raw clustering results by computing per-cluster metrics. """
 
 import pickle
+import sys
 
 import numpy as np
 
@@ -11,10 +12,10 @@ IN_FILE = '../../data/raw/clusters-raw.pkl'
 OUT_FILE = '../../data/processed/clusters.pkl'
 
 
-def main():
+def main(in_file, out_file):
     print("processing cluster data...")
 
-    with open(IN_FILE, 'rb') as f:
+    with open(in_file, 'rb') as f:
         contents = pickle.load(f)
 
     results = {}
@@ -63,11 +64,13 @@ def main():
 
         results[split]['percent_uniqueness'] = np.array(cluster_uniqueness)
 
-    with open(OUT_FILE, 'wb') as f:
+    with open(out_file, 'wb') as f:
         pickle.dump(results, f)
 
     print('done')
 
 
 if __name__ == '__main__':
+    print(sys.argv)
+    sys.exit(0)
     main()

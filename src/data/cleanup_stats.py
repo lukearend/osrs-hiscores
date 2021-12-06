@@ -4,6 +4,7 @@
 
 import csv
 import pickle
+import sys
 
 import numpy as np
 from tqdm import tqdm
@@ -13,7 +14,7 @@ IN_FILE = '../../data/raw/stats-raw.csv'
 OUT_FILE = '../../data/processed/stats.csv'
 
 
-def main():
+def main(in_file, out_file):
     with open('../../reference/skills.csv', 'r') as f:
         skills = f.read().strip().split('\n')
 
@@ -23,7 +24,7 @@ def main():
         fieldnames.append('{}_level'.format(skill))
         fieldnames.append('{}_xp'.format(skill))
 
-    with open(IN_FILE, 'r') as f:
+    with open(in_file, 'r') as f:
         print("reading raw stats data...")
         reader = csv.reader(f)
 
@@ -39,7 +40,7 @@ def main():
     usernames = np.array(usernames)
     stats = np.array(stats)
 
-    print("cleaning data...")
+    print("cleaning stats data...")
 
     # Sort descending by total level, breaking ties by total xp.
     inds = np.lexsort((-stats[:, 2], -stats[:, 1]))
@@ -49,7 +50,7 @@ def main():
     # Rewrite ranks with this new sorting.
     stats[:, 0] = np.arange(1, stats.shape[0] + 1)
 
-    with open(OUT_FILE, 'w') as f:
+    with open(out_file, 'w') as f:
         print("writing results to CSV...")
         writer = csv.DictWriter(f, fieldnames)
 
@@ -63,4 +64,5 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    in_file, out_file = sys.argv[1], sys.argv[2]
+    main(in_file, out_file)
