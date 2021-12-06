@@ -1,15 +1,16 @@
 import string
 
 import numpy as np
+import dash_html_components as html
 from dash import callback_context, no_update
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
-from app import get_level_marks, skill_pretty
+from app import get_level_marks, is_valid, skill_pretty
 from app.figures import get_scatterplot, get_boxplot
 
 
-def attach_callbacks(app, appdata):
+def add_callbacks(app, appdata, player_collection):
 
     @app.callback(
         Output('scatter-plot', 'figure'),
@@ -40,7 +41,6 @@ def attach_callbacks(app, appdata):
 
         return get_scatterplot(appdata[split], skill, level_range, highlight_cluster=highlight_cluster)
 
-
     @app.callback(
         Output('skill-dropdown', 'options'),
         Output('skill-dropdown', 'value'),
@@ -54,12 +54,12 @@ def attach_callbacks(app, appdata):
 
         disabled = {
             'all': [],
-            'cb': skills[8:],
-            'noncb': skills[1:8]
+            'cb': appdata['all']['skills'][8:],
+            'noncb': appdata['all']['skills'][1:8]
         }[split]
 
         options = []
-        for skill in skills:
+        for skill in appdata['all']['skills']:
             options.append({
                 'label': skill_pretty(skill),
                 'value': skill,
@@ -72,7 +72,6 @@ def attach_callbacks(app, appdata):
             new_skill = current_skill
 
         return options, new_skill
-
 
     @app.callback(
         Output('level-selector', 'min'),
@@ -100,15 +99,6 @@ def attach_callbacks(app, appdata):
 
         return 1, 99, new_range, marks
 
-    valid_chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + ' -_'
-    def is_valid(username):
-        if len(username) > 12:
-            return False
-        if username.strip(valid_chars):
-            return False
-        return True
-
-
     @app.callback(
         Output('selected-user', 'children'),
         Input('username-input', 'value'),
@@ -123,13 +113,12 @@ def attach_callbacks(app, appdata):
             if player:
                 username = player['username']
                 cluster_id = player['cluster_id'][split]
-                uniqueness = clusters[split]['percent_uniqueness'][cluster_id]
+                uniqueness = appdata[split]['percent_uniqueness'][cluster_id]
                 return "'{}': cluster {} ({:.2%} unique)".format(username, cluster_id + 1, uniqueness)
             else:
                 return "no player '{}' in dataset".format(username)
 
         return ''
-
 
     @app.callback(
         Output('tooltip', 'show'),
@@ -150,7 +139,7 @@ def attach_callbacks(app, appdata):
 
         bbox = pt['bbox']
         cluster_id = pt['pointNumber']
-        size, upper, median, lower = pt['customdata'][1:5]
+        size = pt['customdata'][1]
 
         children = [
             html.Div([

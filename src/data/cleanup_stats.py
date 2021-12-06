@@ -3,6 +3,7 @@
 """ Cleanup stats data scraped from hiscores and write to CSV. """
 
 import csv
+import pathlib
 import pickle
 import sys
 
@@ -11,7 +12,9 @@ from tqdm import tqdm
 
 
 def main(in_file, out_file):
-    with open('../../reference/skills.csv', 'r') as f:
+    print("cleaning up raw stats data...")
+    skills_file = pathlib.Path(__file__).resolve().parents[2] / 'reference/skills.csv'
+    with open(skills_file, 'r') as f:
         skills = f.read().strip().split('\n')
 
     fieldnames = ['username']
@@ -21,7 +24,7 @@ def main(in_file, out_file):
         fieldnames.append('{}_xp'.format(skill))
 
     with open(in_file, 'r') as f:
-        print("reading raw stats data...")
+        print("reading data...")
         reader = csv.reader(f)
 
         usernames = []
@@ -36,7 +39,7 @@ def main(in_file, out_file):
     usernames = np.array(usernames)
     stats = np.array(stats)
 
-    print("cleaning stats data...")
+    print("cleaning data...")
 
     # Sort descending by total level, breaking ties by total xp.
     inds = np.lexsort((-stats[:, 2], -stats[:, 1]))

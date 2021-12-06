@@ -1,9 +1,16 @@
+dash
+dash-bootstrap-components
+beautifulsoup4
 jupyter
 jupyter_contrib_nbextensions
 matplotlib
 numpy
-scipy
-requests
-beautifulsoup4
+pandas
 pycodestyle
+pymongo
+requests
+seaborn
+scipy
+tqdm
+umap-learn
 -e .

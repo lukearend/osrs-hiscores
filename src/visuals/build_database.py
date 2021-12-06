@@ -15,9 +15,6 @@ def main(stats_file, clusters_file):
     db = MongoClient('localhost', 27017)['osrs-hiscores']
     collection = db['players']
 
-    print(collection.count())
-    sys.exit(1)
-
     print("reading usernames...")
     with open(stats_file, 'rb') as f:
         usernames = pickle.load(f)['usernames']
@@ -42,4 +39,4 @@ def main(stats_file, clusters_file):
 
 
 if __name__ == '__main__':
-    main(*sys.argv[1:])
+    main(*sys.argv[1:3])

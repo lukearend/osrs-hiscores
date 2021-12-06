@@ -32,7 +32,7 @@ def main(in_file, out_file):
         # the whole player base, who are as unique or less unique than the
         # given account. 'Uniqueness' is measured by lining up all clusters
         # left to right in an ordering such that the smallest clusters (those
-        # with fewest players) are on the left, the clusters are monotonically 
+        # with fewest players) are on the left, the clusters are monotonically
         # increasing in size, and the largest cluster is on the right. Player
         # A's percent uniqueness is the number of players in clusters with the
         # same or greater size than player A's cluster, divided by the total

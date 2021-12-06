@@ -1,8 +1,10 @@
 export SHELL := /bin/bash
+
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 DATA_RAW:=$(ROOT_DIR)/data/raw
 DATA_TMP:=$(ROOT_DIR)/data/interim
 DATA_FINAL:=$(ROOT_DIR)/data/processed
+
 
 .PHONY: all
 all: init analytics db run
@@ -62,7 +64,7 @@ $(DATA_FINAL)/clusters.pkl: $(DATA_RAW)/clusters-raw.pkl
 	@source env/bin/activate && \
 	cd src/data && python3 process_cluster_data.py $< $@
 
-$(DATA_FINAL)/percentiles.pkl: $(DATA_FINAL)/clusters.pkl $(DATA_FINAL)/stats.pkl
+$(DATA_FINAL)/percentiles.pkl: $(DATA_FINAL)/stats.pkl $(DATA_FINAL)/clusters.pkl
 	@source env/bin/activate && \
 	cd src/features && python3 compute_percentiles.py $^ $@
 
@@ -85,7 +87,7 @@ clean-analytics:    ## Remove all analytic results computed from scraped data.
 
 .PHONY: db db-pull db-start db-build db-stop clean-db
 db:                 ## Populate application database with player/cluster results.
-db: db-build
+db: db-pull db-start db-build
 
 db-pull:
 	docker pull mongo
@@ -97,9 +99,9 @@ db-start:
 	-v $(ROOT_DIR)/volume:/data/db \
 	-p 27017:27017 mongo
 
-db-build: $(DATA_FINAL)/stats.pkl $(DATA_FINAL)/clusters.pkl db-pull db-start
+db-build: $(DATA_FINAL)/stats.pkl $(DATA_FINAL)/clusters.pkl
 	@source env/bin/activate && \
-	cd db && python3 build_database.py
+	cd src/visuals && python3 build_database.py $^ $@
 
 db-stop:
 	docker stop osrs-hiscores > /dev/null 2>&1
@@ -112,8 +114,7 @@ clean-db: db-stop
 
 .PHONY: run
 run:                ## Run main application.
-run: db-start
-	@source env/bin/activate && python3 app
+	@source env/bin/activate && python3 app $(DATA_FINAL)/appdata.pkl
 
 
 .PHONY: nbextensions notebook lint help
@@ -135,7 +136,7 @@ notebook:           ## Start a local jupyter notebook server.
 
 lint:               ## Run code style checker.
 	@source env/bin/activate && \
-	pycodestyle hiscores --ignore=E501 && \
+	pycodestyle app src --ignore=E501 && \
 	echo "ok"
 
 help:               ## Show this help.

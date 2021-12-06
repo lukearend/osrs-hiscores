@@ -43,8 +43,8 @@ def main(stats_file, clusters_file, out_file):
         for cluster_id in tqdm(range(num_clusters)):
             keep_inds = result['cluster_ids'] == cluster_id
             cluster_rows = dataset[keep_inds]
-            for p in percentiles:
-                cluster_centroids[cluster_id, :, p] = np.nanpercentile(cluster_rows, axis=0, q=p)
+            for i, p in enumerate(percentiles):
+                cluster_centroids[cluster_id, :, i] = np.nanpercentile(cluster_rows, axis=0, q=p)
 
         results[split] = {p: cluster_centroids[:, :, i] for i, p in enumerate(percentiles)}
 
@@ -53,9 +53,9 @@ def main(stats_file, clusters_file, out_file):
         for p in percentiles:
             replace_rows, replace_cols = np.isnan(results[split][p]).nonzero()
             for i, j in zip(replace_rows, replace_cols):
-                results[split][percentile][i, j] = 1
+                results[split][p][i, j] = 1
                 print("replaced {} percentile {} row: {} col: {} with 1"
-                      .format(split, percentile, i, j))
+                      .format(split, p, i, j))
 
     with open(out_file, 'wb') as f:
         pickle.dump(results, f)

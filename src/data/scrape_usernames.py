@@ -8,6 +8,7 @@
 
 import csv
 import os
+import pathlib
 import pickle
 import random
 import subprocess
@@ -66,7 +67,8 @@ def run_workers_once(pages_to_process, out_file):
 def main(out_file):
     # VPN location codes are written as a pickled list of integers.
     # These were obtained by parsing the output of `expresso locations`.
-    with open('../../reference/vpnlocations.pkl', 'rb') as f:
+    locations_file = pathlib.Path(__file__).resolve().parents[2] / 'reference/vpnlocations.pkl'
+    with open(locations_file, 'rb') as f:
         locations = pickle.load(f)
 
     print("scraping usernames...")

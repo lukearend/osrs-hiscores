@@ -3,6 +3,7 @@
 """ Reduce dimensionality of cluster centroids to 3d using UMAP. """
 
 import json
+import pathlib
 import pickle
 import time
 import sys
@@ -26,7 +27,8 @@ def main(clusters_file, percentiles_file, out_file):
     # more info and visual explanations of the UMAP parameters, see
     # https://umap-learn.readthedocs.io/en/latest/parameters.html.
 
-    with open('../../reference/params.json', 'r') as f:
+    params_file = pathlib.Path(__file__).resolve().parents[2] / 'reference/params.json'
+    with open(params_file, 'r') as f:
         params = json.load(f)
 
     print("computing 3d embeddings...")
@@ -69,4 +71,4 @@ def main(clusters_file, percentiles_file, out_file):
 
 
 if __name__ == '__main__':
-    main()
+    main(*sys.argv[1:])

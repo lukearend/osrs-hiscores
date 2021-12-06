@@ -7,7 +7,7 @@ from app import get_level_marks, skill_pretty
 from app.figures import get_scatterplot, get_boxplot
 
 
-def build_layout(appdata)
+def build_layout(appdata):
     app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
     app.layout = dbc.Container([
@@ -42,11 +42,11 @@ def build_layout(appdata)
                                 dcc.Dropdown(
                                     id='split-dropdown',
                                     options=[
-                                        {'label': 'All skills','value': 'all'},
-                                        {'label': 'Combat skills','value': 'cb'},
-                                        {'label': 'Non-combat skills','value': 'noncb'},
+                                        {'label': 'All skills', 'value': 'all'},
+                                        {'label': 'Combat skills', 'value': 'cb'},
+                                        {'label': 'Non-combat skills', 'value': 'noncb'},
                                     ],
-                                    value='all' ,
+                                    value='all',
                                     clearable=False
                                 )
                             )
@@ -67,7 +67,7 @@ def build_layout(appdata)
                                     id='skill-dropdown',
                                     options=[
                                         {'label': skill_pretty(skill),
-                                         'value': skill} for skill in skills
+                                         'value': skill} for skill in appdata['all']['skills']
                                     ],
                                     value='total',
                                     clearable=False
@@ -143,17 +143,19 @@ def build_layout(appdata)
         ),
         dcc.Tooltip(id='tooltip'),
 
-        dbc.Row(
-            dbc.Col(
-                [
-                    dcc.Box(
-                        id='box-plot',
-                        figure=get_boxplot(appdata['all']['percentiles'], 1000)
-                    ),
-                    html.Br()
-                ]
-            )
-        )
+        # TODO: add boxplot
+
+        # dbc.Row(
+        #     dbc.Col(
+        #         [
+        #             dcc.Boxplot(
+        #                 id='box-plot',
+        #                 figure=get_boxplot(appdata['all']['percentiles'], 1000)
+        #             ),
+        #             html.Br()
+        #         ]
+        #     )
+        # )
     ])
 
     return app

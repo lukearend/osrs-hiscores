@@ -94,40 +94,11 @@ def request_stats(username, max_attempts=5):
     return result
 
 
-def parse_stats(stats_csv):
-    skills = [
-        'total', 'attack', 'defence', 'strength', 'hitpoints', 'ranged',
-        'prayer', 'magic', 'cooking', 'woodcutting', 'fletching', 'fishing',
-        'firemaking', 'crafting', 'smithing', 'mining', 'herblore', 'agility',
-        'thieving', 'slayer', 'farming', 'runecraft', 'hunter', 'construction'
-    ]
-    result = {}
-
-    fields = iter(stats_csv.split(','))
-    result['username'] = next(fields)
-
-    for skill in skills:
-        rank = int(next(fields))
-        rank = None if rank == -1 else rank
-        level = int(next(fields))
-        level = None if level == -1 else level
-        xp = int(next(fields))
-        xp = None if level == -1 else xp
-
-        result[skill] = {
-            'rank': rank,
-            'level': level,
-            'xp': xp
-        }
-
-    return result
-
-
 def load_hiscores_data():
     print("loading hiscores data... ", end='')
 
-    data_file = pathlib.Path(__file__).parent.parent.parent / 'data/processed/stats.pkl'
-    with open(data_file.resolve(), 'rb') as f:
+    data_file = pathlib.Path(__file__).resolve().parents[2] / 'data/processed/stats.pkl'
+    with open(data_file, 'rb') as f:
         dataset = pickle.load(f)
 
     # Unpack dataset keys: row names, col names and data values themselves.

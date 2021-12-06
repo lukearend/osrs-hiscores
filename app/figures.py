@@ -3,6 +3,8 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 
+from app import skill_pretty
+
 
 def get_scatterplot(appdata, skill, level_range, highlight_cluster=None):
 
@@ -28,14 +30,11 @@ def get_scatterplot(appdata, skill, level_range, highlight_cluster=None):
     fig = px.scatter_3d(
         plot_data,
         x='x', y='y', z='z',
-        color='{}_50'.format(skill),
+        color=appdata['percentiles']['{}_50'.format(skill)],
         range_color=color_range,
         hover_data={
             'x': False, 'y': False, 'z': False,
-            'cluster': plot_data.index + 1, 'size': True,
-            '{}_95'.format(skill): True,
-            '{}_50'.format(skill): True,
-            '{}_5'.format(skill): True
+            'cluster': plot_data.index + 1, 'size': appdata['cluster_sizes']
         }
     )
 
