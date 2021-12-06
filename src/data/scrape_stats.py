@@ -8,16 +8,13 @@
 
 import csv
 import os
-import pickle
-import random
-import subprocess
 import sys
 from queue import Queue
 from threading import Thread, Lock
 
 from tqdm import tqdm
 
-from src.data import request_stats, parse_stats
+from src.data import request_stats
 
 
 def process_pages(job_queue, out_file, file_lock):
