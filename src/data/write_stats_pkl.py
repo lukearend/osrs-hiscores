@@ -4,18 +4,15 @@
 
 import csv
 import pickle
+import sys
 
 import numpy as np
 from tqdm import tqdm
 
 
-IN_FILE = '../../data/processed/stats.csv'
-OUT_FILE = '../../data/processed/stats.pkl'
+def main(in_file, out_file):
 
-
-def main():
-
-    with open(IN_FILE, 'r') as f:
+    with open(in_file, 'r') as f:
 
         print("reading stats CSV...")
 
@@ -30,7 +27,7 @@ def main():
 
     stats = np.array(stats)
 
-    with open(OUT_FILE, 'wb') as f:
+    with open(out_file, 'wb') as f:
 
         payload = {
             'usernames': usernames,
@@ -44,4 +41,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(*sys.argv[1:])

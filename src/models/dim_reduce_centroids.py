@@ -5,23 +5,18 @@
 import json
 import pickle
 import time
+import sys
 
 import numpy as np
 import umap
 
 
-CLUSTERS_FILE = '../../data/processed/clusters.pkl'
-CENTROIDS_FILE = '../../data/processed/centroids.pkl'
-PARAMS_FILE = '../../reference/params.json'
-OUT_FILE = '../../data/processed/dimreduced.pkl'
-
-
-def main():
-    with open(CLUSTERS_FILE, 'rb') as f:
+def main(clusters_file, percentiles_file, out_file):
+    with open(clusters_file, 'rb') as f:
         cluster_data = pickle.load(f)
 
-    with open(CENTROIDS_FILE, 'rb') as f:
-        centroid_data = pickle.load(f)
+    with open(percentiles_file, 'rb') as f:
+        percentiles_data = pickle.load(f)
 
     # These parameters were found by manually inspecting clusterings
     # of the data for all parameter combinations in a grid search over
@@ -31,7 +26,7 @@ def main():
     # more info and visual explanations of the UMAP parameters, see
     # https://umap-learn.readthedocs.io/en/latest/parameters.html.
 
-    with open(PARAMS_FILE, 'r') as f:
+    with open('../../reference/params.json', 'r') as f:
         params = json.load(f)
 
     print("computing 3d embeddings...")
@@ -47,7 +42,7 @@ def main():
               .format(n_neighbors, min_dist))
         print("running... ", end='', flush=True)
 
-        centroids = centroid_data[split][50][:, 1:]    # 50th percentile (median); drop total level
+        centroids = percentiles_data[split][50][:, 1:]    # 50th percentile (median)
         cluster_sizes = cluster_data[split]['cluster_sizes']
 
         # For reproducibility.
@@ -67,7 +62,7 @@ def main():
 
         results[split] = u
 
-    with open(OUT_FILE, 'wb') as f:
+    with open(out_file, 'wb') as f:
         pickle.dump(results, f)
 
     print("saved results to file")

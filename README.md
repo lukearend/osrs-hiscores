@@ -7,28 +7,28 @@ Project organization
 --------------------
 
     ├── LICENSE
-    ├── README.md          <- The top-level README for developers using this project.
+    ├── README.md        <- The top-level README for developers using this project.
     │
-    ├── app                <- Dash application for visualizing final results.
+    ├── app              <- Dash application for visualizing final results.
     │
     ├── data
-    │   ├── interim        <- Intermediate data that has been transformed.
-    │   ├── processed      <- The final, canonical data sets for modeling.
-    │   └── raw            <- The original, immutable data dump.
+    │   ├── interim      <- Intermediate data that has been transformed.
+    │   ├── processed    <- The final, canonical data sets for modeling.
+    │   └── raw          <- The original, immutable data dump.
     │
-    ├── figures            <- Graphics and figures generated from the data.
-    ├── notebooks          <- Jupyter notebooks for exploring data and generating figures.
-    ├── reference          <- Reference files used in data processing.
+    ├── figures          <- Graphics and figures generated from the data.
+    ├── notebooks        <- Jupyter notebooks for exploring data and generating figures.
+    ├── reference        <- Reference files used in data processing.
     │
-    ├── src                <- Python source code for this project.
-    │   ├── data           <- Scripts to download, generate and/or clean data.
-    │   ├── features       <- Scripts to turn raw data into features for modeling.
-    │   ├── models         <- Scripts to train and use machine learning models.
-    │   └── visuals        <- Scripts to create exploratory visualizations.
+    ├── src              <- Python source code for this project.
+    │   ├── data         <- Scripts to download, generate and/or clean data.
+    │   ├── features     <- Scripts to turn raw data into features for modeling.
+    │   ├── models       <- Scripts to train and use machine learning models.
+    │   └── visuals      <- Scripts to create exploratory visualizations.
     │
-    ├── Makefile           <- Top-level Makefile for building and running project.
-    ├── requirements.txt   <- Dependencies file for reproducing the project environment.
-    └── setup.py           <- Setup file for installing this project through pip.
+    ├── Makefile         <- Top-level Makefile for building and running project.
+    ├── requirements.txt <- Dependencies file for reproducing the project environment.
+    └── setup.py         <- Setup file for installing this project through pip.
 
 This repo is accompanied by two important data files:
 

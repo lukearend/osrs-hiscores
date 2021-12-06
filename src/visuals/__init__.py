@@ -1,9 +1,8 @@
 import numpy as np
 import seaborn as sns
 from matplotlib import pyplot as plt
-from scipy.stats import pearsonr
 
-from hiscores.data import exclude_missing
+from src.data import exclude_missing
 
 
 # Use default seaborn theme.

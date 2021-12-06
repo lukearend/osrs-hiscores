@@ -17,10 +17,7 @@ from threading import Thread, Lock
 
 from tqdm import tqdm
 
-from hiscores.data import request_page, parse_page
-
-
-NUM_WORKERS = 32
+from src.data import request_page, parse_page
 
 
 def process_pages(job_queue, out_file, file_lock):
@@ -53,7 +50,7 @@ def run_workers_once(pages_to_process, out_file):
         job_queue.put(page)
 
     workers = []
-    for i in range(NUM_WORKERS):
+    for i in range(32):
         worker = Thread(target=process_pages,
                         args=(job_queue, out_file, file_lock),
                         daemon=True)
@@ -109,5 +106,4 @@ def main(out_file):
 
 
 if __name__ == '__main__':
-    out_file = sys.argv[1]
-    main(out_file)
+    main(*sys.argv[1:])

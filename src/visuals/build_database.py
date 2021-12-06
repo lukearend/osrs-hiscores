@@ -3,6 +3,7 @@
 """ Build a database of mappings from usernames to cluster ID. """
 
 import pickle
+import sys
 
 from pymongo import MongoClient
 from tqdm import tqdm
@@ -13,6 +14,9 @@ def main(stats_file, clusters_file):
     print("connecting to database")
     db = MongoClient('localhost', 27017)['osrs-hiscores']
     collection = db['players']
+
+    print(collection.count())
+    sys.exit(1)
 
     print("reading usernames...")
     with open(stats_file, 'rb') as f:

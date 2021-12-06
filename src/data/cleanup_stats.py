@@ -10,10 +10,6 @@ import numpy as np
 from tqdm import tqdm
 
 
-IN_FILE = '../../data/raw/stats-raw.csv'
-OUT_FILE = '../../data/processed/stats.csv'
-
-
 def main(in_file, out_file):
     with open('../../reference/skills.csv', 'r') as f:
         skills = f.read().strip().split('\n')
@@ -64,5 +60,4 @@ def main(in_file, out_file):
 
 
 if __name__ == '__main__':
-    in_file, out_file = sys.argv[1], sys.argv[2]
-    main(in_file, out_file)
+    main(*sys.argv[1:])

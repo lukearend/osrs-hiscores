@@ -8,10 +8,6 @@ import sys
 import numpy as np
 
 
-IN_FILE = '../../data/raw/clusters-raw.pkl'
-OUT_FILE = '../../data/processed/clusters.pkl'
-
-
 def main(in_file, out_file):
     print("processing cluster data...")
 
@@ -71,6 +67,4 @@ def main(in_file, out_file):
 
 
 if __name__ == '__main__':
-    print(sys.argv)
-    sys.exit(0)
-    main()
+    main(*sys.argv[1:])

@@ -9,15 +9,15 @@ import numpy as np
 import pandas as pd
 
 
-def main(dimreduced_file, centroids_file, clusters_file, out_file):
+def main(dimreduced_file, clusters_file, percentiles_file, out_file):
 
     with open(dimreduced_file, 'rb') as f:
         xyz = pickle.load(f)
-    with open(percentiles_file, 'rb') as f:
-        percentiles = pickle.load(f)
     with open(clusters_file, 'rb') as f:
         clusters = pickle.load(f)
-    with open('reference/skills.csv', 'r') as f:
+    with open(percentiles_file, 'rb') as f:
+        percentiles = pickle.load(f)
+    with open('../../reference/skills.csv', 'r') as f:
         skills = f.read().strip().split('\n')
 
     data = {}
@@ -25,16 +25,16 @@ def main(dimreduced_file, centroids_file, clusters_file, out_file):
         num_clusters = len(xyz_data)
 
         if split == 'all':
-            split_skills = skills
+            skills_in_split = skills
         elif split == 'cb':
-            split_skills = skills[:8]
+            skills_in_split = skills[:8]
         elif split == 'noncb':
-            split_skills = [skills[0]] + skills[8:]
+            skills_in_split = [skills[0]] + skills[8:]
 
         perc_cols = []
-        perc_data = np.zeros((num_clusters, 5 * len(split_skills)), dtype='int')
+        perc_data = np.zeros((num_clusters, 5 * len(skills_in_split)), dtype='int')
         for i, p in enumerate((0, 25, 50, 75, 100)):
-            for j, skill in enumerate(split_skills):
+            for j, skill in enumerate(skills_in_split):
 
                 col_i = i * len(split_skills) + j
                 perc_cols.append("{}_{}".format(skill, p))

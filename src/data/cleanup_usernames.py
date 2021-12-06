@@ -41,5 +41,4 @@ def main(in_file, out_file):
 
 
 if __name__ == '__main__':
-    in_file, out_file = sys.argv[1], sys.argv[2]
-    main(in_file, out_file)
+    main(*sys.argv[1:])
