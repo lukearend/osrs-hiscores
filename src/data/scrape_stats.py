@@ -66,10 +66,10 @@ def run_workers_once(names_to_process, out_file):
 
 
 def main(in_file, out_file):
-    print("scraping stats...")
+    print("scraping player stats...")
 
     # Read user rankings file to see which usernames need to be processed.
-    print("reading file of usernames to scrape...")
+    print("reading usernames to scrape...")
     with open(in_file, 'r') as f:
         reader = csv.reader(f)
         names_to_process = [line[1] for line in tqdm(reader)]
@@ -78,7 +78,7 @@ def main(in_file, out_file):
     # Check which usernames have been processed already.
     if os.path.isfile(out_file):
 
-        print("output file detected, reading existing results...")
+        print("output file detected, scanning existing results...")
         with open(out_file, 'r') as f:
             reader = csv.reader(f)
             processed_names = [line[0] for line in tqdm(reader)]
@@ -88,11 +88,13 @@ def main(in_file, out_file):
     print("{}/{} users left to process".format(len(names_to_process), num_players))
 
     if not names_to_process:
-        print("done scraping stats")
+        print()
         return
 
     run_workers_once(names_to_process, out_file)
-    print("done scraping stats")
+
+    print("done")
+    print()
 
 
 if __name__ == '__main__':

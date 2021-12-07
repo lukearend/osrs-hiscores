@@ -12,7 +12,8 @@ from tqdm import tqdm
 
 
 def main(in_file, out_file):
-    print("cleaning up raw stats data...")
+    print("cleaning up stats dataset...")
+
     skills_file = pathlib.Path(__file__).resolve().parents[2] / 'reference/skills.csv'
     with open(skills_file, 'r') as f:
         skills = f.read().strip().split('\n')
@@ -24,7 +25,7 @@ def main(in_file, out_file):
         fieldnames.append('{}_xp'.format(skill))
 
     with open(in_file, 'r') as f:
-        print("reading data...")
+        print("reading in rank/level/xp data...")
         reader = csv.reader(f)
 
         usernames = []
@@ -39,7 +40,7 @@ def main(in_file, out_file):
     usernames = np.array(usernames)
     stats = np.array(stats)
 
-    print("cleaning data...")
+    print("sorting...")
 
     # Sort descending by total level, breaking ties by total xp.
     inds = np.lexsort((-stats[:, 2], -stats[:, 1]))
@@ -50,7 +51,7 @@ def main(in_file, out_file):
     stats[:, 0] = np.arange(1, stats.shape[0] + 1)
 
     with open(out_file, 'w') as f:
-        print("writing results to CSV...")
+        print("writing results to csv...")
         writer = csv.DictWriter(f, fieldnames)
 
         writer.writeheader()
@@ -59,7 +60,8 @@ def main(in_file, out_file):
             line = dict(zip(fieldnames, line))
             writer.writerow(line)
 
-    print("done cleaning up stats")
+    print("done")
+    print()
 
 
 if __name__ == '__main__':

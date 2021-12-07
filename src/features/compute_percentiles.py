@@ -10,6 +10,9 @@ from tqdm import tqdm
 
 
 def main(stats_file, clusters_file, out_file):
+    print("computing cluster percentiles...")
+    percentiles = [0, 25, 50, 75, 100]
+
     print("loading player data...")
     with open(stats_file, 'rb') as f:
         contents = pickle.load(f)
@@ -20,9 +23,6 @@ def main(stats_file, clusters_file, out_file):
 
     with open(clusters_file, 'rb') as f:
         clusters = pickle.load(f)
-
-    print("computing cluster percentiles...")
-    percentiles = [0, 25, 50, 75, 100]
 
     results = {}
     for split, result in clusters.items():
@@ -60,7 +60,8 @@ def main(stats_file, clusters_file, out_file):
     with open(out_file, 'wb') as f:
         pickle.dump(results, f)
 
-    print('done')
+    print("done")
+    print()
 
 
 if __name__ == '__main__':

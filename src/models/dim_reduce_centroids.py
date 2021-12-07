@@ -68,6 +68,7 @@ def main(clusters_file, percentiles_file, out_file):
         pickle.dump(results, f)
 
     print("saved results to file")
+    print()
 
 
 if __name__ == '__main__':

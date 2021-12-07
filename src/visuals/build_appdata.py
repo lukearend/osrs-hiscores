@@ -63,6 +63,7 @@ def main(dimreduced_file, clusters_file, percentiles_file, out_file):
         pickle.dump(data, f)
 
     print("done")
+    print()
 
 
 if __name__ == '__main__':

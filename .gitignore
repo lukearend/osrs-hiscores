@@ -5,4 +5,5 @@ __pycache__
 
 /env
 /volume
+/app/assets/appdata.pkl
 /figures/scatterplots/player-clusters-*-*.pdf

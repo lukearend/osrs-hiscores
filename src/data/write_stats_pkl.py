@@ -12,9 +12,8 @@ from tqdm import tqdm
 
 def main(in_file, out_file):
 
+    print("converting stats csv to pickle file...")
     with open(in_file, 'r') as f:
-
-        print("reading stats CSV...")
 
         reader = csv.reader(f)
         fieldnames = next(reader)
@@ -37,7 +36,8 @@ def main(in_file, out_file):
 
         pickle.dump(payload, f)
 
-    print("wrote to pkl file")
+    print("done")
+    print()
 
 
 if __name__ == '__main__':

@@ -82,7 +82,7 @@ def main(out_file):
         # If file is already there, skip the pages it already contains.
         if os.path.isfile(out_file):
 
-            print("output file detected, reading existing results...")
+            print("checking previous results...")
             with open(out_file, 'r') as f:
                 reader = csv.reader(f)
                 processed_pages = [int(line[1]) for line in tqdm(reader)]
@@ -104,7 +104,8 @@ def main(out_file):
         subprocess.run(['expresso', 'connect', '--change', '--random', location])
         run_workers_once(pages_to_process, out_file)
 
-    print("done scraping usernames")
+    print("done")
+    print()
 
 
 if __name__ == '__main__':

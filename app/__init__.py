@@ -3,6 +3,7 @@ import string
 
 valid_chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + ' -_'
 
+
 def is_valid(username):
     if len(username) > 12:
         return False

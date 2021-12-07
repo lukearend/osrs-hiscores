@@ -63,7 +63,8 @@ def main(in_file, out_file):
     with open(out_file, 'wb') as f:
         pickle.dump(results, f)
 
-    print('done')
+    print("done")
+    print()
 
 
 if __name__ == '__main__':
