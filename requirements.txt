@@ -1,3 +1,4 @@
+aiohttp
 dash
 dash-bootstrap-components
 beautifulsoup4

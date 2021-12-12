@@ -12,11 +12,10 @@ def main(in_file, out_file):
     print("processing cluster data...")
 
     with open(in_file, 'rb') as f:
-        contents = pickle.load(f)
+        raw_data = pickle.load(f)
 
     results = {}
-    for split, cluster_ids in contents.items():
-
+    for split, cluster_ids in raw_data.items():
         print("processing split '{}'".format(split))
 
         num_clusters = np.max(cluster_ids) + 1

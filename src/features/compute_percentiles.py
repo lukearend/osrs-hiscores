@@ -15,20 +15,20 @@ def main(stats_file, clusters_file, out_file):
 
     print("loading player data...")
     with open(stats_file, 'rb') as f:
-        contents = pickle.load(f)
-        players = contents['usernames']
-        skills = np.array(contents['stats'][:, 1::3], dtype='float32')
+        stats_data = pickle.load(f)
+        players = stats_data['usernames']
+        skills = np.array(stats_data['stats'][:, 1::3], dtype='float32')
 
     skills[skills < 0] = np.nan
 
     with open(clusters_file, 'rb') as f:
-        clusters = pickle.load(f)
+        cluster_data = pickle.load(f)
 
     results = {}
-    for split, result in clusters.items():
-        num_clusters = result['num_clusters']
+    for split, result in cluster_data.items():
 
         print("processing split '{}'".format(split))
+        num_clusters = result['num_clusters']
 
         if split == 'all':
             dataset = skills
@@ -44,18 +44,25 @@ def main(stats_file, clusters_file, out_file):
             keep_inds = result['cluster_ids'] == cluster_id
             cluster_rows = dataset[keep_inds]
             for i, p in enumerate(percentiles):
+
+                # A good number of clusters have one or more nan columns. This is
+                # because accounts in the cluster had one or more skills below the
+                # threshold to have that skill's data included in the official OSRS
+                # hiscores. We use np.nanpercentile and pass any nan columns on.
+
                 cluster_centroids[cluster_id, :, i] = np.nanpercentile(cluster_rows, axis=0, q=p)
 
-        results[split] = {p: cluster_centroids[:, :, i] for i, p in enumerate(percentiles)}
+        results[split] = {percent: cluster_centroids[:, :, i]
+                          for i, percent in enumerate(percentiles)}
 
     print("handling missing data")
-    for split in clusters.keys():
-        for p in percentiles:
-            replace_rows, replace_cols = np.isnan(results[split][p]).nonzero()
-            for i, j in zip(replace_rows, replace_cols):
-                results[split][p][i, j] = 1
-                print("replaced {} percentile {} row: {} col: {} with 1"
-                      .format(split, p, i, j))
+    for split in cluster_data.keys():
+        for percent in percentiles:
+            replace_rows, replace_cols = np.isnan(results[split][percent]).nonzero()
+            for row_i, col_i in zip(replace_rows, replace_cols):
+                results[split][percent][row_i, col_i] = 1
+                print("replaced '{}' {}th percentile row: {} col: {} with 1"
+                      .format(split, percent, row_i, col_i))
 
     with open(out_file, 'wb') as f:
         pickle.dump(results, f)

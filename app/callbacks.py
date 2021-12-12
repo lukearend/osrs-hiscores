@@ -34,7 +34,10 @@ def add_callbacks(app, appdata, player_collection):
         if not user_text or no_player or invalid_player:
             highlight_cluster = None
         else:
-            # e.g. "'snakeylime': cluster 116 (41.38% unique)" -> 115
+
+            # Get cluster ID from info string, e.g.
+            # "'snakeylime': cluster 116 (41.38% unique)" -> 115
+
             i = user_text.find('cluster')
             words = user_text[i:].split(' ')
             highlight_cluster = int(words[1]) - 1

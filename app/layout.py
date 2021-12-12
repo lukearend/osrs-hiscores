@@ -1,16 +1,17 @@
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
-from dash import Dash
 
 from app import get_level_marks, skill_pretty
 from app.figures import get_scatterplot, get_boxplot
 
 
-def build_layout(appdata):
-    app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-
+def build_layout(app, appdata):
     app.layout = dbc.Container([
+
+        # App layout is a series of dbc.Rows.
+        # Individual content items are wrapped by dbc.Col.
+
         dbc.Row(
             dbc.Col(
                 [
@@ -137,25 +138,15 @@ def build_layout(appdata):
                         style={'height': '80vh'},
                         clear_on_unhover=True
                     ),
+                    dcc.Graph(
+                        id='box-plot',
+                        figure=get_boxplot(appdata['all']['cluster_stats'][115])
+                    ),
                     html.Br()
                 ]
             )
         ),
         dcc.Tooltip(id='tooltip'),
-
-        # TODO: add boxplot
-
-        # dbc.Row(
-        #     dbc.Col(
-        #         [
-        #             dcc.Boxplot(
-        #                 id='box-plot',
-        #                 figure=get_boxplot(appdata['all']['percentiles'], 1000)
-        #             ),
-        #             html.Br()
-        #         ]
-        #     )
-        # )
     ])
 
     return app

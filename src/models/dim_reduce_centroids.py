@@ -17,7 +17,7 @@ def main(clusters_file, percentiles_file, out_file):
         cluster_data = pickle.load(f)
 
     with open(percentiles_file, 'rb') as f:
-        percentiles_data = pickle.load(f)
+        percentiles = pickle.load(f)
 
     # These parameters were found by manually inspecting clusterings
     # of the data for all parameter combinations in a grid search over
@@ -44,8 +44,11 @@ def main(clusters_file, percentiles_file, out_file):
               .format(n_neighbors, min_dist))
         print("running... ", end='', flush=True)
 
-        centroids = percentiles_data[split][50][:, 1:]    # 50th percentile (median)
-        cluster_sizes = cluster_data[split]['cluster_sizes']
+        # Null columns are due to missing hiscores data from unranked skills.
+        # Replace these with 1 (as in skill level 1) for embedding purposes.
+
+        centroids = percentiles[split][50][:, 1:]    # 50th percentile (median)
+        centroids = np.nan_to_num(centroids, nan=1.0)
 
         # For reproducibility.
         np.random.seed(0)

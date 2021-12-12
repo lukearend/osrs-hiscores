@@ -16,16 +16,18 @@ def main(dimreduced_file, clusters_file, percentiles_file, out_file):
     skills_file = pathlib.Path(__file__).resolve().parents[2] / 'reference/skills.csv'
     with open(skills_file, 'r') as f:
         skills = f.read().strip().split('\n')
-    with open(dimreduced_file, 'rb') as f:
-        xyz = pickle.load(f)
     with open(clusters_file, 'rb') as f:
-        clusters = pickle.load(f)
+        cluster_data = pickle.load(f)
     with open(percentiles_file, 'rb') as f:
-        percentiles = pickle.load(f)
+        percentile_data = pickle.load(f)
+    with open(dimreduced_file, 'rb') as f:
+        xyz_data = pickle.load(f)
 
-    data = {}
-    for split, xyz_data in xyz.items():
-        num_clusters = len(xyz_data)
+    splits = list(xyz_data.keys())
+    percentiles = list(percentile_data[splits[0]].keys())
+
+    appdata = {}
+    for split in splits:
 
         if split == 'all':
             skills_in_split = skills
@@ -34,33 +36,32 @@ def main(dimreduced_file, clusters_file, percentiles_file, out_file):
         elif split == 'noncb':
             skills_in_split = [skills[0]] + skills[8:]
 
-        percentile_cols = []
-        percentile_data = np.zeros((num_clusters, 5 * len(skills_in_split)), dtype='int')
-        for i, p in enumerate((0, 25, 50, 75, 100)):
-            for j, skill in enumerate(skills_in_split):
+        num_clusters = cluster_data[split]['num_clusters']
+        cluster_stats = np.zeros((num_clusters, len(skills_in_split), len(percentiles)))
 
-                col_i = i * len(skills_in_split) + j
-                percentile_cols.append("{}_{}".format(skill, p))
-                percentile_data[:, col_i] = np.floor(percentiles[split][p][:, j])
+        # Transform the percentile data into a data structure that is more
+        # efficient for accessing by cluster ID during a callback.
 
-        percentile_df = pd.DataFrame(percentile_data, columns=percentile_cols)
-        xyz_df = pd.DataFrame(xyz_data, columns=('x', 'y', 'z'))
+        for cluster_id in range(num_clusters):
+            for i, percent in enumerate(percentiles):
+                skill_percentiles = percentile_data[split][percent][cluster_id, :]
+                cluster_stats[cluster_id, :, i] = skill_percentiles
 
-        data[split] = {
+        appdata[split] = {
             'skills': skills_in_split,
-            'xyz': xyz_df,
-            'percentiles': percentile_df,
-            'cluster_sizes': clusters[split]['cluster_sizes'],
-            'percent_uniqueness': clusters[split]['percent_uniqueness'],
+            'xyz': xyz_data[split],
+            'cluster_stats': cluster_stats,
+            'cluster_sizes': cluster_data[split]['cluster_sizes'],
+            'percent_uniqueness': cluster_data[split]['percent_uniqueness'],
             'axis_limits': {
-                'x': (np.min(xyz_df['x']), np.max(xyz_df['x'])),
-                'y': (np.min(xyz_df['y']), np.max(xyz_df['y'])),
-                'z': (np.min(xyz_df['z']), np.max(xyz_df['z']))
+                'x': (np.min(xyz_data[split][:, 0]), np.max(xyz_data[split][:, 0])),
+                'y': (np.min(xyz_data[split][:, 1]), np.max(xyz_data[split][:, 1])),
+                'z': (np.min(xyz_data[split][:, 2]), np.max(xyz_data[split][:, 2]))
             }
         }
 
     with open(out_file, 'wb') as f:
-        pickle.dump(data, f)
+        pickle.dump(appdata, f)
 
     print("done")
     print()

@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 from app import skill_pretty
 
 
-def get_scatterplot(appdata, skill, level_range, highlight_cluster=None):
+def get_scatterplot(split_data, skill, level_range, highlight_cluster=None):
 
     if skill == 'total':
         color_range = [500, 2277]
@@ -15,28 +15,59 @@ def get_scatterplot(appdata, skill, level_range, highlight_cluster=None):
 
     # When level selector is used, we display only those clusters whose
     # interquartile range in the chosen skill overlaps the selected range.
-    inds = np.where(np.logical_and(
-        appdata['percentiles']['{}_75'.format(skill)] >= level_range[0],
-        appdata['percentiles']['{}_25'.format(skill)] <= level_range[1],
+
+    skill_i = split_data['skills'].index(skill)
+    show_inds = np.where(np.logical_and(
+        split_data['cluster_stats'][:, skill_i, 3] >= level_range[0],   # 75th percentile
+        split_data['cluster_stats'][:, skill_i, 1] <= level_range[1],   # 25th percentile
     ))[0]
-    plot_data = appdata['xyz'].iloc[inds]
+    clusters_xyz = split_data['xyz'][show_inds]
 
-    xmin, xmax = appdata['axis_limits']['x']
-    ymin, ymax = appdata['axis_limits']['y']
-    zmin, zmax = appdata['axis_limits']['z']
+    # We use a px.scatter_3d instead of a go.Scatter3d because it
+    # is much easier for color and hover data formatting.
 
-    # We use a px.scatter_3d instead of a go.Scatter3d because the former
-    # is better for color and hover data formatting.
     fig = px.scatter_3d(
-        plot_data,
-        x='x', y='y', z='z',
-        color=appdata['percentiles']['{}_50'.format(skill)],
+        x=clusters_xyz[:, 0],
+        y=clusters_xyz[:, 1],
+        z=clusters_xyz[:, 2],
+        color=split_data['cluster_stats'][:, skill_i, 2],               # 50th percentile (median)
         range_color=color_range,
         hover_data={
-            'x': False, 'y': False, 'z': False,
-            'cluster': plot_data.index + 1, 'size': appdata['cluster_sizes']
+            'cluster': np.arange(1, len(clusters_xyz) + 1), 'size': split_data['cluster_sizes']
         }
     )
+
+    sizes = split_data['cluster_sizes'][show_inds]
+    fig.update_traces(
+        marker=dict(
+            size=3 * np.log(sizes + 1),
+            line=dict(width=0),
+            opacity=0.5
+        )
+    )
+
+    if highlight_cluster is not None:
+        x = clusters_xyz[highlight_cluster, 0]
+        y = clusters_xyz[highlight_cluster, 1]
+        z = clusters_xyz[highlight_cluster, 2]
+        fig.add_trace(
+            go.Scatter3d(
+                x=[xmin, xmax, None, x, x, None, x, x],
+                y=[y, y, None, ymin, ymax, None, y, y],
+                z=[z, z, None, z, z, None, zmin, zmax],
+                mode='lines',
+                line_color='white',
+                line_width=2,
+                showlegend=False,
+                name='crosshairs'
+            )
+        )
+
+    fig.update_traces(hoverinfo='none', hovertemplate=None)
+
+    xmin, xmax = split_data['axis_limits']['x']
+    ymin, ymax = split_data['axis_limits']['y']
+    zmin, zmax = split_data['axis_limits']['z']
 
     fig.update_layout(
         uirevision='constant',
@@ -65,36 +96,35 @@ def get_scatterplot(appdata, skill, level_range, highlight_cluster=None):
         )
     )
 
-    sizes = appdata['cluster_sizes'][inds]
-    fig.update_traces(
-        marker=dict(
-            size=3 * np.log(sizes + 1),
-            line=dict(width=0),
-            opacity=0.5
-        )
-    )
-
-    if highlight_cluster is not None:
-        x = appdata['xyz']['x'][highlight_cluster]
-        y = appdata['xyz']['y'][highlight_cluster]
-        z = appdata['xyz']['z'][highlight_cluster]
-        fig.add_trace(
-            go.Scatter3d(
-                x=[xmin, xmax, None, x, x, None, x, x],
-                y=[y, y, None, ymin, ymax, None, y, y],
-                z=[z, z, None, z, z, None, zmin, zmax],
-                mode='lines',
-                line_color='white',
-                line_width=2,
-                name='crosshairs'
-            )
-        )
-
-    fig.update_traces(hoverinfo='none', hovertemplate=None)
-    fig.update_traces(showlegend=False, selector=dict(name='crosshairs'))
-
     return fig
 
 
-def get_boxplot(percentiles, cluster_id):
-    return None
+def get_boxplot(percentile_data):
+    fig = go.Figure()
+
+    # Don't show total level.
+    percentile_data = percentile_data[1:]
+
+    mins = percentile_data[:, 0]
+    maxes = percentile_data[:, 4]
+    median = percentile_data[:, 2]
+    q1 = percentile_data[:, 1]
+    q3 = percentile_data[:, 3]
+    iqr = q3 - q1
+
+    lowerfence = q1 - 1.5 * iqr
+    upperfence = q3 + 1.5 * iqr
+
+    fig = go.Figure(
+        data=[
+            go.Box(
+                lowerfence=np.maximum(mins, lowerfence),
+                q1=q1,
+                median=median,
+                q3=q3,
+                upperfence=np.minimum(maxes, upperfence)
+            )
+        ]
+    )
+
+    return fig
