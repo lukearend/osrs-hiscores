@@ -63,27 +63,24 @@ def parse_hiscores_page(page_html):
     except IndexError as e:
         raise ValueError("could not parse page: {}".format(e))
 
-    results = []
+    usernames = []
+    ranks = []
     for row in player_rows:
         try:
-            rank, username, total_level = row.find_all('td')[:3]
+            rank, username, _ = row.find_all('td')[:3]
         except IndexError as e:
             raise ValueError("could not parse row: {}".format(e))
 
         rank = int(rank.string.strip().replace(',', ''))
         username = username.a.string.replace('\xa0', ' ')
-        total_level = int(total_level.string.strip().replace(',', ''))
 
-        results.append({
-            'rank': rank,
-            'username': username,
-            'total_level': total_level
-        })
+        usernames.append(username)
+        ranks.append(rank)
 
-    return results
+    return ranks, usernames
 
 
-async def request_player_stats(username, max_attempts=5):
+async def pull_player_stats(session, username, max_attempts=5):
     for _ in range(max_attempts):
 
         async with session.get(
@@ -103,7 +100,7 @@ async def request_player_stats(username, max_attempts=5):
                 continue
 
             csv = await response.text()
-            csv = stats_csv.replace('\n', ',')
+            csv = csv.replace('\n', ',')
             csv = username + ',' + csv
             return csv
 
