@@ -43,8 +43,6 @@ Run `make init` to set up virtual environment. Run `make analytics` to run the f
 
 The virtual environment must be activated to work interactively with python. To do this, run `source env/bin/activate` from the top-level directory. You can then open a notebook server by running `make notebook` and going to `localhost:8888` in the browser. The notebooks in this repository were used to generate the final figures.
 
-Run `make scrape` to download and build the raw dataset by scraping official OSRS hiscores. Note: depends on the `expresso` [tool](https://github.com/sttz/expresso) for ExpressVPN.
-
 Dependencies
 ------------
 
