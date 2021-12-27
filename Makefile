@@ -37,22 +37,22 @@ env-clean:          ## Remove virtual environment.
 .PHONY: scrape scrape-clean scrape-clobber
 
 scrape:             ## Run full data scraping process.
-scrape:
+scrape: $(DATA_FINAL)/stats.csv
 	@source env/bin/activate && \
-	cd src/scrape && python3 scrape_usernames.py $(DATA_RAW)/stats-raw.csv 1 80000
+	cd src/scrape && python3 scrape_usernames.py $<
 
 $(DATA_RAW)/usernames-raw.csv:
 	@source env/bin/activate && \
-	cd src/data && python3 scrape_usernames.py $@ && \
+	cd src/scrape && python3 scrape_usernames.py $@ && \
 	touch $@
 
 $(DATA_TMP)/usernames.csv: $(DATA_RAW)/usernames-raw.csv
 	@source env/bin/activate && \
-	cd src/data && python3 cleanup_usernames.py $< $@
+	cd src/scrape && python3 cleanup_usernames.py $< $@
 
 $(DATA_RAW)/stats-raw.csv: $(DATA_TMP)/usernames.csv
 	@source env/bin/activate && \
-	cd src/data && python3 scrape_stats.py $< $@ && \
+	cd src/scrape && python3 scrape_stats.py $< $@ && \
 	touch $@
 
 $(DATA_FINAL)/stats.csv: $(DATA_RAW)/stats-raw.csv

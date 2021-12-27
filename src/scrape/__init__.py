@@ -1,124 +1,88 @@
-import asyncio
-
-import aiohttp
-import numpy as np
+import requests
 from bs4 import BeautifulSoup
 
 
-class ApiError(Exception):
-    pass
+def request_page(page_number, max_attempts=5):
+    if page_number < 1 or page_number > 80000:
+        raise ValueError("page number must be between 1 and 80000 inclusive")
 
+    for attempt in range(max_attempts):
+        response = requests.get(
+            'https://secure.runescape.com/m=hiscore_oldschool/overall',
+            headers={
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept'
+            },
+            params={
+                'table': 0,
+                'page': page_number
+            }
+        )
 
-def repeat_shuffled(items):
-    while True:
-        yield from np.random.permutation(items)
-
-
-async def run_subprocess(command):
-    proc = await asyncio.create_subprocess_shell(
-        command,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE)
-
-    stdout, stderr = await proc.communicate()
-    if stderr:
-        raise ValueError("could not run '{}': {}".format(command, stderr.decode('utf-8')))
-
-    return stdout.decode('utf-8')
-
-
-async def pull_hiscores_page(session, page_num, max_attempts=5):
-    try:
-        for _ in range(max_attempts):
-
-                async with session.get(
-                    'https://secure.runescape.com/m=hiscore_oldschool/overall',
-                    headers={
-                        'Access-Control-Allow-Origin': '*',
-                        'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept'
-                    },
-                    params={
-                        'table': 0,
-                        'page': page_num
-                    }
-                ) as response:
-                    if response.status != 200:
-                        continue
-                    return await response.text()
-
+        if response.status_code == 200:
+            break
         else:
-            error = await response.text()
-            raise ApiError("could not get page after {} tries: {}".format(max_attempts, error))
+            continue
+    else:
+        raise ValueError("max attempts exceeded, could not get page after {} tries"
+                         .format(max_attempts))
 
-    except asyncio.TimeoutError as e:
-        raise KeyError("hiscores page {} unavailable: {}".format(page_num, e))
-    except aiohttp.ClientError as e:
-        raise ApiError("could not pull hiscores page {}: {}".format(page_num, e))
+    return response.text
 
 
-def parse_hiscores_page(page_html):
-
-    # Extract 25 usernames and overall rank/total level/xp from the raw HTML.
-    soup = BeautifulSoup(page_html, 'html.parser')
-    page_body = soup.html.body
+def parse_page(page_text):
+    soup = BeautifulSoup(page_text, 'html.parser')
     try:
-        main_div = page_body.find_all('div')[4]
-        hiscores_div = main_div.find_all('div')[7]
-        stats_table = hiscores_div.find_all('div')[4]
-        personal_hiscores = stats_table.div.find_all('div')[1]
-        table_rows = personal_hiscores.div.table.tbody
-        player_rows = table_rows.find_all('tr')[1:]
+        table_rows = soup.html.body
+        table_rows = table_rows.find_all('div')[4]
+        table_rows = table_rows.find_all('div')[5]
+        table_rows = table_rows.find_all('div')[4]
+        table_rows = table_rows.div.find_all('div')[1]
+        table_rows = table_rows.div.table.tbody
+        table_rows = table_rows.find_all('tr')[1:]
     except IndexError as e:
-        raise ApiError("could not parse page body:\n{}".format(page_body))
+        raise ValueError("could not parse page: {}".format(e))
 
-    ranks = []
-    usernames = []
-    for row in player_rows:
+    result = {}
+    for row in table_rows:
         try:
-            rank, username = row.find_all('td')[:2]
+            rank, username, total_level = row.find_all('td')[:3]
         except IndexError as e:
-            raise ApiError("could not parse page row: {}".format(e))
+            raise ValueError("could not parse row: {}".format(e))
 
         rank = int(rank.string.strip().replace(',', ''))
-        ranks.append(rank)
-
         username = username.a.string.replace('\xa0', ' ')
-        usernames.append(username)
+        total_level = int(total_level.string.strip().replace(',', ''))
 
-    return ranks, usernames
+        result[rank] = {
+            'username': username,
+            'total_level': total_level
+        }
+
+    return result
 
 
-async def pull_player_stats(session, username, max_attempts=5):
+def request_stats(username, max_attempts=5):
+    for attempt in range(max_attempts):
+        response = requests.get(
+            'http://services.runescape.com/m=hiscore_oldschool/index_lite.ws',
+            headers={
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept'
+            },
+            params={
+                'player': username
+            }
+        )
 
-    try:
-        for _ in range(max_attempts):
-            async with session.get(
-                'http://services.runescape.com/m=hiscore_oldschool/index_lite.ws',
-                headers={
-                    'Access-Control-Allow-Origin': '*',
-                    'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept'
-                },
-                params={
-                    'player': username
-                }
-            ) as response:
-                if response.status == 404:
-                    raise KeyError("user '{}' not found".format(username))
-                elif response.status != 200:
-                    continue
+        if response.status_code == 200:
+            break
+        elif response.status_code == 404:
+            raise KeyError("user '{}' not found".format(username))
+    else:
+        raise ValueError("max attempts exceeded, could not get page after {} tries"
+                         .format(max_attempts))
 
-                csv = await response.text()
-                csv = csv.strip().replace('\n', ',')
-                csv = username + ',' + csv
-                return csv
-        else:
-            error = await response.text()
-            raise ApiError("could not get page after {} tries: {}".format(max_attempts, error))
-
-    except TimeoutError as e:
-        raise KeyError("data for '{}' unavailable: {}".format(username, e))
-    except aiohttp.ClientError as e:
-        raise ApiError("could not pull player stats: {}".format(e))
-    except aiohttp.ClientConnectionError as e:
-        raise ApiError("could not pull player stats: {}".format(e))
-
+    result = response.text.replace('\n', ',')
+    result = "{},".format(username) + result
+    return result

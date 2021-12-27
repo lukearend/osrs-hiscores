@@ -14,6 +14,36 @@ from threading import Thread, Lock
 
 from tqdm import tqdm
 
+from src.scrape import request_stats
+
+
+def process_pages(job_queue, out_file, file_lock):
+    with open(out_file, 'a', buffering=1) as f:
+        while True:
+            username = job_queue.get()
+            if username == 'stop':
+                break
+
+            try:
+                stats_csv = request_stats(username)
+            except KeyError as e:
+                print("could not process user '{}': {}".format(username, e))
+
+                file_lock.acquire()
+                f.write(username + '\n')
+                file_lock.release()
+                continue
+
+            except ValueError as e:
+                print("could not process user '{}': {}".format(username, e))
+                continue
+
+            file_lock.acquire()
+            f.write(stats_csv + '\n')
+            file_lock.release()
+
+            print('processed user {}'.format(username))
+
 
 def run_workers_once(names_to_process, out_file):
     file_lock = Lock()
