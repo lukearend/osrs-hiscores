@@ -30,21 +30,21 @@ def request_page(page_number, max_attempts=5):
     return response.text
 
 
-def parse_page(page_text):
-    soup = BeautifulSoup(page_text, 'html.parser')
+def parse_page(page_html):
+    soup = BeautifulSoup(page_html, 'html.parser')
     try:
-        table_rows = soup.html.body
-        table_rows = table_rows.find_all('div')[4]
-        table_rows = table_rows.find_all('div')[5]
-        table_rows = table_rows.find_all('div')[4]
-        table_rows = table_rows.div.find_all('div')[1]
-        table_rows = table_rows.div.table.tbody
-        table_rows = table_rows.find_all('tr')[1:]
+        page_body = soup.html.body
+        main_div = page_body.find_all('div')[4]
+        hiscores_div = main_div.find_all('div')[7]
+        stats_table = hiscores_div.find_all('div')[4]
+        personal_hiscores = stats_table.div.find_all('div')[1]
+        table_rows = personal_hiscores.div.table.tbody
+        player_rows = table_rows.find_all('tr')[1:]
     except IndexError as e:
-        raise ValueError("could not parse page: {}".format(e))
+        raise ApiError("could not parse page body:\n{}".format(page_body))
 
     result = {}
-    for row in table_rows:
+    for row in player_rows:
         try:
             rank, username, total_level = row.find_all('td')[:3]
         except IndexError as e:

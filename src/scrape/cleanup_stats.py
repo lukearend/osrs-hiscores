@@ -42,8 +42,8 @@ def main(in_file, out_file):
 
     print("sorting...")
 
-    # Sort descending by total level, breaking ties by total xp.
-    inds = np.lexsort((-stats[:, 2], -stats[:, 1]))
+    # Sort descending by overall rank, breaking ties by total level and then xp.
+    inds = np.lexsort((stats[:, 2], stats[:, 1], stats[:, 0]))
     stats = stats[inds]
     usernames = usernames[inds]
 

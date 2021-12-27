@@ -68,7 +68,6 @@ def main(out_file):
     # Get VPN locations by parsing the output of `expresso locations`.
     # Parse lines like: "- USA - Chicago (9)" -> 9
     #                   "- India (via UK) (152)" -> 152
-    print("getting location codes...", end=' ', flush=True)
     cmd = 'expresso locations'
     proc = subprocess.run(['expresso', 'locations'], capture_output=True)
     output = proc.stdout.decode('utf-8')
@@ -81,7 +80,6 @@ def main(out_file):
             location_codes.append(code)
 
     print("scraping usernames...")
-
     while True:
         # There are 80,000 pages, giving rankings 1-25, 26-50, ..., etc.
         # up to 2 million.
