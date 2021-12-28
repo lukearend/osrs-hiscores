@@ -8,18 +8,14 @@ APP_DIR:=$(ROOT_DIR)/app
 DB_DIR:=$(ROOT_DIR)/volume
 DB_PORT:=27017
 
-.PHONY: all clean
 all: lint analytics app run
 clean: env-clean analytics-clean app-clean
+.PHONY: all clean
 
-##
-##  Setup
-.PHONY: init env-clean
+# Setup
+init: db-pull env extensions lint ## Initialize repository.
 
-init:               ## Initialize repository.
-init: db-pull env extensions lint
-
-env:                ## Build virtual environment.
+env: ## Build virtual environment.
 	@echo "building virtual environment..."
 	@python3 -m venv env && \
 	source env/bin/activate && \
@@ -29,20 +25,22 @@ env:                ## Build virtual environment.
 	source env/bin/activate
 	@echo
 
-env-clean:          ## Remove virtual environment.
+env-clean: ## Remove virtual environment.
 	@rm -rf env
 
-##
-##  Data scraping
-.PHONY: scrape scrape-clean scrape-clobber
-.PRECIOUS: $(DATA_RAW)/usernames-raw.csv $(DATA_RAW)/stats-raw.csv
+.PHONY: init env-clean
 
-scrape:             ## Run full data scraping process.
-scrape: $(DATA_FINAL)/stats.csv
+# Data scraping
+scrape: $(DATA_FINAL)/stats.csv ## Run full data scraping process.
 
 $(DATA_RAW)/usernames-raw.csv:
 	@source env/bin/activate && \
-	cd src/scrape && python3 scrape_usernames.py $@
+	cd src/scrape && \
+	until python3 scrape_usernames.py $@ ; do                                                   \
+		echo "resetting vpn connection..." ;                                                    \
+		loc=`expresso locations | grep -- '- USA - ' | sed 's/^.*(//;s/)$$//' | shuf -n 1` &&   \
+		expresso connect --change $$loc ;                                                       \
+	done
 
 $(DATA_TMP)/usernames.csv: $(DATA_RAW)/usernames-raw.csv
 	@source env/bin/activate && \
@@ -50,30 +48,35 @@ $(DATA_TMP)/usernames.csv: $(DATA_RAW)/usernames-raw.csv
 
 $(DATA_RAW)/stats-raw.csv: $(DATA_TMP)/usernames.csv
 	@source env/bin/activate && \
-	cd src/scrape && python3 scrape_stats.py $< $@ && \
-	touch $@
+	cd src/scrape && \
+	until python3 scrape_stats.py $< $@; do                                                     \
+		echo "resetting vpn connection..." ;                                                    \
+		loc=`expresso locations | grep -- '- USA - ' | sed 's/^.*(//;s/)$$//' | shuf -n 1` &&   \
+		expresso connect --change $$loc ;                                                       \
+	done
 
 $(DATA_FINAL)/stats.csv: $(DATA_RAW)/stats-raw.csv
 	@source env/bin/activate && \
 	cd src/scrape && python3 cleanup_stats.py $< $@
 
-scrape-clean:       ## Remove scraped data (but not raw files).
+scrape-clean: ## Remove processed scraped data, but not raw files.
 	touch $(DATA_RAW)/usernames-raw.csv ; \
 	touch $(DATA_RAW)/stats-raw.csv ; \
 	rm -f $(DATA_TMP)/usernames.csv && \
 	rm -f $(DATA_FINAL)/stats.csv
 
-scrape-clobber:     ## Remove ALL scraped data.
+scrape-clobber: ## Remove ALL scraped data.
 	rm -f $(DATA_RAW)/usernames-raw.csv
 	rm -f $(DATA_RAW)/stats-raw.csv
 	rm -f $(DATA_TMP)/usernames.csv
 	rm -f $(DATA_FINAL)/stats.csv
 
-##
-##  Data analytics
-.PHONY: analytics analytics-clean
+.PHONY: scrape scrape-clean scrape-clobber
+.PHONY: $(DATA_RAW)/usernames-raw.csv $(DATA_RAW)/stats-raw.csv
+.PRECIOUS: $(DATA_RAW)/usernames-raw.csv $(DATA_RAW)/stats-raw.csv
 
-analytics:          ## Run full processing pipeline on scraped data.
+# Data analytics
+analytics: ## Run full processing pipeline on scraped data.
 analytics: $(DATA_TMP)/clusters.pkl $(DATA_TMP)/percentiles.pkl $(DATA_TMP)/dimreduced.pkl
 
 $(DATA_TMP)/stats.pkl: $(DATA_FINAL)/stats.csv
@@ -92,22 +95,20 @@ $(DATA_TMP)/dimreduced.pkl: $(DATA_TMP)/clusters.pkl $(DATA_TMP)/percentiles.pkl
 	@source env/bin/activate && \
 	cd src/models && python3 dim_reduce_centroids.py $^ $@
 
-analytics-clean:    ## Remove all analytics generated from scraped data.
+analytics-clean: ## Remove all analytics generated from scraped data.
 	rm -f $(DATA_TMP)/stats.pkl
 	rm -f $(DATA_TMP)/clusters.pkl
 	rm -f $(DATA_TMP)/centroids.pkl
 	rm -f $(DATA_TMP)/dimreduced.pkl
 
+.PHONY: analytics analytics-clean
 
-##
-##  Main application
-.PHONY: run app app-data app-db app-clean
-
-run:                ## Run main application.
+# Main application
+run: ## Run main application.
 run: db-start
 	@source env/bin/activate && python3 app $(DB_PORT)
 
-app:                ## Build application data file and database.
+app: ## Build application data file and database.
 app: app-data db-start app-db
 
 app-data: $(DATA_FINAL)/appdata.pkl
@@ -124,22 +125,21 @@ $(DATA_FINAL)/appdata.pkl: $(DATA_TMP)/dimreduced.pkl $(DATA_TMP)/clusters.pkl \
 	@source env/bin/activate && \
 	cd src/visuals && python3 build_appdata.py $^ $@
 
-app-clean:          ## Remove application data and database.
+app-clean: ## Remove application data and database.
 app-clean: db-stop
 	rm -f $(DATA_FINAL)/appdata.pkl
 	rm -f $(APP_DIR)/assets/appdata.pkl
 	rm -rf $(DB_DIR)
 
-##
-##  Database
-.PHONY: db-pull db-start db-stop
+.PHONY: run app app-data app-db app-clean
 
-db-pull:            ## Pull latest version of MongoDB.
+# Database
+db-pull: ## Pull latest version of MongoDB.
 	@echo "pulling mongodb..."
 	@docker pull mongo
 	@echo
 
-db-start:           ## Start database service.
+db-start: ## Start database service.
 	@echo "starting database..."
 	@mkdir -p $(DB_DIR) && \
 	docker stop osrs-hiscores > /dev/null 2>&1 ; \
@@ -149,13 +149,14 @@ db-start:           ## Start database service.
 	@echo -n "warming up... " && sleep 1
 	@echo "done" && echo
 
-db-stop:            ## Stop database service.
+db-stop: ## Stop database service.
 	@echo "stopping database..."
 	@docker stop osrs-hiscores 2> /dev/null
 	@echo
 
-##
-##  Other
+.PHONY: db-pull db-start db-stop
+
+# Other
 .PHONY: vim-binding nbextensions notebook lint help
 
 vim-binding:
@@ -171,17 +172,16 @@ nbextensions: vim-binding
 	jupyter nbextension enable toggle_all_line_numbers/main && \
 	jupyter nbextension enable varInspector/main
 
-notebook:           ## Start a local jupyter notebook server.
+notebook: ## Start a local jupyter notebook server.
 notebook: nbextensions
 	@source env/bin/activate && \
 	cd notebooks && jupyter notebook
 
-lint:               ## Run code style checker.
+lint: ## Run code style checker.
 	@source env/bin/activate && \
 	pycodestyle app src --ignore=E501 && \
 	echo "ok"
 
-help:               ## Show this help.
-	@fgrep -h "##" $(MAKEFILE_LIST) | fgrep -v fgrep | sed -e 's/\\$$//' | sed -e 's/##//'
-
-##
+help: ## Show this help.
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
+	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-16s\033[0m %s\n", $$1, $$2}'

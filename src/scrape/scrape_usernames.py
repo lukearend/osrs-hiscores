@@ -6,114 +6,102 @@
     Once the output file is complete, running this script will do nothing.
 """
 
+import asyncio
 import csv
 import os
-import pathlib
 import pickle
 import random
 import subprocess
 import sys
-from queue import Queue
-from threading import Thread, Lock
+from collections import defaultdict
 
+import aiohttp
 from tqdm import tqdm
 
 from src.scrape import request_page, parse_page
 
 
-def process_pages(job_queue, out_file, file_lock):
+async def process_pages(session, job_queue, out_file, file_lock, pbar):
     with open(out_file, 'a', buffering=1) as f:
         while True:
-            page_number = job_queue.get()
-            if page_number == 'stop':
-                break
-
             try:
-                page = request_page(page_number)
-                result = parse_page(page)
-            except ValueError as e:
-                print('could not process page {}: {}'.format(page_number, e))
+                page_number = job_queue.get_nowait()
+            except asyncio.QueueEmpty:
                 return
 
-            file_lock.acquire()
+            page = await request_page(session, page_number)
+            result = parse_page(page)
+
+            await file_lock.acquire()
             for rank, player in result.items():
                 f.write("{},{},{},{}\n".format(
                         rank, page_number, player['username'], player['total_level']))
+            pbar.update(1)
             file_lock.release()
 
-            print('processed page {}'.format(page_number))
 
+async def run_workers(pages_to_scrape, out_file, pbar):
+    file_lock = asyncio.Lock()
+    job_queue = asyncio.Queue()
+    for page in pages_to_scrape:
+        job_queue.put_nowait(page)
 
-def run_workers_once(pages_to_process, out_file):
-    file_lock = Lock()
-    job_queue = Queue()
-    for page in pages_to_process:
-        job_queue.put(page)
+    async with aiohttp.ClientSession() as session:
+        workers = []
+        for i in range(24):
+            workers.append(asyncio.create_task(
+                process_pages(session, job_queue, out_file, file_lock, pbar)
+            ))
+            await asyncio.sleep(0.1)
 
-    workers = []
-    for i in range(32):
-        worker = Thread(target=process_pages,
-                        args=(job_queue, out_file, file_lock),
-                        daemon=True)
-        workers.append(worker)
-        job_queue.put('stop')
-
-    for worker in workers:
-        worker.start()
-    for worker in workers:
-        worker.join()
+        await asyncio.gather(*workers)
 
 
 def main(out_file):
-    # Get VPN locations by parsing the output of `expresso locations`.
-    # Parse lines like: "- USA - Chicago (9)" -> 9
-    #                   "- India (via UK) (152)" -> 152
-    cmd = 'expresso locations'
-    proc = subprocess.run(['expresso', 'locations'], capture_output=True)
-    output = proc.stdout.decode('utf-8')
-
-    location_codes = []
-    for line in output.split('\n'):
-        if line.startswith('- USA - '):
-            substr = line.split(')')[-2]
-            code = substr.split('(')[-1]
-            location_codes.append(code)
-
     print("scraping usernames...")
-    while True:
-        # There are 80,000 pages, giving rankings 1-25, 26-50, ..., etc.
-        # up to 2 million.
-        pages_to_process = set(range(1, 80001))
 
-        # Write user rankings as they are processed in a CSV file.
-        # If file is already there, skip the pages it already contains.
-        if os.path.isfile(out_file):
+    # There are 80,000 pages, giving rankings 1-25, 26-50, ..., etc. up to 2 million.
+    pages_to_scrape = set(range(1, 80001))
 
-            print("checking previous results...")
-            with open(out_file, 'r') as f:
-                reader = csv.reader(f)
-                processed_pages = [int(line[1]) for line in tqdm(reader)]
+    # Write ranked usernames as they are extracted from pages into a CSV file.
+    # If that file exists, find out what's already been computed.
+    if os.path.isfile(out_file):
+        found_pages = defaultdict(set)
+        with open(out_file, 'r') as f:
+            reader = csv.reader(f)
+            header = next(reader)
 
-            processed_pages = set(processed_pages)
-            pages_to_process -= processed_pages
+            print("reading previous results...")
+            for line in tqdm(reader):
+                rank = int(line[0])
+                page_num = int(line[1])
+                found_pages[page_num].add(rank)
 
-        print("{}/80000 pages left to process".format(len(pages_to_process)))
+        complete_pages = set()
+        for page_num, ranks_on_page in found_pages.items():
+            if len(ranks_on_page) == 25:
+                complete_pages.add(page_num)
 
-        if not pages_to_process:
-            break
+        pages_to_scrape = list(set(pages_to_scrape) - complete_pages)
+        pages_to_scrape = sorted(pages_to_scrape)
 
-        # Launch the threads once, running all until they have exited
-        # with an error. The threads error out after about 45 seconds
-        # when hiscores server blocks this IP for too many requests.
-        # Get a new IP address using the CLI interface to ExpressVPN.
-        print("resetting vpn connection...")
-        code = random.choice(location_codes)
-        subprocess.run(['expresso', 'connect', '--change', code])
-        run_workers_once(pages_to_process, out_file)
+    if not pages_to_scrape:
+        return True
 
-    print("done")
-    print()
+    print("{}/80000 pages left to scrape".format(len(pages_to_scrape)))
+
+    with tqdm(total=80000, initial=80000 - len(pages_to_scrape)) as pbar:
+        loop = asyncio.get_event_loop()
+        loop.run_until_complete(
+            run_workers(pages_to_scrape, out_file, pbar)
+        )
+        return False
 
 
 if __name__ == '__main__':
-    main(*sys.argv[1:])
+    done = main(*sys.argv[1:])
+    if done:
+        print("done")
+        print()
+        sys.exit(0)
+    sys.exit(1)
