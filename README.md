@@ -36,6 +36,10 @@ TODO: instructions for downloading both files and adding to repo under the data/
 
 1. `data/processed/stats.csv`: Rank, levels, xp, clues and achievements stats for the top \~2 million OSRS players. This file is *not currently in the repo* due to github file size restraints, and must be downloaded separately and added to the repo. To do this, run `wget TODO: get stats.csv from Google Drive or S3 bucket and place in repo` from the command line in this directory or (i) click TODO: [here]() to download and (ii) copy the downloaded file into the folder `data/processed/` under the this repo directory.
 
+2. `data/processed/clusters.csv`: TODO: cluster data file
+
+Player stats were scraped on Dec 28, 2021 between 00:00 and 18:00 CST.
+
 Usage
 -----
 
@@ -46,8 +50,8 @@ The virtual environment must be activated to work interactively with python. To 
 Dependencies
 ------------
 
-Needs `docker` to run MongoDB.
+Needs `docker` to run MongoDB, uses `expresso` (command line interface to ExpressVPN) in data scraping scripts.
 
 --------
 
-<p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>. #cookiecutterdatascience</small></p>
+<p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>.

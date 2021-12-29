@@ -2,28 +2,6 @@ import requests
 from bs4 import BeautifulSoup
 
 
-async def request_page(session, page_num, max_attempts=5):
-    for _ in range(max_attempts):
-        async with session.get(
-            'https://secure.runescape.com/m=hiscore_oldschool/overall',
-            headers={
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept'
-            },
-            params={
-                'table': 0,
-                'page': page_num
-            }
-        ) as response:
-            if response.status != 200:
-                continue
-            return await response.text()
-
-    else:
-        error = await response.text()
-        raise ApiError("could not get page after {} tries: {}".format(max_attempts, error))
-
-
 def parse_page(page_html):
     soup = BeautifulSoup(page_html, 'html.parser')
     try:
@@ -54,6 +32,28 @@ def parse_page(page_html):
         }
 
     return result
+
+
+async def request_page(session, page_num, max_attempts=5):
+    for _ in range(max_attempts):
+        async with session.get(
+            'https://secure.runescape.com/m=hiscore_oldschool/overall',
+            headers={
+                'Access-Control-Allow-Origin': '*',
+                'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept'
+            },
+            params={
+                'table': 0,
+                'page': page_num
+            }
+        ) as response:
+            if response.status != 200:
+                continue
+            return await response.text()
+
+    else:
+        error = await response.text()
+        raise ApiError("could not get page after {} tries: {}".format(max_attempts, error))
 
 
 async def request_stats(session, username, max_attempts=5):

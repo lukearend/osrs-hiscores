@@ -24,14 +24,14 @@ def main(in_file, out_file):
 
     # If a username shows up in more than one row, keep the row
     # where total level is highest (most recent) and discard the rest.
-    players = defaultdict(int)
+    total_levels = defaultdict(int)
     for row in tqdm(rows):
         name, total_level = row[2], row[3]
-        if total_level > players[name]:
-            players[name] = total_level
+        if total_level > total_levels[name]:
+            total_levels[name] = total_level
 
     # Sort players by total level and write to file.
-    players = sorted(players.items(), key=lambda item: item[1], reverse=True)
+    players = sorted(total_levels.items(), key=lambda item: item[1], reverse=True)
 
     print("writing results to csv...")
     with open(out_file, 'w') as f:
@@ -39,7 +39,6 @@ def main(in_file, out_file):
             f.write('{},{},{}\n'.format(rank, name, total_level))
 
     print("done")
-    print()
 
 
 if __name__ == '__main__':

@@ -8,14 +8,13 @@ APP_DIR:=$(ROOT_DIR)/app
 DB_DIR:=$(ROOT_DIR)/volume
 DB_PORT:=27017
 
-all: lint analytics app run
-clean: env-clean analytics-clean app-clean
-.PHONY: all clean
+.DEFAULT_GOAL := help
+all: init analytics app run
 
 # Setup
-init: db-pull env extensions lint ## Initialize repository.
+init: db-pull env extensions lint ## Setup project dependencies.
 
-env: ## Build virtual environment.
+env: ## Build project virtual environment.
 	@echo "building virtual environment..."
 	@python3 -m venv env && \
 	source env/bin/activate && \
@@ -25,13 +24,15 @@ env: ## Build virtual environment.
 	source env/bin/activate
 	@echo
 
-env-clean: ## Remove virtual environment.
+env-clean: ## Remove project virtual environment.
 	@rm -rf env
 
-.PHONY: init env-clean
+clean: env-clean scrape-clean analytics-clean app-clean
+
+.PHONY: all init env-clean clean
 
 # Data scraping
-scrape: $(DATA_FINAL)/stats.csv ## Run full data scraping process.
+scrape: $(DATA_FINAL)/stats.csv ## Run data scraping process.
 
 $(DATA_RAW)/usernames-raw.csv:
 	@source env/bin/activate && \
@@ -41,10 +42,12 @@ $(DATA_RAW)/usernames-raw.csv:
 		loc=`expresso locations | grep -- '- USA - ' | sed 's/^.*(//;s/)$$//' | shuf -n 1` &&   \
 		expresso connect --change $$loc ;                                                       \
 	done
+	@echo
 
 $(DATA_TMP)/usernames.csv: $(DATA_RAW)/usernames-raw.csv
 	@source env/bin/activate && \
 	cd src/scrape && python3 cleanup_usernames.py $< $@
+	@echo
 
 $(DATA_RAW)/stats-raw.csv: $(DATA_TMP)/usernames.csv
 	@source env/bin/activate && \
@@ -54,10 +57,12 @@ $(DATA_RAW)/stats-raw.csv: $(DATA_TMP)/usernames.csv
 		loc=`expresso locations | grep -- '- USA - ' | sed 's/^.*(//;s/)$$//' | shuf -n 1` &&   \
 		expresso connect --change $$loc ;                                                       \
 	done
+	@echo
 
 $(DATA_FINAL)/stats.csv: $(DATA_RAW)/stats-raw.csv
 	@source env/bin/activate && \
 	cd src/scrape && python3 cleanup_stats.py $< $@
+	@echo
 
 scrape-clean: ## Remove processed scraped data, but not raw files.
 	touch $(DATA_RAW)/usernames-raw.csv ; \
@@ -76,24 +81,28 @@ scrape-clobber: ## Remove ALL scraped data.
 .PRECIOUS: $(DATA_RAW)/usernames-raw.csv $(DATA_RAW)/stats-raw.csv
 
 # Data analytics
-analytics: ## Run full processing pipeline on scraped data.
+analytics: ## Run analytics pipeline on scraped data.
 analytics: $(DATA_TMP)/clusters.pkl $(DATA_TMP)/percentiles.pkl $(DATA_TMP)/dimreduced.pkl
 
 $(DATA_TMP)/stats.pkl: $(DATA_FINAL)/stats.csv
 	@source env/bin/activate && \
 	cd src/data && python3 write_stats_pkl.py $< $@
+	@echo
 
 $(DATA_TMP)/clusters.pkl: $(DATA_RAW)/clusters-raw.pkl
 	@source env/bin/activate && \
-	cd src/data && python3 process_cluster_data.py $< $@
+	cd src/data && python3 augment_cluster_data.py $< $@
+	@echo
 
 $(DATA_TMP)/percentiles.pkl: $(DATA_TMP)/stats.pkl $(DATA_TMP)/clusters.pkl
 	@source env/bin/activate && \
 	cd src/features && python3 compute_percentiles.py $^ $@
+	@echo
 
 $(DATA_TMP)/dimreduced.pkl: $(DATA_TMP)/clusters.pkl $(DATA_TMP)/percentiles.pkl
 	@source env/bin/activate && \
 	cd src/models && python3 dim_reduce_centroids.py $^ $@
+	@echo
 
 analytics-clean: ## Remove all analytics generated from scraped data.
 	rm -f $(DATA_TMP)/stats.pkl
@@ -104,29 +113,26 @@ analytics-clean: ## Remove all analytics generated from scraped data.
 .PHONY: analytics analytics-clean
 
 # Main application
-run: ## Run main application.
-run: db-start
+run: ## Run application for visualizing results.
 	@source env/bin/activate && python3 app $(DB_PORT)
 
-app: ## Build application data file and database.
-app: app-data db-start app-db
+app: app-data db-start app-db ## Build application dependencies.
 
-app-data: $(DATA_FINAL)/appdata.pkl
-	@echo "installing app data"
-	cp $< $(APP_DIR)/assets/appdata.pkl
-	@echo
+app-data: $(DATA_FINAL)/appdata.pkl ## Build application data file.
+	@cp $< $(APP_DIR)/assets/appdata.pkl
 
-app-db: $(DATA_TMP)/stats.pkl $(DATA_TMP)/clusters.pkl
+app-db: $(DATA_TMP)/stats.pkl $(DATA_TMP)/clusters.pkl ## Build application database.
 	@source env/bin/activate && \
 	cd src/visuals && python3 build_database.py $^ $(DB_PORT)
+	@echo
 
 $(DATA_FINAL)/appdata.pkl: $(DATA_TMP)/dimreduced.pkl $(DATA_TMP)/clusters.pkl \
                            $(DATA_TMP)/percentiles.pkl
 	@source env/bin/activate && \
 	cd src/visuals && python3 build_appdata.py $^ $@
+	@echo
 
-app-clean: ## Remove application data and database.
-app-clean: db-stop
+app-clean: db-stop ## Remove application data and database.
 	rm -f $(DATA_FINAL)/appdata.pkl
 	rm -f $(APP_DIR)/assets/appdata.pkl
 	rm -rf $(DB_DIR)
@@ -135,30 +141,23 @@ app-clean: db-stop
 
 # Database
 db-pull: ## Pull latest version of MongoDB.
-	@echo "pulling mongodb..."
 	@docker pull mongo
-	@echo
 
-db-start: ## Start database service.
-	@echo "starting database..."
+db-start: ## Start database container.
 	@mkdir -p $(DB_DIR) && \
 	docker stop osrs-hiscores > /dev/null 2>&1 ; \
 	docker run --rm -d --name osrs-hiscores \
 	-v $(DB_DIR):/data/db \
 	-p $(DB_PORT):$(DB_PORT) mongo
-	@echo -n "warming up... " && sleep 1
-	@echo "done" && echo
+	@echo -n "starting... " && sleep 2 && echo -e "done\n"
 
-db-stop: ## Stop database service.
-	@echo "stopping database..."
+db-stop: ## Stop database container.
 	@docker stop osrs-hiscores 2> /dev/null
 	@echo
 
 .PHONY: db-pull db-start db-stop
 
 # Other
-.PHONY: vim-binding nbextensions notebook lint help
-
 vim-binding:
 	@source env/bin/activate && \
 	jupyter contrib nbextensions install && \
@@ -184,4 +183,6 @@ lint: ## Run code style checker.
 
 help: ## Show this help.
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
-	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-16s\033[0m %s\n", $$1, $$2}'
+	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
+
+.PHONY: vim-binding nbextensions notebook lint help

@@ -37,7 +37,6 @@ def main(in_file, out_file):
         pickle.dump(payload, f)
 
     print("done")
-    print()
 
 
 if __name__ == '__main__':

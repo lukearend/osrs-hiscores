@@ -62,7 +62,6 @@ def main(stats_file, clusters_file, mongo_port):
         collection.insert_many(batch)
 
     print("done")
-    print()
 
 
 if __name__ == '__main__':

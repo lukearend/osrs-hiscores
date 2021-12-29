@@ -3,7 +3,8 @@
 """ Download stats for the top 2 million players on the OSRS hiscores.
     Like the previous scraping script, this script operates in an
     append-only manner and running it will do nothing once the output
-    file contains a complete results set.
+    file contains a complete results set. Running the full scrape
+    takes about 18 hours.
 """
 
 import asyncio
@@ -51,7 +52,6 @@ async def run_workers(names_to_scrape, out_file, pbar):
     job_queue = asyncio.Queue()
     for username in names_to_scrape:
         job_queue.put_nowait(username)
-    job_queue.put_nowait(None)
 
     async with aiohttp.ClientSession() as session:
         workers = []
@@ -83,10 +83,10 @@ def main(in_file, out_file):
 
         names_to_scrape = set(names_to_scrape) - set(processed_names)
 
-    print("{}/{} users left to process".format(len(names_to_scrape), num_players))
-
     if not names_to_scrape:
         return True
+
+    print("{}/{} users left to process".format(len(names_to_scrape), num_players))
 
     with tqdm(total=num_players, initial=num_players - len(names_to_scrape)) as pbar:
         loop = asyncio.get_event_loop()
@@ -98,8 +98,8 @@ def main(in_file, out_file):
 
 if __name__ == '__main__':
     done = main(*sys.argv[1:])
+
     if done:
         print("done")
-        print()
         sys.exit(0)
     sys.exit(1)

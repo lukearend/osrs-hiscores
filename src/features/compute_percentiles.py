@@ -68,7 +68,6 @@ def main(stats_file, clusters_file, out_file):
         pickle.dump(results, f)
 
     print("done")
-    print()
 
 
 if __name__ == '__main__':

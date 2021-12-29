@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-""" Cleanup stats data scraped from hiscores and write to CSV. """
+""" Cleanup stats data scraped from hiscores and write to CSV. 
+    This script runs in ~3 min on M1 Mac. """
 
 import csv
 import pathlib
@@ -18,32 +19,43 @@ def main(in_file, out_file):
     with open(skills_file, 'r') as f:
         skills = f.read().strip().split('\n')
 
-    fieldnames = ['username']
+    fields = ['username']
     for skill in skills:
-        fieldnames.append('{}_rank'.format(skill))
-        fieldnames.append('{}_level'.format(skill))
-        fieldnames.append('{}_xp'.format(skill))
+        fields.append('{}_rank'.format(skill))
+        fields.append('{}_level'.format(skill))
+        fields.append('{}_xp'.format(skill))
 
     with open(in_file, 'r') as f:
-        print("reading in rank/level/xp data...")
+        print("cleaning rank/level/xp data...")
         reader = csv.reader(f)
 
-        usernames = []
-        stats = []
+        username_list = []
+        stats_list = []
         for line in tqdm(reader):
-            if len(line) < 73:
+            if len(line) < len(fields):                # user not found during scraping
                 continue
 
-            usernames.append(line[0])
-            stats.append(np.array([int(i) for i in line[1:73]]))
+            username = line[0]
+            stats = np.array([int(i) for i in line[1:len(fields)]])
 
-    usernames = np.array(usernames)
-    stats = np.array(stats)
+            if stats[0] == -1:                          # missing total level
+                continue
 
+            # If a skill's level is 1 and rank/xp are missing, level is missing.
+            for i in range(0, len(stats), 3):
+                rank, level, xp = stats[i:i + 3]
+                if (rank, level, xp) == (-1, 1, -1):
+                    stats[i + 1] = -1
+
+            username_list.append(username)
+            stats_list.append(stats)
+
+    usernames = np.array(username_list)
+    stats = np.array(stats_list)
+
+    # Sort descending by total level, breaking ties with xp and then original OSRS rank.
     print("sorting...")
-
-    # Sort descending by overall rank, breaking ties by total level and then xp.
-    inds = np.lexsort((stats[:, 2], stats[:, 1], stats[:, 0]))
+    inds = np.lexsort((stats[:, 0], -stats[:, 2], -stats[:, 1]))
     stats = stats[inds]
     usernames = usernames[inds]
 
@@ -52,16 +64,15 @@ def main(in_file, out_file):
 
     with open(out_file, 'w') as f:
         print("writing results to csv...")
-        writer = csv.DictWriter(f, fieldnames)
+        writer = csv.DictWriter(f, fields)
 
         writer.writeheader()
         for username, user_stats in tqdm(zip(usernames, stats)):
             line = [username, *user_stats]
-            line = dict(zip(fieldnames, line))
+            line = dict(zip(fields, line))
             writer.writerow(line)
 
     print("done")
-    print()
 
 
 if __name__ == '__main__':

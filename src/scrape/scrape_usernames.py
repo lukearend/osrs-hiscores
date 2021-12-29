@@ -1,9 +1,11 @@
 #!/usr/bin/env python3
 
 """ Download usernames for the top 2 million players on the OSRS hiscores.
-    This script is made so it can be run repeatedly and will only append
-    new results to the output file, skipping any pages previously scraped.
-    Once the output file is complete, running this script will do nothing.
+    This script is meant to be run repeatedly and will only append new
+    results to the output file, skipping any pages previously scraped.
+    Once the output file contains a complete set of results, running
+    this script against it will do nothing and return with exit code 0.
+    Running the full scrape takes about 90 mins.
 """
 
 import asyncio
@@ -100,8 +102,8 @@ def main(out_file):
 
 if __name__ == '__main__':
     done = main(*sys.argv[1:])
+
     if done:
         print("done")
-        print()
         sys.exit(0)
     sys.exit(1)
