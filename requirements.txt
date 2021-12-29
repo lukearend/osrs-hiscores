@@ -1,4 +1,5 @@
 aiohttp
+boonnano
 dash
 dash-bootstrap-components
 beautifulsoup4
