@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-""" Cleanup stats data scraped from hiscores and write to CSV. 
+""" Cleanup stats data scraped from hiscores and write to CSV.
     This script runs in ~3 min on M1 Mac. """
 
 import csv
@@ -15,7 +15,7 @@ from tqdm import tqdm
 def main(in_file, out_file):
     print("cleaning up stats dataset...")
 
-    skills_file = pathlib.Path(__file__).resolve().parents[2] / 'reference/skills.csv'
+    skills_file = pathlib.Path(__file__).resolve().parents[2] / 'reference/osrs_skills.csv'
     with open(skills_file, 'r') as f:
         skills = f.read().strip().split('\n')
 

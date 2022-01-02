@@ -11,13 +11,13 @@ DB_PORT:=27017
 
 .DEFAULT_GOAL := help
 
-all: lint init scrape analytics app
-clean: env-clean scrape-clean analytics-clean app-clean
+all: lint init scrape cluster app
+clean: env-clean data-clean results-clean 
 
 # Setup
 init: db-pull env extensions ## Setup project dependencies.
 
-env: ## Build project virtual environment.
+env:
 	@echo "building virtual environment..."
 	@python3 -m venv env && \
 	source env/bin/activate && \
@@ -27,21 +27,27 @@ env: ## Build project virtual environment.
 	source env/bin/activate
 	@echo
 
-env-clean: ## Remove project virtual environment.
+env-clean:
 	@rm -rf env
 
-.PHONY: all init env-clean clean
+.PHONY: all clean init env-clean
 
 # Data scraping
-scrape: $(DATA_FINAL)/stats.csv ## Run data scraping process.
+scrape: $(DATA_FINAL)/stats.csv ## Run data scrape of OSRS hiscores.
+
+scrape-clean:
+	@[ -f $(DATA_RAW)/usernames-raw.csv ] && touch $(DATA_RAW)/usernames-raw.csv; \
+	[ -f $(DATA_RAW)/stats-raw.csv ] &&  touch $(DATA_RAW)/stats-raw.csv ; \
+	rm -f $(DATA_TMP)/usernames.csv && \
+	rm -f $(DATA_FINAL)/stats.csv &&
 
 $(DATA_RAW)/usernames-raw.csv:
 	@source env/bin/activate && \
 	cd src/scrape && \
-	until python3 scrape_usernames.py $@ ; do                                                   \
-		echo "resetting vpn connection..." ;                                                    \
-		loc=`expresso locations | grep -- '- USA - ' | sed 's/^.*(//;s/)$$//' | shuf -n 1` &&   \
-		expresso connect --change $$loc ;                                                       \
+	until python3 scrape_usernames.py $@ ; do \
+		echo "resetting vpn connection..." ; \
+		loc=`expresso locations | grep -- '- USA - ' | sed 's/^.*(//;s/)$$//' | shuf -n 1` && \
+		expresso connect --change $$loc ; \
 	done
 	@echo
 
@@ -53,84 +59,72 @@ $(DATA_TMP)/usernames.csv: $(DATA_RAW)/usernames-raw.csv
 $(DATA_RAW)/stats-raw.csv: $(DATA_TMP)/usernames.csv
 	@source env/bin/activate && \
 	cd src/scrape && \
-	until python3 scrape_stats.py $< $@; do                                                     \
-		echo "resetting vpn connection...";                                                     \
-		loc=`expresso locations | grep -- '- USA - ' | sed 's/^.*(//;s/)$$//' | shuf -n 1` &&   \
-		expresso connect --change $$loc;                                                        \
+	until python3 scrape_stats.py $< $@; dok \
+		echo "resetting vpn connection..."; \
+		loc=`expresso locations | grep -- '- USA - ' | sed 's/^.*(//;s/)$$//' | shuf -n 1` && \
+		expresso connect --change $$loc; \
 	done
 	@echo
 
-# $(DATA_FINAL)/stats.csv: $(DATA_RAW)/stats-raw.csv
-$(DATA_FINAL)/stats.csv:
+$(DATA_FINAL)/stats.csv: $(DATA_RAW)/stats-raw.csv
 	@source env/bin/activate && \
-	cd src/scrape && python3 cleanup_stats.py $< $@
+	cd src/scrape && python3 cleanup_stats.py $(DATA_RAW)/stats-raw.csv $@
 	@echo
 
-scrape-clean: ## Remove processed scraped data, but not raw files.
-	touch $(DATA_RAW)/usernames-raw.csv;  \
-	touch $(DATA_RAW)/stats-raw.csv ; \
-	rm -f $(DATA_TMP)/usernames.csv && \
-	rm -f $(DATA_FINAL)/stats.csv
-
-scrape-clobber: ## Remove ALL scraped data.
-	rm -f $(DATA_RAW)/usernames-raw.csv
-	rm -f $(DATA_RAW)/stats-raw.csv
-	rm -f $(DATA_TMP)/usernames.csv
-	rm -f $(DATA_FINAL)/stats.csv
-
-.PHONY: scrape scrape-clean scrape-clobber
-.PHONY: $(DATA_RAW)/usernames-raw.csv $(DATA_RAW)/stats-raw.csv
+.PHONY: scrape scrape-clean
 .PRECIOUS: $(DATA_RAW)/usernames-raw.csv $(DATA_RAW)/stats-raw.csv
+
+# Clustering
+cluster: $(DATA_FINAL)/clusters.csv ## Cluster players according to scraped stats.
+
+cluster-clean:
+	@[ -f $(DATA_FINAL)/clusters.csv ] && touch $(DATA_FINAL)/clusters.csv
 
 $(DATA_FINAL)/clusters.csv: $(DATA_FINAL)/stats.csv
 	@source env/bin/activate && \
 	cd src/models && python3 cluster_players.py $< $@
 	@echo
 
-# Data analytics
-analytics: $(DATA_FINAL)/appdata.pkl ## Run analytics pipeline on clustering results.
+.PHONY: cluster cluster-clean
+.PRECIOUS: $(DATA_FINAL)/clusters.csv
 
-$(DATA_TMP)/clusters.pkl: $(DATA_FINAL)/clusters.csv
+# Dimensionality reduction
+dimreduce: $(DATA_TMP)/dim_reduced.pkl ## Reduce dimensionality of clusters to 3D.
+
+dimreduce-clean:
+	rm -f $(DATA_TMP)/cluster_analytics.pkl && \
+	rm -f $(DATA_TMP)/dim_reduced.pkl
+
+$(DATA_TMP)/cluster_analytics.pkl: $(DATA_FINAL)/clusters.csv
 	@source env/bin/activate && \
-	cd src/data && python3 augment_cluster_data.py $< $@
+	cd src/data && python3 analyze_clusters.py $< $@
 	@echo
 
-$(DATA_TMP)/percentiles.pkl: $(DATA_TMP)/stats.pkl $(DATA_TMP)/clusters.pkl
+$(DATA_TMP)/dim_reduced.pkl: $(DATA_TMP)/cluster_analytics.pkl
 	@source env/bin/activate && \
-	cd src/features && python3 compute_percentiles.py $^ $@
+	cd src/models && python3 dim_reduce.py $< $@
 	@echo
 
-$(DATA_TMP)/dimreduced.pkl: $(DATA_TMP)/clusters.pkl $(DATA_TMP)/percentiles.pkl
-	@source env/bin/activate && \
-	cd src/models && python3 dim_reduce_centroids.py $^ $@
-	@echo
+.PHONY: dimreduce dimreduce-clean
 
-$(DATA_FINAL)/appdata.pkl: $(DATA_TMP)/dimreduced.pkl $(DATA_TMP)/clusters.pkl \
-                           $(DATA_TMP)/percentiles.pkl
-	@source env/bin/activate && \
-	cd src/visuals && python3 build_appdata.py $^ $@
-	@echo
-
-analytics-clean: ## Remove analytics
-	rm -f $(DATA_TMP)/clusters.csv
-	rm -f $(DATA_TMP)/centroids.pkl
-	rm -f $(DATA_TMP)/dimreduced.pkl
-
-.PHONY: analytics create-model analytics-clean
-
-# Main application
-app: $(DATA_FINAL)/appdata.pkl db ## Build application dependencies.
+# Visualization
+app: $(DATA_FINAL)/app_data.pkl db ## Build application data/database.
 	@cp $< $(APP_DIR)/assets/appdata.pkl
 
-app-run: db-start ## Run main application for visualizing results.
-	@source env/bin/activate && python3 app $(DB_PORT)
-
-app-clean: db-stop ## Remove application data and database.
+app-clean: db-stop
 	rm -f $(DATA_FINAL)/appdata.pkl
 	rm -f $(APP_DIR)/assets/appdata.pkl
 	rm -rf $(DB_DIR)
 
-.PHONY: app app-run app-clean
+app-run: db-start ## Run main application for visualizing results.
+	@source env/bin/activate && python3 app $(DB_PORT)
+
+$(DATA_FINAL)/app_data.pkl: $(DATA_TMP)/dim_reduced.pkl $(DATA_TMP)/cluster_analytics.pkl
+	@source env/bin/activate && \
+	cd src/visuals && python3 build_appdata.py $^ $@
+	@echo
+
+.PHONY: app app-clean app-run
 
 # Database
 db: $(DATA_TMP)/stats.pkl $(DATA_TMP)/clusters.pkl db-pull db-start ## Build application database.
@@ -138,10 +132,10 @@ db: $(DATA_TMP)/stats.pkl $(DATA_TMP)/clusters.pkl db-pull db-start ## Build app
 	cd src/visuals && python3 build_database.py $^ $(DB_PORT)
 	@echo
 
-db-pull:
+db-pull: ## Pull latest version of MongoDB.
 	@docker pull mongo
 
-db-start: ## Start MongoDB docker container.
+db-start: ## Start database container.
 	@mkdir -p $(DB_DIR) && \
 	docker stop osrs-hiscores-db > /dev/null 2>&1 ; \
 	docker run --rm -d --name osrs-hiscores-db \

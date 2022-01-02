@@ -4,6 +4,7 @@
     subtraction. The distance between two players is proportional to the
     sum of their stat-by-stat differences. Players exceeding a fixed
     distance threshold from one another are allocated separate clusters.
+    This script runs in ~10 mins on M1 mac.
 """
 
 import csv
@@ -71,9 +72,9 @@ def main(stats_file, out_file):
             # weighted 2:1 to balance their influence on clustering.
             weights = 7 * [2 * 16] + 16 * [7]
         pv = {
-            'all'   : 0.103,
-            'cb'    : 0.039,
-            'noncb' : 0.123
+            'all': 0.103,
+            'cb': 0.039,
+            'noncb': 0.123
         }[split]
 
         success, response = nano.configure_nano(feature_count=dataset.shape[1],
