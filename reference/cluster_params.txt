@@ -1,0 +1,31 @@
+find pv parameter that gives just under 10000 clusters for all 1999165 players
+
+split 'all', weighted 2:1
+# samples   pv      # clusters  time
+1999165     0.117   5067        ~2:00
+1999165     0.115   5411        2:01
+1700000     0.100   9992        3:07
+1800000     0.100   9999        3:29
+1900000     0.102   9982        3:37
+1999165     0.102   9999        3:54
+1999165     0.103   9781        3:27
+
+split 'cb':
+# samples   pv      # clusters  time
+1999165     0.050   5122        ~2:00
+1999165     0.045   6783        2:09
+1999165     0.040   9236        3:27
+1900000     0.038   9893        ~3:40
+1999165     0.038   9999        4:01
+1999165     0.039   9805        3:25
+
+split 'noncb':
+# samples   pv      # clusters  time
+1999165     0.125   8916        2:27
+1999165     0.123   9824        2:48
+
+solution:
+split   pv      # clusters
+all     0.103   9781
+cb      0.039   9805
+noncb   0.123   9824

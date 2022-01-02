@@ -27,7 +27,7 @@ def main(clusters_file, percentiles_file, out_file):
     # more info and visual explanations of the UMAP parameters, see
     # https://umap-learn.readthedocs.io/en/latest/parameters.html.
 
-    params_file = pathlib.Path(__file__).resolve().parents[2] / 'reference/params.json'
+    params_file = pathlib.Path(__file__).resolve().parents[2] / 'reference/umap_params.json'
     with open(params_file, 'r') as f:
         params = json.load(f)
 

@@ -1,6 +1,7 @@
 export SHELL:=/bin/bash
-ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+export AMBER_LICENSE_ID:=luke-dev
 
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 DATA_RAW:=$(ROOT_DIR)/data/raw
 DATA_TMP:=$(ROOT_DIR)/data/interim
 DATA_FINAL:=$(ROOT_DIR)/data/processed
@@ -9,10 +10,12 @@ DB_DIR:=$(ROOT_DIR)/volume
 DB_PORT:=27017
 
 .DEFAULT_GOAL := help
-all: init analytics app run
+
+all: lint init scrape analytics app
+clean: env-clean scrape-clean analytics-clean app-clean
 
 # Setup
-init: db-pull env extensions lint ## Setup project dependencies.
+init: db-pull env extensions ## Setup project dependencies.
 
 env: ## Build project virtual environment.
 	@echo "building virtual environment..."
@@ -26,8 +29,6 @@ env: ## Build project virtual environment.
 
 env-clean: ## Remove project virtual environment.
 	@rm -rf env
-
-clean: env-clean scrape-clean analytics-clean app-clean
 
 .PHONY: all init env-clean clean
 
@@ -53,19 +54,20 @@ $(DATA_RAW)/stats-raw.csv: $(DATA_TMP)/usernames.csv
 	@source env/bin/activate && \
 	cd src/scrape && \
 	until python3 scrape_stats.py $< $@; do                                                     \
-		echo "resetting vpn connection..." ;                                                    \
+		echo "resetting vpn connection...";                                                     \
 		loc=`expresso locations | grep -- '- USA - ' | sed 's/^.*(//;s/)$$//' | shuf -n 1` &&   \
-		expresso connect --change $$loc ;                                                       \
+		expresso connect --change $$loc;                                                        \
 	done
 	@echo
 
-$(DATA_FINAL)/stats.csv: $(DATA_RAW)/stats-raw.csv
+# $(DATA_FINAL)/stats.csv: $(DATA_RAW)/stats-raw.csv
+$(DATA_FINAL)/stats.csv:
 	@source env/bin/activate && \
 	cd src/scrape && python3 cleanup_stats.py $< $@
 	@echo
 
 scrape-clean: ## Remove processed scraped data, but not raw files.
-	touch $(DATA_RAW)/usernames-raw.csv ; \
+	touch $(DATA_RAW)/usernames-raw.csv;  \
 	touch $(DATA_RAW)/stats-raw.csv ; \
 	rm -f $(DATA_TMP)/usernames.csv && \
 	rm -f $(DATA_FINAL)/stats.csv
@@ -80,16 +82,15 @@ scrape-clobber: ## Remove ALL scraped data.
 .PHONY: $(DATA_RAW)/usernames-raw.csv $(DATA_RAW)/stats-raw.csv
 .PRECIOUS: $(DATA_RAW)/usernames-raw.csv $(DATA_RAW)/stats-raw.csv
 
-# Data analytics
-analytics: ## Run analytics pipeline on scraped data.
-analytics: $(DATA_TMP)/clusters.pkl $(DATA_TMP)/percentiles.pkl $(DATA_TMP)/dimreduced.pkl
-
-$(DATA_TMP)/stats.pkl: $(DATA_FINAL)/stats.csv
+$(DATA_FINAL)/clusters.csv: $(DATA_FINAL)/stats.csv
 	@source env/bin/activate && \
-	cd src/data && python3 write_stats_pkl.py $< $@
+	cd src/models && python3 cluster_players.py $< $@
 	@echo
 
-$(DATA_TMP)/clusters.pkl: $(DATA_RAW)/clusters-raw.pkl
+# Data analytics
+analytics: $(DATA_FINAL)/appdata.pkl ## Run analytics pipeline on clustering results.
+
+$(DATA_TMP)/clusters.pkl: $(DATA_FINAL)/clusters.csv
 	@source env/bin/activate && \
 	cd src/data && python3 augment_cluster_data.py $< $@
 	@echo
@@ -104,58 +105,53 @@ $(DATA_TMP)/dimreduced.pkl: $(DATA_TMP)/clusters.pkl $(DATA_TMP)/percentiles.pkl
 	cd src/models && python3 dim_reduce_centroids.py $^ $@
 	@echo
 
-analytics-clean: ## Remove all analytics generated from scraped data.
-	rm -f $(DATA_TMP)/stats.pkl
-	rm -f $(DATA_TMP)/clusters.pkl
-	rm -f $(DATA_TMP)/centroids.pkl
-	rm -f $(DATA_TMP)/dimreduced.pkl
-
-.PHONY: analytics analytics-clean
-
-# Main application
-run: ## Run application for visualizing results.
-	@source env/bin/activate && python3 app $(DB_PORT)
-
-app: app-data db-start app-db ## Build application dependencies.
-
-app-data: $(DATA_FINAL)/appdata.pkl ## Build application data file.
-	@cp $< $(APP_DIR)/assets/appdata.pkl
-
-app-db: $(DATA_TMP)/stats.pkl $(DATA_TMP)/clusters.pkl ## Build application database.
-	@source env/bin/activate && \
-	cd src/visuals && python3 build_database.py $^ $(DB_PORT)
-	@echo
-
 $(DATA_FINAL)/appdata.pkl: $(DATA_TMP)/dimreduced.pkl $(DATA_TMP)/clusters.pkl \
                            $(DATA_TMP)/percentiles.pkl
 	@source env/bin/activate && \
 	cd src/visuals && python3 build_appdata.py $^ $@
 	@echo
 
+analytics-clean: ## Remove analytics
+	rm -f $(DATA_TMP)/clusters.csv
+	rm -f $(DATA_TMP)/centroids.pkl
+	rm -f $(DATA_TMP)/dimreduced.pkl
+
+.PHONY: analytics create-model analytics-clean
+
+# Main application
+app: $(DATA_FINAL)/appdata.pkl db ## Build application dependencies.
+	@cp $< $(APP_DIR)/assets/appdata.pkl
+
+app-run: db-start ## Run main application for visualizing results.
+	@source env/bin/activate && python3 app $(DB_PORT)
+
 app-clean: db-stop ## Remove application data and database.
 	rm -f $(DATA_FINAL)/appdata.pkl
 	rm -f $(APP_DIR)/assets/appdata.pkl
 	rm -rf $(DB_DIR)
 
-.PHONY: run app app-data app-db app-clean
+.PHONY: app app-run app-clean
 
 # Database
-db-pull: ## Pull latest version of MongoDB.
+db: $(DATA_TMP)/stats.pkl $(DATA_TMP)/clusters.pkl db-pull db-start ## Build application database.
+	@source env/bin/activate && \
+	cd src/visuals && python3 build_database.py $^ $(DB_PORT)
+	@echo
+
+db-pull:
 	@docker pull mongo
 
-db-start: ## Start database container.
+db-start: ## Start MongoDB docker container.
 	@mkdir -p $(DB_DIR) && \
-	docker stop osrs-hiscores > /dev/null 2>&1 ; \
-	docker run --rm -d --name osrs-hiscores \
-	-v $(DB_DIR):/data/db \
-	-p $(DB_PORT):$(DB_PORT) mongo
+	docker stop osrs-hiscores-db > /dev/null 2>&1 ; \
+	docker run --rm -d --name osrs-hiscores-db \
+	-v $(DB_DIR):/data/db -p $(DB_PORT):$(DB_PORT) mongo
 	@echo -n "starting... " && sleep 2 && echo -e "done\n"
 
 db-stop: ## Stop database container.
-	@docker stop osrs-hiscores 2> /dev/null
-	@echo
+	@docker stop osrs-hiscores-db 2> /dev/null
 
-.PHONY: db-pull db-start db-stop
+.PHONY: db db-pull db-start db-stop
 
 # Other
 vim-binding:
@@ -171,8 +167,7 @@ nbextensions: vim-binding
 	jupyter nbextension enable toggle_all_line_numbers/main && \
 	jupyter nbextension enable varInspector/main
 
-notebook: ## Start a local jupyter notebook server.
-notebook: nbextensions
+notebook: nbextensions ## Start a local jupyter notebook server.
 	@source env/bin/activate && \
 	cd notebooks && jupyter notebook
 
