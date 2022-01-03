@@ -22,14 +22,14 @@ try:
     db.command('ping')
 except ServerSelectionTimeoutError:
     raise ValueError("could not connect to mongodb")
-playerdb = db['players']
+player_db = db['players']
 
-datapath = pathlib.Path(__file__).resolve().parent / 'assets/appdata.pkl'
-with open(datapath, 'rb') as f:
-    appdata = pickle.load(f)
+data_file = pathlib.Path(__file__).resolve().parent / 'assets/app_data.pkl'
+with open(data_file, 'rb') as f:
+    app_data = pickle.load(f)
 
 app = Dash(__name__, external_stylesheets=[themes.BOOTSTRAP])
-app = build_layout(app, appdata)
-app = add_callbacks(app, appdata, playerdb)
+app = build_layout(app, app_data)
+app = add_callbacks(app, app_data, player_db)
 
 app.run_server(debug=True)

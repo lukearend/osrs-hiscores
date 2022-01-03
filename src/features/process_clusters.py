@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 
 """ Compute size, quartiles and uniqueness for each cluster.
-    This script runs in about ~5 mins on an M1 Mac. """
+    This script runs in about ~5 mins on an M1 Mac.
+"""
 
 import csv
 import pickle

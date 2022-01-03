@@ -108,7 +108,7 @@ $(DATA_TMP)/dim_reduced.pkl: $(DATA_TMP)/cluster_analytics.pkl
 .PHONY: dimreduce dimreduce-clean
 
 # Visualization -----------------------------------------------------------------------------------
-app: $(APP_DIR)/assets/appdata.pkl db ## Build application data/database.
+app: $(APP_DIR)/assets/app_data.pkl db ## Build application data/database.
 
 app-clean: db-stop
 	rm -f $(DATA_FINAL)/appdata.pkl
@@ -118,9 +118,9 @@ app-clean: db-stop
 app-run: db-start ## Run main application for visualizing results.
 	@source env/bin/activate && python3 app $(DB_PORT)
 
-$(APP_DIR)/assets/appdata.pkl: $(DATA_TMP)/dim_reduced.pkl $(DATA_TMP)/cluster_analytics.pkl
+$(APP_DIR)/assets/app_data.pkl: $(DATA_TMP)/cluster_analytics.pkl $(DATA_TMP)/dim_reduced.pkl
 	@source env/bin/activate && \
-	cd src/visuals && python3 build_appdata.py $^ $@
+	cd src/data && python3 build_appdata.py $^ $@
 	@echo
 
 .PHONY: app app-clean app-run
@@ -128,7 +128,7 @@ $(APP_DIR)/assets/appdata.pkl: $(DATA_TMP)/dim_reduced.pkl $(DATA_TMP)/cluster_a
 # Database ----------------------------------------------------------------------------------------
 db: $(DATA_FINAL)/clusters.csv db-pull db-start ## Build application database.
 	@source env/bin/activate && \
-	cd src/visuals && python3 build_database.py $^ $(DB_PORT)
+	cd src/data && python3 build_database.py $^ $(DB_PORT)
 	@echo
 
 db-pull: ## Pull latest version of MongoDB.
