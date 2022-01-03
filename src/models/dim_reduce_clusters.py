@@ -16,6 +16,15 @@ def main(clusters_file, percentiles_file, out_file):
     with open(clusters_file, 'rb') as f:
         cluster_data = pickle.load(f)
 
+    print("handling missing data")
+    for split in cluster_data.keys():
+        for percent in percentiles:
+            replace_rows, replace_cols = np.isnan(results[split][percent]).nonzero()
+            for row_i, col_i in zip(replace_rows, replace_cols):
+                results[split][percent][row_i, col_i] = 1
+                print("replaced '{}' {}th percentile row: {} col: {} with 1"
+                      .format(split, percent, row_i, col_i))
+
     with open(percentiles_file, 'rb') as f:
         percentiles = pickle.load(f)
 

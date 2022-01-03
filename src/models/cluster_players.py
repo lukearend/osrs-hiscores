@@ -13,30 +13,16 @@ import pathlib
 import sys
 
 import numpy as np
+from boonnano import NanoHandle
 from tqdm import tqdm
 
-from boonnano import NanoHandle
+from src.data import load_stats_data
 
 
 def main(stats_file, out_file):
     print("clustering player stats...")
-
-    print("reading stats data...")
-    with open(stats_file, 'r') as f:
-        usernames = []
-        stats_list = []
-        reader = csv.reader(f)
-        _ = next(reader)            # Discard header
-        for line in tqdm(reader):
-            username = line[0]
-            player_levels = [int(n) for n in line[5::3]]
-            usernames.append(username)
-            stats_list.append(player_levels)
-
-    print("building data array...")
-    usernames = np.array(usernames)
-    stats = np.array(stats_list, dtype='int')
-    del stats_list
+    usernames, _, stats = load_stats_data(stats_file)
+    stats = stats[:, 1:]    # Drop total level
 
     # Replace missing data with 1s. This is an alright assumption for
     # for clustering purposes because unranked stats are generally low.
@@ -101,7 +87,6 @@ def main(stats_file, out_file):
                 success, response = nano.load_data(batch)
                 if not success:
                     raise ValueError(response)
-
                 success, response = nano.run_nano(results='ID')
                 if not success:
                     raise ValueError(response)

@@ -14,7 +14,7 @@ DB_PORT:=27017
 all: lint init scrape cluster app
 clean: env-clean data-clean results-clean 
 
-# Setup
+# Setup -------------------------------------------------------------------------------------------
 init: db-pull env extensions ## Setup project dependencies.
 
 env:
@@ -32,7 +32,7 @@ env-clean:
 
 .PHONY: all clean init env-clean
 
-# Data scraping
+# Data scraping -----------------------------------------------------------------------------------
 scrape: $(DATA_FINAL)/stats.csv ## Run data scrape of OSRS hiscores.
 
 scrape-clean:
@@ -43,7 +43,7 @@ scrape-clean:
 
 $(DATA_RAW)/usernames-raw.csv:
 	@source env/bin/activate && \
-	cd src/scrape && \
+	cd src/data && \
 	until python3 scrape_usernames.py $@ ; do \
 		echo "resetting vpn connection..." ; \
 		loc=`expresso locations | grep -- '- USA - ' | sed 's/^.*(//;s/)$$//' | shuf -n 1` && \
@@ -53,13 +53,13 @@ $(DATA_RAW)/usernames-raw.csv:
 
 $(DATA_TMP)/usernames.csv: $(DATA_RAW)/usernames-raw.csv
 	@source env/bin/activate && \
-	cd src/scrape && python3 cleanup_usernames.py $< $@
+	cd src/data && python3 cleanup_usernames.py $< $@
 	@echo
 
 $(DATA_RAW)/stats-raw.csv: $(DATA_TMP)/usernames.csv
 	@source env/bin/activate && \
-	cd src/scrape && \
-	until python3 scrape_stats.py $< $@; dok \
+	cd src/data && \
+	until python3 scrape_stats.py $< $@; do \
 		echo "resetting vpn connection..."; \
 		loc=`expresso locations | grep -- '- USA - ' | sed 's/^.*(//;s/)$$//' | shuf -n 1` && \
 		expresso connect --change $$loc; \
@@ -68,13 +68,13 @@ $(DATA_RAW)/stats-raw.csv: $(DATA_TMP)/usernames.csv
 
 $(DATA_FINAL)/stats.csv: $(DATA_RAW)/stats-raw.csv
 	@source env/bin/activate && \
-	cd src/scrape && python3 cleanup_stats.py $(DATA_RAW)/stats-raw.csv $@
+	cd src/data && python3 cleanup_stats.py $(DATA_RAW)/stats-raw.csv $@
 	@echo
 
 .PHONY: scrape scrape-clean
 .PRECIOUS: $(DATA_RAW)/usernames-raw.csv $(DATA_RAW)/stats-raw.csv
 
-# Clustering
+# Clustering --------------------------------------------------------------------------------------
 cluster: $(DATA_FINAL)/clusters.csv ## Cluster players according to scraped stats.
 
 cluster-clean:
@@ -88,26 +88,26 @@ $(DATA_FINAL)/clusters.csv: $(DATA_FINAL)/stats.csv
 .PHONY: cluster cluster-clean
 .PRECIOUS: $(DATA_FINAL)/clusters.csv
 
-# Dimensionality reduction
+# Dimensionality reduction ------------------------------------------------------------------------
 dimreduce: $(DATA_TMP)/dim_reduced.pkl ## Reduce dimensionality of clusters to 3D.
 
 dimreduce-clean:
 	rm -f $(DATA_TMP)/cluster_analytics.pkl && \
 	rm -f $(DATA_TMP)/dim_reduced.pkl
 
-$(DATA_TMP)/cluster_analytics.pkl: $(DATA_FINAL)/clusters.csv
+$(DATA_TMP)/cluster_analytics.pkl: $(DATA_FINAL)/stats.csv $(DATA_FINAL)/clusters.csv
 	@source env/bin/activate && \
-	cd src/data && python3 analyze_clusters.py $< $@
+	cd src/features && python3 process_clusters.py $^ $@
 	@echo
 
 $(DATA_TMP)/dim_reduced.pkl: $(DATA_TMP)/cluster_analytics.pkl
 	@source env/bin/activate && \
-	cd src/models && python3 dim_reduce.py $< $@
+	cd src/models && python3 dim_reduce_clusters.py $< $@
 	@echo
 
 .PHONY: dimreduce dimreduce-clean
 
-# Visualization
+# Visualization -----------------------------------------------------------------------------------
 app: $(DATA_FINAL)/app_data.pkl db ## Build application data/database.
 	@cp $< $(APP_DIR)/assets/appdata.pkl
 
@@ -126,8 +126,8 @@ $(DATA_FINAL)/app_data.pkl: $(DATA_TMP)/dim_reduced.pkl $(DATA_TMP)/cluster_anal
 
 .PHONY: app app-clean app-run
 
-# Database
-db: $(DATA_TMP)/stats.pkl $(DATA_TMP)/clusters.pkl db-pull db-start ## Build application database.
+# Database ----------------------------------------------------------------------------------------
+db: $(DATA_FINAL)/clusters.csv db-pull db-start ## Build application database.
 	@source env/bin/activate && \
 	cd src/visuals && python3 build_database.py $^ $(DB_PORT)
 	@echo
@@ -147,7 +147,7 @@ db-stop: ## Stop database container.
 
 .PHONY: db db-pull db-start db-stop
 
-# Other
+# Other -------------------------------------------------------------------------------------------
 vim-binding:
 	@source env/bin/activate && \
 	jupyter contrib nbextensions install && \
