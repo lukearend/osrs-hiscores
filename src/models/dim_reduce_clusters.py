@@ -3,6 +3,7 @@
 """ Reduce dimensionality of cluster centroids to 3d using UMAP. """
 
 import json
+import os
 import pathlib
 import pickle
 import time
@@ -12,74 +13,65 @@ import numpy as np
 import umap
 
 
-def main(clusters_file, percentiles_file, out_file):
-    with open(clusters_file, 'rb') as f:
-        cluster_data = pickle.load(f)
+def main(in_file, out_file):
+    with open(in_file, 'rb') as f:
+        data = pickle.load(f)
 
-    print("handling missing data")
-    for split in cluster_data.keys():
-        for percent in percentiles:
-            replace_rows, replace_cols = np.isnan(results[split][percent]).nonzero()
-            for row_i, col_i in zip(replace_rows, replace_cols):
-                results[split][percent][row_i, col_i] = 1
-                print("replaced '{}' {}th percentile row: {} col: {} with 1"
-                      .format(split, percent, row_i, col_i))
+    quartiles = data['cluster_quartiles']
+    splits = quartiles.keys()
 
-    with open(percentiles_file, 'rb') as f:
-        percentiles = pickle.load(f)
-
-    # These parameters were found by manually inspecting clusterings
-    # of the data for all parameter combinations in a grid search over
-    # n_neighbors = [5, 10, 15, 20] and min_dist = [0.0, 0.1, 0.25, 0.5],
-    # and choosing the parameter set that qualitatively "looked best"--
-    # i.e. is best spread out and brings out the most structure. For
-    # more info and visual explanations of the UMAP parameters, see
-    # https://umap-learn.readthedocs.io/en/latest/parameters.html.
+    centroids = {}
+    for split in splits:
+        medians = quartiles[split][:, 2, :]         # Centroid is median (50th percentile)
+        medians = np.nan_to_num(medians, nan=1.0)   # Set missing data to 1 for embedding purposes.
+        centroids[split] = medians
 
     params_file = pathlib.Path(__file__).resolve().parents[2] / 'reference/umap_params.json'
     with open(params_file, 'r') as f:
         params = json.load(f)
 
+    out_dir = pathlib.Path(__file__).resolve().parents[2] / 'data/raw/dimreduce'
+    if not os.path.isdir(out_dir):
+        os.makedirs(out_dir)
+
     print("computing 3d embeddings...")
+    num_jobs = len(splits) * len(params['n_neighbors']) * len(params['min_dist'])
 
-    results = {}
-    for split, p in params.items():
+    i = 1
+    out = {}
+    for split in splits:
 
-        n_neighbors = p['n_neighbors']
-        min_dist = p['min_dist']
+        out[split] = {}
+        for n_neighbors in params['n_neighbors']:
 
-        print("reducing dimensionality for split '{}'".format(split))
-        print("UMAP parameters: n_neighbors = {}, min_dist = {:.2f}"
-              .format(n_neighbors, min_dist))
-        print("running... ", end='', flush=True)
+            out[split][n_neighbors] = {}
+            for min_dist in params['min_dist']:
 
-        # Null columns are due to missing hiscores data from unranked skills.
-        # Replace these with 1 (as in skill level 1) for embedding purposes.
+                # For reproducibility.
+                np.random.seed(0)
+                t0 = time.time()
 
-        centroids = percentiles[split][50][:, 1:]    # 50th percentile (median)
-        centroids = np.nan_to_num(centroids, nan=1.0)
+                progress = "{}/{}".format(i, num_jobs).ljust(8)
+                print("{} running split '{}' (n_neighbors = {}, min_dist = {:.2f})... "
+                      .format(progress, split, n_neighbors, min_dist), end='', flush=True)
+                fit = umap.UMAP(
+                    n_neighbors=n_neighbors,
+                    min_dist=min_dist,
+                    n_components=3,
+                    metric='euclidean'
+                )
+                u = fit.fit_transform(centroids[split])
 
-        # For reproducibility.
-        np.random.seed(0)
-        t0 = time.time()
+                elapsed = time.time() - t0
+                print("done ({:.2f} sec)".format(elapsed))
 
-        fit = umap.UMAP(
-            n_neighbors=n_neighbors,
-            min_dist=min_dist,
-            n_components=3,
-            metric='euclidean'
-        )
-        u = fit.fit_transform(centroids)
+                out[split][n_neighbors][min_dist] = u
+                i += 1
 
-        elapsed = time.time() - t0
-        print("done ({:.2f} sec)".format(elapsed))
+        with open(out_file, 'wb') as f:
+            pickle.dump(out, f)
 
-        results[split] = u
-
-    with open(out_file, 'wb') as f:
-        pickle.dump(results, f)
-
-    print("saved results to file")
+        print("saved results to file")
 
 
 if __name__ == '__main__':

@@ -1,5 +1,6 @@
-find pv parameter that gives just under 10000 clusters for all 1999165 players
+Goal: find pv parameter that gives just under 10000 clusters for all 1999165 players.
 
+Experiments:
 split 'all', weighted 2:1
 # samples   pv      # clusters  time
 1999165     0.117   5067        ~2:00
@@ -24,7 +25,7 @@ split 'noncb':
 1999165     0.125   8916        2:27
 1999165     0.123   9824        2:48
 
-solution:
+Solution:
 split   pv      # clusters
 all     0.103   9781
 cb      0.039   9805

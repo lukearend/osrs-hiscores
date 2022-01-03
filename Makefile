@@ -89,7 +89,7 @@ $(DATA_FINAL)/clusters.csv: $(DATA_FINAL)/stats.csv
 .PRECIOUS: $(DATA_FINAL)/clusters.csv
 
 # Dimensionality reduction ------------------------------------------------------------------------
-dimreduce: $(DATA_TMP)/dim_reduced.pkl ## Reduce dimensionality of clusters to 3D.
+dimreduce: $(DATA_TMP)/dim_reduced.pkl ## Reduce cluster dimensionality for visualization.
 
 dimreduce-clean:
 	rm -f $(DATA_TMP)/cluster_analytics.pkl && \
@@ -108,8 +108,7 @@ $(DATA_TMP)/dim_reduced.pkl: $(DATA_TMP)/cluster_analytics.pkl
 .PHONY: dimreduce dimreduce-clean
 
 # Visualization -----------------------------------------------------------------------------------
-app: $(DATA_FINAL)/app_data.pkl db ## Build application data/database.
-	@cp $< $(APP_DIR)/assets/appdata.pkl
+app: $(APP_DIR)/assets/appdata.pkl db ## Build application data/database.
 
 app-clean: db-stop
 	rm -f $(DATA_FINAL)/appdata.pkl
@@ -119,7 +118,7 @@ app-clean: db-stop
 app-run: db-start ## Run main application for visualizing results.
 	@source env/bin/activate && python3 app $(DB_PORT)
 
-$(DATA_FINAL)/app_data.pkl: $(DATA_TMP)/dim_reduced.pkl $(DATA_TMP)/cluster_analytics.pkl
+$(APP_DIR)/assets/appdata.pkl: $(DATA_TMP)/dim_reduced.pkl $(DATA_TMP)/cluster_analytics.pkl
 	@source env/bin/activate && \
 	cd src/visuals && python3 build_appdata.py $^ $@
 	@echo

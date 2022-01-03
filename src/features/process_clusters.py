@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
-""" Compute metrics (size, quartiles and uniqueness) for each cluster. """
+""" Compute size, quartiles and uniqueness for each cluster.
+    This script runs in about ~5 mins on an M1 Mac. """
 
 import csv
 import pickle

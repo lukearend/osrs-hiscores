@@ -20,6 +20,10 @@ from src.data import load_stats_data
 
 
 def main(stats_file, out_file):
+    pv_file = pathlib.Path(__file__).resolve().parents[2] / 'reference/cluster_pv.json'
+    with open(params_file, 'r') as f:
+        pv = json.load(f)
+
     print("clustering player stats...")
     usernames, _, stats = load_stats_data(stats_file)
     stats = stats[:, 1:]    # Drop total level
@@ -57,15 +61,11 @@ def main(stats_file, out_file):
             # other 16 non-combat skills. Combat vs. non-combat skills are
             # weighted 2:1 to balance their influence on clustering.
             weights = 7 * [2 * 16] + 16 * [7]
-        pv = {
-            'all': 0.103,
-            'cb': 0.039,
-            'noncb': 0.123
-        }[split]
 
         success, response = nano.configure_nano(feature_count=dataset.shape[1],
                                                 min_val=mins, max_val=maxes, weight=weights,
-                                                percent_variation=pv, autotune_range=False)
+                                                percent_variation=pv[split],
+                                                autotune_range=False)
         if not success:
             raise ValueError(response)
 
