@@ -4,7 +4,6 @@
     subtraction. The distance between two players is proportional to the
     sum of their stat-by-stat differences. Players exceeding a fixed
     distance threshold from one another are allocated separate clusters.
-    This script runs in ~10 mins on M1 mac.
 """
 
 import csv
@@ -13,20 +12,30 @@ import pathlib
 import sys
 
 import numpy as np
-from boonnano import NanoHandle
 from tqdm import tqdm
 
-from src.data import load_stats_data
+from boonnano import NanoHandle
 
 
 def main(stats_file, out_file):
-    pv_file = pathlib.Path(__file__).resolve().parents[2] / 'reference/cluster_pv.json'
-    with open(params_file, 'r') as f:
-        pv = json.load(f)
-
     print("clustering player stats...")
-    usernames, _, stats = load_stats_data(stats_file)
-    stats = stats[:, 1:]    # Drop total level
+
+    print("reading stats data...")
+    with open(stats_file, 'r') as f:
+        usernames = []
+        stats_list = []
+        reader = csv.reader(f)
+        _ = next(reader)            # Discard header
+        for line in tqdm(reader):
+            username = line[0]
+            player_levels = [int(n) for n in line[5::3]]
+            usernames.append(username)
+            stats_list.append(player_levels)
+
+    print("building data array...")
+    usernames = np.array(usernames)
+    stats = np.array(stats_list, dtype='int')
+    del stats_list
 
     # Replace missing data with 1s. This is an alright assumption for
     # for clustering purposes because unranked stats are generally low.
@@ -61,11 +70,15 @@ def main(stats_file, out_file):
             # other 16 non-combat skills. Combat vs. non-combat skills are
             # weighted 2:1 to balance their influence on clustering.
             weights = 7 * [2 * 16] + 16 * [7]
+        pv = {
+            'all'   : 0.103,
+            'cb'    : 0.039,
+            'noncb' : 0.123
+        }[split]
 
-        success, response = nano.configure_nano(feature_count=dataset.shape[1],
+        success, response = nano.configure_nano(feature_count=num_features,
                                                 min_val=mins, max_val=maxes, weight=weights,
-                                                percent_variation=pv[split],
-                                                autotune_range=False)
+                                                percent_variation=pv, autotune_range=False)
         if not success:
             raise ValueError(response)
 
@@ -87,6 +100,7 @@ def main(stats_file, out_file):
                 success, response = nano.load_data(batch)
                 if not success:
                     raise ValueError(response)
+
                 success, response = nano.run_nano(results='ID')
                 if not success:
                     raise ValueError(response)

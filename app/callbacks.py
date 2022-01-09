@@ -10,21 +10,23 @@ from app import get_level_marks, is_valid, skill_pretty
 from app.figures import get_scatterplot, get_boxplot
 
 
-def add_callbacks(app, appdata, player_collection):
+def add_callbacks(app, app_data, player_collection):
 
     @app.callback(
         Output('scatter-plot', 'figure'),
         Input('split-dropdown', 'value'),
         Input('skill-dropdown', 'value'),
         Input('level-selector', 'value'),
-        Input('selected-user', 'children')
+        Input('selected-user', 'children'),
+        Input('n-neighbors-dropdown', 'value'),
+        Input('min-dist-dropdown', 'value')
     )
-    def redraw_figure(split, skill, level_range, user_text):
+    def redraw_figure(split, skill, level_range, user_text, n_neighbors, min_dist):
 
         # All four input triggers are fired at initialization.
         triggers = [trigger['prop_id'] for trigger in callback_context.triggered]
         if len(triggers) == 4:
-            return get_scatterplot(appdata[split], skill, level_range, highlight_cluster=None)
+            return get_scatterplot(app_data[split], skill, level_range, highlight_cluster=None)
 
         no_player = user_text.startswith('no player')
         invalid_player = 'not a valid username' in user_text
@@ -37,12 +39,11 @@ def add_callbacks(app, appdata, player_collection):
 
             # Get cluster ID from info string, e.g.
             # "'snakeylime': cluster 116 (41.38% unique)" -> 115
-
             i = user_text.find('cluster')
             words = user_text[i:].split(' ')
             highlight_cluster = int(words[1]) - 1
 
-        return get_scatterplot(appdata[split], skill, level_range, highlight_cluster=highlight_cluster)
+        return get_scatterplot(app_data[split], skill, level_range, n_neighbors, min_dist, highlight_cluster=highlight_cluster)
 
     @app.callback(
         Output('skill-dropdown', 'options'),
@@ -57,12 +58,12 @@ def add_callbacks(app, appdata, player_collection):
 
         disabled = {
             'all': [],
-            'cb': appdata['all']['skills'][8:],
-            'noncb': appdata['all']['skills'][1:8]
+            'cb': app_data['all']['skills'][8:],
+            'noncb': app_data['all']['skills'][1:8]
         }[split]
 
         options = []
-        for skill in appdata['all']['skills']:
+        for skill in app_data['all']['skills']:
             options.append({
                 'label': skill_pretty(skill),
                 'value': skill,
@@ -116,7 +117,7 @@ def add_callbacks(app, appdata, player_collection):
             if player:
                 username = player['username']
                 cluster_id = player['cluster_id'][split]
-                uniqueness = appdata[split]['percent_uniqueness'][cluster_id]
+                uniqueness = app_data[split]['cluster_uniqueness'][cluster_id]
                 return "'{}': cluster {} ({:.2%} unique)".format(username, cluster_id + 1, uniqueness)
             else:
                 return "no player '{}' in dataset".format(username)

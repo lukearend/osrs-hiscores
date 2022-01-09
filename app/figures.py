@@ -6,7 +6,8 @@ import plotly.graph_objects as go
 from app import skill_pretty
 
 
-def get_scatterplot(split_data, skill, level_range, highlight_cluster=None):
+def get_scatterplot(split_data, skill, level_range,
+                    n_neighbors, min_dist, highlight_cluster=None):
 
     if skill == 'total':
         color_range = [500, 2277]
@@ -18,10 +19,12 @@ def get_scatterplot(split_data, skill, level_range, highlight_cluster=None):
 
     skill_i = split_data['skills'].index(skill)
     show_inds = np.where(np.logical_and(
-        split_data['cluster_stats'][:, skill_i, 3] >= level_range[0],   # 75th percentile
-        split_data['cluster_stats'][:, skill_i, 1] <= level_range[1],   # 25th percentile
+        split_data['cluster_quartiles'][:, 3, skill_i] >= level_range[0],   # 75th percentile
+        split_data['cluster_quartiles'][:, 1, skill_i] <= level_range[1],   # 25th percentile
     ))[0]
-    clusters_xyz = split_data['xyz'][show_inds]
+    clusters_xyz = split_data['xyz'][n_neighbors][min_dist][show_inds]
+    medians = split_data['cluster_quartiles'][:, 2, skill_i][show_inds]     # 50th percentile
+    sizes = split_data['cluster_sizes'][show_inds]
 
     # We use a px.scatter_3d instead of a go.Scatter3d because it
     # is much easier for color and hover data formatting.
@@ -30,10 +33,10 @@ def get_scatterplot(split_data, skill, level_range, highlight_cluster=None):
         x=clusters_xyz[:, 0],
         y=clusters_xyz[:, 1],
         z=clusters_xyz[:, 2],
-        color=split_data['cluster_stats'][:, skill_i, 2],               # 50th percentile (median)
+        color=medians,
         range_color=color_range,
         hover_data={
-            'cluster': np.arange(1, len(clusters_xyz) + 1), 'size': split_data['cluster_sizes']
+            'cluster': np.arange(1, len(clusters_xyz) + 1), 'size': sizes
         }
     )
 
@@ -46,10 +49,12 @@ def get_scatterplot(split_data, skill, level_range, highlight_cluster=None):
         )
     )
 
+    xmin, xmax = split_data['axis_limits'][n_neighbors][min_dist]['x']
+    ymin, ymax = split_data['axis_limits'][n_neighbors][min_dist]['y']
+    zmin, zmax = split_data['axis_limits'][n_neighbors][min_dist]['z']
+
     if highlight_cluster is not None:
-        x = clusters_xyz[highlight_cluster, 0]
-        y = clusters_xyz[highlight_cluster, 1]
-        z = clusters_xyz[highlight_cluster, 2]
+        x, y, z = clusters_xyz[highlight_cluster, :]
         fig.add_trace(
             go.Scatter3d(
                 x=[xmin, xmax, None, x, x, None, x, x],
@@ -64,10 +69,6 @@ def get_scatterplot(split_data, skill, level_range, highlight_cluster=None):
         )
 
     fig.update_traces(hoverinfo='none', hovertemplate=None)
-
-    xmin, xmax = split_data['axis_limits']['x']
-    ymin, ymax = split_data['axis_limits']['y']
-    zmin, zmax = split_data['axis_limits']['z']
 
     fig.update_layout(
         uirevision='constant',

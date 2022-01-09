@@ -12,28 +12,17 @@ from collections import defaultdict
 import numpy as np
 from tqdm import tqdm
 
-from src.data import load_stats_data
+from src.data import load_cluster_data, load_stats_data
 
 
 def main(stats_file, clusters_file, out_file):
     print("computing cluster percentiles...")
     _, skills, stats = load_stats_data(stats_file)
+    _, splits, cluster_ids = load_cluster_data(clusters_file)
 
     # Change missing values from -1 to Nan.
     stats = stats.astype('float')
     stats[stats < 0] = np.nan
-
-    print("loading cluster data...")
-    with open(clusters_file, 'r') as f:
-        reader = csv.reader(f)
-        header = next(reader)
-        splits = header[1:]
-
-        cluster_ids = np.zeros((len(stats), len(splits)), dtype='int')
-        with tqdm(total=len(cluster_ids)) as pbar:
-            for i, line in enumerate(reader):
-                cluster_ids[i, :] = line[1:]
-                pbar.update(1)
 
     print("computing cluster sizes...")
     cluster_sizes = {split: defaultdict(int) for split in splits}

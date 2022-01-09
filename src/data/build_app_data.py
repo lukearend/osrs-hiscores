@@ -32,18 +32,24 @@ def main(cluster_analytics_file, dim_reduced_file, out_file):
         elif split == 'noncb':
             skills_in_split = [skills[0]] + skills[8:]
 
+        axis_limits = {}
+        for n_neighbors, nn_dict in xyz_data[split].items():
+            axis_limits[n_neighbors] = {}
+            for min_dist, md_dict in nn_dict.items():
+                xyz = xyz_data[split][n_neighbors][min_dist]
+                axis_limits[n_neighbors][min_dist] = {
+                    'x': (np.min(xyz[:, 0]), np.max(xyz[:, 0])),
+                    'y': (np.min(xyz[:, 1]), np.max(xyz[:, 1])),
+                    'z': (np.min(xyz[:, 2]), np.max(xyz[:, 2]))
+                }
+
         app_data[split] = {
             'skills': skills_in_split,
             'xyz': xyz_data[split],
-            'cluster_stats': cluster_data['cluster_quartiles'][split],
+            'cluster_quartiles': cluster_data['cluster_quartiles'][split],
             'cluster_sizes': cluster_data['cluster_sizes'][split],
-            'percent_uniqueness': cluster_data['cluster_uniqueness'][split],
-            # TODO:
-            # 'axis_limits': {
-            #     'x': (np.min(xyz_data[split][:, 0]), np.max(xyz_data[split][:, 0])),
-            #     'y': (np.min(xyz_data[split][:, 1]), np.max(xyz_data[split][:, 1])),
-            #     'z': (np.min(xyz_data[split][:, 2]), np.max(xyz_data[split][:, 2]))
-            # }
+            'cluster_uniqueness': cluster_data['cluster_uniqueness'][split],
+            'axis_limits': axis_limits
         }
 
     with open(out_file, 'wb') as f:

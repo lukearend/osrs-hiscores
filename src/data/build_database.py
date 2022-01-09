@@ -2,16 +2,17 @@
 
 """ Build a database of mappings from usernames to cluster ID. """
 
-import pickle
+import csv
 import sys
 
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
 from tqdm import tqdm
 
+from src.data import load_cluster_data
 
-def main(stats_file, clusters_file, mongo_port):
 
+def main(clusters_file, mongo_port):
     print("building database...")
 
     print("connecting...", end=' ', flush=True)
@@ -25,19 +26,12 @@ def main(stats_file, clusters_file, mongo_port):
     collection = db['players']
     print("ok")
 
-    print("loading username list...")
-    with open(stats_file, 'rb') as f:
-        usernames = pickle.load(f)['usernames']
-
-    with open(clusters_file, 'rb') as f:
-        clusters = pickle.load(f)
-    splits = clusters.keys()
+    usernames, splits, cluster_ids = load_cluster_data(clusters_file)
 
     # If the final username in usernames file has an entry in database,
     # assume database has already been filled and take no further action.
     if collection.find_one(usernames[-1].lower()):
         print("database already populated, nothing to do")
-        print()
         return
 
     print("writing records...")
@@ -50,7 +44,7 @@ def main(stats_file, clusters_file, mongo_port):
         document = {
             '_id': username.lower(),
             'username': username,
-            'cluster_id': {split: int(clusters[split]['cluster_ids'][i]) for split in splits}
+            'cluster_id': {split: int(cluster_ids[i, j]) for j, split in enumerate(splits)}
         }
         batch.append(document)
 
@@ -65,4 +59,4 @@ def main(stats_file, clusters_file, mongo_port):
 
 
 if __name__ == '__main__':
-    main(*sys.argv[1:3], int(sys.argv[3]))
+    main(sys.argv[1], int(sys.argv[2]))

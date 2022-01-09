@@ -111,16 +111,17 @@ $(DATA_TMP)/dim_reduced.pkl: $(DATA_TMP)/cluster_analytics.pkl
 app: $(APP_DIR)/assets/app_data.pkl db ## Build application data/database.
 
 app-clean: db-stop
-	rm -f $(DATA_FINAL)/appdata.pkl
-	rm -f $(APP_DIR)/assets/appdata.pkl
+	rm -f $(DATA_FINAL)/app_data.pkl
+	rm -f $(APP_DIR)/assets/app_data.pkl
 	rm -rf $(DB_DIR)
 
-app-run: db-start ## Run main application for visualizing results.
+# app-run: db-start ## Run main application for visualizing results.
+app-run:
 	@source env/bin/activate && python3 app $(DB_PORT)
 
 $(APP_DIR)/assets/app_data.pkl: $(DATA_TMP)/cluster_analytics.pkl $(DATA_TMP)/dim_reduced.pkl
 	@source env/bin/activate && \
-	cd src/data && python3 build_appdata.py $^ $@
+	cd src/data && python3 build_app_data.py $^ $@
 	@echo
 
 .PHONY: app app-clean app-run
@@ -128,7 +129,7 @@ $(APP_DIR)/assets/app_data.pkl: $(DATA_TMP)/cluster_analytics.pkl $(DATA_TMP)/di
 # Database ----------------------------------------------------------------------------------------
 db: $(DATA_FINAL)/clusters.csv db-pull db-start ## Build application database.
 	@source env/bin/activate && \
-	cd src/data && python3 build_database.py $^ $(DB_PORT)
+	cd src/data && python3 build_database.py $< $(DB_PORT)
 	@echo
 
 db-pull: ## Pull latest version of MongoDB.
@@ -139,7 +140,7 @@ db-start: ## Start database container.
 	docker stop osrs-hiscores-db > /dev/null 2>&1 ; \
 	docker run --rm -d --name osrs-hiscores-db \
 	-v $(DB_DIR):/data/db -p $(DB_PORT):$(DB_PORT) mongo
-	@echo -n "starting... " && sleep 2 && echo -e "done\n"
+	@echo -n "starting database... " && sleep 2 && echo -e "done\n"
 
 db-stop: ## Stop database container.
 	@docker stop osrs-hiscores-db 2> /dev/null

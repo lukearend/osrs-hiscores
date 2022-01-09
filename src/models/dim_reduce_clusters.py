@@ -24,17 +24,13 @@ def main(in_file, out_file):
 
     centroids = {}
     for split in splits:
-        medians = quartiles[split][:, 2, :]         # Centroid is median (50th percentile)
+        medians = quartiles[split][:, 2, 1:]        # Take 50th percentile, drop total level.
         medians = np.nan_to_num(medians, nan=1.0)   # Set missing data to 1 for embedding purposes.
         centroids[split] = medians
 
     params_file = pathlib.Path(__file__).resolve().parents[2] / 'reference/umap_params.json'
     with open(params_file, 'r') as f:
         params = json.load(f)
-
-    out_dir = pathlib.Path(__file__).resolve().parents[2] / 'data/raw/dimreduce'
-    if not os.path.isdir(out_dir):
-        os.makedirs(out_dir)
 
     print("computing 3d embeddings...")
     num_jobs = len(splits) * len(params['n_neighbors']) * len(params['min_dist'])
