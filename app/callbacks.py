@@ -23,12 +23,7 @@ def add_callbacks(app, app_data, player_collection):
         Input('min-dist-dropdown', 'value')
     )
     def redraw_figure(split, skill, level_range, user_text, point_size, n_neighbors, min_dist):
-
-        # All four input triggers are fired at initialization.
         triggers = [trigger['prop_id'] for trigger in callback_context.triggered]
-        if len(triggers) == 4:
-            return get_scatterplot(app_data[split], skill, level_range, highlight_cluster=None)
-
         no_player = user_text.startswith('no player')
         invalid_player = 'not a valid username' in user_text
         if 'selected-user.children' in triggers and (no_player or invalid_player):
