@@ -4,7 +4,7 @@ import string
 valid_chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + ' -_'
 
 
-def is_valid(username):
+def validate_username(username):
     if len(username) > 12:
         return False
     if username.strip(valid_chars):

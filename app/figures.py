@@ -6,7 +6,7 @@ import plotly.graph_objects as go
 from app import skill_pretty
 
 
-def get_scatterplot(split_data, skill, level_range,
+def get_scatterplot(split_data, skill, level_range, point_size,
                     n_neighbors, min_dist, highlight_cluster=None):
 
     if skill == 'total':
@@ -40,10 +40,16 @@ def get_scatterplot(split_data, skill, level_range,
         }
     )
 
+    size_factor = {
+        'small': 1,
+        'medium': 2,
+        'large': 3
+    }[point_size]
+
     sizes = split_data['cluster_sizes'][show_inds]
     fig.update_traces(
         marker=dict(
-            size=3 * np.log(sizes + 1),
+            size=size_factor * np.log(sizes + 1),
             line=dict(width=0),
             opacity=0.5
         )
@@ -103,16 +109,10 @@ def get_scatterplot(split_data, skill, level_range,
 def get_boxplot(percentile_data):
     fig = go.Figure()
 
-    # Don't show total level.
-    percentile_data = percentile_data[1:]
+    percentile_data = percentile_data[:, 1:]    # Drop total level.
+    mins, q1, median, q3, maxes = percentile_data
 
-    mins = percentile_data[:, 0]
-    maxes = percentile_data[:, 4]
-    median = percentile_data[:, 2]
-    q1 = percentile_data[:, 1]
-    q3 = percentile_data[:, 3]
     iqr = q3 - q1
-
     lowerfence = q1 - 1.5 * iqr
     upperfence = q3 + 1.5 * iqr
 
@@ -125,7 +125,8 @@ def get_boxplot(percentile_data):
                 q3=q3,
                 upperfence=np.minimum(maxes, upperfence)
             )
-        ]
+        ],
+        layout=dict(margin=dict(l=0, r=0, t=0, b=0))
     )
 
     return fig

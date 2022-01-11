@@ -6,7 +6,7 @@ from dash import callback_context, no_update
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
-from app import get_level_marks, is_valid, skill_pretty
+from app import get_level_marks, validate_username, skill_pretty
 from app.figures import get_scatterplot, get_boxplot
 
 
@@ -18,10 +18,11 @@ def add_callbacks(app, app_data, player_collection):
         Input('skill-dropdown', 'value'),
         Input('level-selector', 'value'),
         Input('selected-user', 'children'),
+        Input('point-size-dropdown', 'value'),
         Input('n-neighbors-dropdown', 'value'),
         Input('min-dist-dropdown', 'value')
     )
-    def redraw_figure(split, skill, level_range, user_text, n_neighbors, min_dist):
+    def redraw_figure(split, skill, level_range, user_text, point_size, n_neighbors, min_dist):
 
         # All four input triggers are fired at initialization.
         triggers = [trigger['prop_id'] for trigger in callback_context.triggered]
@@ -43,7 +44,8 @@ def add_callbacks(app, app_data, player_collection):
             words = user_text[i:].split(' ')
             highlight_cluster = int(words[1]) - 1
 
-        return get_scatterplot(app_data[split], skill, level_range, n_neighbors, min_dist, highlight_cluster=highlight_cluster)
+        return get_scatterplot(app_data[split], skill, level_range, point_size,
+                               n_neighbors, min_dist, highlight_cluster=highlight_cluster)
 
     @app.callback(
         Output('skill-dropdown', 'options'),
@@ -110,8 +112,8 @@ def add_callbacks(app, app_data, player_collection):
     )
     def lookup_player(username, split):
         if username:
-            if not is_valid(username):
-                return "'{}' is not a valid username".format(username[:64])
+            if not validate_username(username):
+                return "'{}' is not a valid username".format(username[:12])
 
             player = player_collection.find_one({'_id': username.lower()})
             if player:
@@ -152,5 +154,8 @@ def add_callbacks(app, app_data, player_collection):
             ])
         ]
         return True, bbox, children
+
+    # @app.callback(
+    #     Output(
 
     return app
