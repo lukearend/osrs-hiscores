@@ -1,17 +1,16 @@
 import json
-import os
 import pathlib
 
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 
-from app import get_level_marks, skill_pretty
+from app import get_level_tick_marks, skill_pretty
 from app.figures import get_scatterplot, get_boxplot
 
 
-def level_chart(app, skill_levels):
-    layout_file = pathlib.Path(__name__).resolve().parent / 'app' / 'assets' / 'skill_layout.json'
+def level_table(app, skill_levels):
+    layout_file = pathlib.Path(__name__).resolve().parent / 'assets' / 'skill_layout.json'
     with open(layout_file, 'r') as f:
         skills = json.load(f)
 
@@ -181,7 +180,7 @@ def build_layout(app, app_data):
                         value=[1, 2277],
                         tooltip={'placement': 'bottom'},
                         allowCross=False,
-                        marks=get_level_marks('total')
+                        marks=get_level_tick_marks('total')
                     )
                 )
             ],
@@ -240,8 +239,8 @@ def build_layout(app, app_data):
                     html.Br(),
                     dbc.Row(
                         dbc.Col([
-                            html.Div(children=html.Strong("'snakeylime'")),
-                            level_chart(app, list(range(1, 24)))
+                            html.Div(id='selected-cluster'),
+                            level_table(app, list(range(1, 24)))
                         ]),
                         align='center'
                     ),

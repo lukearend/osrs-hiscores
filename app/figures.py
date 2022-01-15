@@ -1,4 +1,6 @@
 import numpy as np
+import pandas
+import pandas as pd
 
 import plotly.express as px
 import plotly.graph_objects as go
@@ -22,23 +24,42 @@ def get_scatterplot(split_data, skill, level_range, point_size,
         split_data['cluster_quartiles'][:, 3, skill_i] >= level_range[0],   # 75th percentile
         split_data['cluster_quartiles'][:, 1, skill_i] <= level_range[1],   # 25th percentile
     ))[0]
-    clusters_xyz = split_data['xyz'][n_neighbors][min_dist][show_inds]
-    medians = split_data['cluster_quartiles'][:, 2, skill_i][show_inds]     # 50th percentile
-    sizes = split_data['cluster_sizes'][show_inds]
+
+    xyz_df = pd.DataFrame(split_data['xyz'][n_neighbors][min_dist][show_inds], columns=['x', 'y', 'z'])
+    info_df = pd.DataFrame({
+        'cluster_id': show_inds + 1,
+        'num_players': split_data['cluster_sizes'][show_inds],
+        'uniqueness': 100 * split_data['cluster_uniqueness'][show_inds],
+        'median': split_data['cluster_quartiles'][:, 2, skill_i][show_inds],
+        'min': split_data['cluster_quartiles'][:, 0, skill_i][show_inds],
+        'max': split_data['cluster_quartiles'][:, 4, skill_i][show_inds],
+        'q1': split_data['cluster_quartiles'][:, 1, skill_i][show_inds],
+        'q3': split_data['cluster_quartiles'][:, 3, skill_i][show_inds],
+    })
+    df = pd.concat([xyz_df, info_df], axis=1)
 
     # We use a px.scatter_3d instead of a go.Scatter3d because it
     # is much easier for color and hover data formatting.
 
     fig = px.scatter_3d(
-        x=clusters_xyz[:, 0],
-        y=clusters_xyz[:, 1],
-        z=clusters_xyz[:, 2],
-        color=medians,
+        df,
+        x='x',
+        y='y',
+        z='z',
+        color='median',
         range_color=color_range,
-        hover_data={
-            'cluster': np.arange(1, len(clusters_xyz) + 1), 'size': sizes
-        }
+        hover_name=[f'Cluster {i}' for i in df['cluster_id']],
+        custom_data=['cluster_id', 'num_players', 'uniqueness', 'min', 'q1', 'median', 'q3', 'max']
     )
+
+    hover_box = '<br>'.join([
+        '<b>Cluster %{customdata[0]}</b>',
+        '%{customdata[1]} players',
+        '%{customdata[2]:.2f}% unique',
+        f'{skill_pretty(skill)} quantiles:',
+        '[%{customdata[3]:d}, %{customdata[4]:d}, %{customdata[5]:d}, %{customdata[6]:d}, %{customdata[7]:d}]'
+    ])
+    fig.update_traces(hovertemplate=hover_box)
 
     size_factor = {
         'small': 1,
@@ -60,7 +81,7 @@ def get_scatterplot(split_data, skill, level_range, point_size,
     zmin, zmax = split_data['axis_limits'][n_neighbors][min_dist]['z']
 
     if highlight_cluster is not None:
-        x, y, z = clusters_xyz[highlight_cluster, :]
+        x, y, z = split_data['xyz'][n_neighbors][min_dist][highlight_cluster - 1]
         fig.add_trace(
             go.Scatter3d(
                 x=[xmin, xmax, None, x, x, None, x, x],
@@ -73,8 +94,6 @@ def get_scatterplot(split_data, skill, level_range, point_size,
                 name='crosshairs'
             )
         )
-
-    fig.update_traces(hoverinfo='none', hovertemplate=None)
 
     fig.update_layout(
         uirevision='constant',

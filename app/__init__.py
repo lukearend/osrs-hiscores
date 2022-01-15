@@ -1,18 +1,18 @@
 import string
 
 
-valid_chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + ' -_'
+username_chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + ' -_'
 
 
 def validate_username(username):
     if len(username) > 12:
         return False
-    if username.strip(valid_chars):
+    if username.strip(username_chars):
         return False
     return True
 
 
-def get_level_marks(skill):
+def get_level_tick_marks(skill):
     if skill == 'total':
         return {i: str(i) for i in [1, 250, 500, 750, 1000, 1250, 1500, 1750, 2000, 2277]}
     else:
@@ -20,4 +20,4 @@ def get_level_marks(skill):
 
 
 def skill_pretty(skill):
-    return skill[0].upper() + skill[1:].replace('_', ' ') + ' level'
+    return skill[0].upper() + skill[1:] + ' level'

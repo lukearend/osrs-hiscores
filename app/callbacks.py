@@ -6,7 +6,7 @@ from dash import callback_context, no_update
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
-from app import get_level_marks, validate_username, skill_pretty
+from app import get_level_tick_marks, validate_username, skill_pretty
 from app.figures import get_scatterplot, get_boxplot
 
 
@@ -24,6 +24,7 @@ def add_callbacks(app, app_data, player_collection):
     )
     def redraw_figure(split, skill, level_range, user_text, point_size, n_neighbors, min_dist):
         triggers = [trigger['prop_id'] for trigger in callback_context.triggered]
+
         no_player = user_text.startswith('no player')
         invalid_player = 'not a valid username' in user_text
         if 'selected-user.children' in triggers and (no_player or invalid_player):
@@ -34,10 +35,10 @@ def add_callbacks(app, app_data, player_collection):
         else:
 
             # Get cluster ID from info string, e.g.
-            # "'snakeylime': cluster 116 (41.38% unique)" -> 115
+            # "'snakeylime': cluster 244 (41.38% unique)" -> 244
             i = user_text.find('cluster')
             words = user_text[i:].split(' ')
-            highlight_cluster = int(words[1]) - 1
+            highlight_cluster = int(words[1])
 
         return get_scatterplot(app_data[split], skill, level_range, point_size,
                                n_neighbors, min_dist, highlight_cluster=highlight_cluster)
@@ -93,7 +94,7 @@ def add_callbacks(app, app_data, player_collection):
         else:
             new_range = no_update
 
-        marks = get_level_marks(new_skill)
+        marks = get_level_tick_marks(new_skill)
 
         if new_skill == 'total':
             return 1, 2277, new_range, marks
@@ -103,7 +104,7 @@ def add_callbacks(app, app_data, player_collection):
     @app.callback(
         Output('selected-user', 'children'),
         Input('username-input', 'value'),
-        State('split-dropdown', 'value')
+        Input('split-dropdown', 'value')
     )
     def lookup_player(username, split):
         if username:
@@ -115,42 +116,18 @@ def add_callbacks(app, app_data, player_collection):
                 username = player['username']
                 cluster_id = player['cluster_id'][split]
                 uniqueness = app_data[split]['cluster_uniqueness'][cluster_id]
-                return "'{}': cluster {} ({:.2%} unique)".format(username, cluster_id + 1, uniqueness)
+                return "'{}': cluster {} ({:.2%} unique)".format(username, cluster_id, uniqueness)
             else:
                 return "no player '{}' in dataset".format(username)
 
         return ''
 
     @app.callback(
-        Output('tooltip', 'show'),
-        Output('tooltip', 'bbox'),
-        Output('tooltip', 'children'),
-        Input('scatter-plot', 'hoverData'),
-        State('split-dropdown', 'value'),
-        State('skill-dropdown', 'value')
+        Output('selected-cluster', 'children'),
+        Input('scatter-plot', 'clickData')
     )
-    def hover_tooltip(hover_data, split, skill):
-        if hover_data is None:
-            return False, no_update, no_update
-
-        # Hovered cluster has curveNumber 0, hovered line has curveNumber 1.
-        pt = hover_data['points'][0]
-        if pt['curveNumber'] == 1:
-            return False, no_update, no_update
-
-        bbox = pt['bbox']
-        cluster_id = pt['pointNumber']
-        size = pt['customdata'][1]
-
-        children = [
-            html.Div([
-                html.Div(children=html.Strong("cluster {}".format(cluster_id + 1))),
-                html.Div(children="{} players".format(size))
-            ])
-        ]
-        return True, bbox, children
-
-    # @app.callback(
-    #     Output(
+    def select_cluster(click_data):
+        print(click_data)
+        return 'cluster 7'
 
     return app
