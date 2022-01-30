@@ -1,10 +1,3 @@
-import base64
-import json
-import os
-import pathlib
-
-import dash_bootstrap_components as dbc
-import dash_html_components as html
 import numpy as np
 import pandas as pd
 
@@ -142,35 +135,6 @@ def get_scatterplot(split_data, skill, level_range, point_size,
     )
 
     return fig
-
-
-def get_level_table(name):
-    layout_file = pathlib.Path(__name__).resolve().parent / 'assets' / 'skill_layout.json'
-    with open(layout_file, 'r') as f:
-        skills_layout = json.load(f)
-
-    table_rows = []
-    for skill_row in skills_layout:
-
-        table_row = []
-        for skill in skill_row:
-            icon = html.Div(html.Img(src=f'/assets/icons/{skill}_icon.png'))
-            value = html.Div(id=f'{name}-{skill}')
-
-            table_elem = dbc.Row(
-                [
-                    dbc.Col(icon, width=6),
-                    dbc.Col(value, width=6)
-                ],
-                align='center',
-                justify='center',
-                className='g-1'  # almost no gutter between icon and number
-            )
-            table_row.append(dbc.Col(table_elem, width=4))
-
-        table_rows.append(dbc.Row(table_row, align='center'))
-
-    return dbc.Col(table_rows)
 
 
 def get_boxplot(percentile_data):

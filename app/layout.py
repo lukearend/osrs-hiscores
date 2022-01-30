@@ -1,9 +1,40 @@
+import json
+import pathlib
+
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 
 from app import get_level_tick_marks, skill_format
-from app.figures import get_scatterplot, get_level_table, get_boxplot
+
+
+def build_level_table(name):
+    layout_file = pathlib.Path(__name__).resolve().parent / 'assets' / 'skill_layout.json'
+    with open(layout_file, 'r') as f:
+        skills_layout = json.load(f)
+
+    table_rows = []
+    for skill_row in skills_layout:
+
+        table_row = []
+        for skill in skill_row:
+            icon = html.Div(html.Img(src=f'/assets/icons/{skill}_icon.png'))
+            value = html.Div(id=f'{name}-{skill}')
+
+            table_elem = dbc.Row(
+                [
+                    dbc.Col(icon, width=6),
+                    dbc.Col(value, width=6)
+                ],
+                align='center',
+                justify='center',
+                className='g-1'  # almost no gutter between icon and number
+            )
+            table_row.append(dbc.Col(table_elem, width=4))
+
+        table_rows.append(dbc.Row(table_row, align='center'))
+
+    return dbc.Col(table_rows)
 
 
 def build_layout(app, app_data):
@@ -213,11 +244,11 @@ def build_layout(app, app_data):
                         [
                             dbc.Col([
                                 html.Strong(id='player-table-title'),
-                                get_level_table(name='player-table'),
+                                build_level_table(name='player-table'),
                             ]),
                             dbc.Col([
                                 html.Strong(id='cluster-table-title'),
-                                get_level_table(name='cluster-table')
+                                build_level_table(name='cluster-table')
                             ]),
                         ],
                         align='center'
