@@ -1,5 +1,8 @@
 import string
 
+import dash_bootstrap_components as dbc
+import dash_html_components as html
+
 
 username_chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + ' -_'
 
@@ -19,5 +22,5 @@ def get_level_tick_marks(skill):
         return {i: str(i) for i in [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 99]}
 
 
-def skill_pretty(skill):
+def skill_format(skill):
     return skill[0].upper() + skill[1:] + ' level'

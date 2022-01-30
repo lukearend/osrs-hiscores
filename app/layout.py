@@ -1,41 +1,9 @@
-import json
-import pathlib
-
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 
-from app import get_level_tick_marks, skill_pretty
-from app.figures import get_scatterplot, get_boxplot
-
-
-def level_table(app, skill_levels):
-    layout_file = pathlib.Path(__name__).resolve().parent / 'assets' / 'skill_layout.json'
-    with open(layout_file, 'r') as f:
-        skills = json.load(f)
-
-    rows = []
-    for i in range(8):
-        cells = []
-        for j in range(3):
-            if i == 7 and j == 2:
-                image_url = None
-                level = str(sum(skill_levels))
-            else:
-                image_url = app.get_asset_url('icons/{}_icon.png'.format(skills[i][j]))
-                level = skill_levels[i * 3 + j]
-
-            level = html.Div(level)
-            if image_url:
-                image = html.Div(html.Img(src=image_url,
-                                          style={'width': '50%'}))
-            else:
-                image = html.Div()
-
-            cell = dbc.Row([dbc.Col(image), dbc.Col(level)])
-            cells.append(dbc.Col(cell, width=4))
-        rows.append(dbc.Row(cells, align='center'))
-    return dbc.Col(rows)
+from app import get_level_tick_marks, skill_format
+from app.figures import get_scatterplot, get_level_table, get_boxplot
 
 
 def build_layout(app, app_data):
@@ -70,7 +38,7 @@ def build_layout(app, app_data):
                             ),
                             dbc.Col(
                                 dcc.Dropdown(
-                                    id='split-dropdown',
+                                    id='current-split',
                                     options=[
                                         {'label': 'All skills', 'value': 'all'},
                                         {'label': 'Combat skills', 'value': 'cb'},
@@ -94,9 +62,9 @@ def build_layout(app, app_data):
                             ),
                             dbc.Col(
                                 dcc.Dropdown(
-                                    id='skill-dropdown',
+                                    id='current-skill',
                                     options=[
-                                        {'label': skill_pretty(skill), 'value': skill}
+                                        {'label': skill_format(skill), 'value': skill}
                                         for skill in app_data['all']['skills']
                                     ],
                                     value='total',
@@ -119,12 +87,12 @@ def build_layout(app, app_data):
                     dbc.Row(
                         [
                             dbc.Col(
-                                html.Div(children="n_neighbors:"),
+                                html.Div(children="Structure:"),
                                 width=3
                             ),
                             dbc.Col(
                                 dcc.Dropdown(
-                                    id='n-neighbors-dropdown',
+                                    id='n-neighbors',
                                     options=[
                                         {'label': str(n), 'value': n}
                                         for n in [5, 10, 15, 20]
@@ -142,12 +110,12 @@ def build_layout(app, app_data):
                     dbc.Row(
                         [
                             dbc.Col(
-                                html.Div(children="min_dist:"),
+                                html.Div(children="Diffusion:"),
                                 width=3
                             ),
                             dbc.Col(
                                 dcc.Dropdown(
-                                    id='min-dist-dropdown',
+                                    id='min-dist',
                                     options=[
                                         {'label': '{:.2f}'.format(d), 'value': d}
                                         for d in [0.0, 0.1, 0.25, 0.50]
@@ -173,7 +141,7 @@ def build_layout(app, app_data):
                 ),
                 dbc.Col(
                     dcc.RangeSlider(
-                        id='level-selector',
+                        id='level-range',
                         min=1,
                         max=2277,
                         step=1,
@@ -188,6 +156,7 @@ def build_layout(app, app_data):
             style={'padding-bottom': '1vh'}
         ),
 
+        dcc.Store(id='query-event'),
         dbc.Row(
             [
                 dbc.Col(
@@ -196,13 +165,14 @@ def build_layout(app, app_data):
                             dbc.Col(html.Div(children="Lookup player:"), width='auto'),
                             dbc.Col(
                                 dcc.Input(
-                                    id='username-input',
+                                    id='username-text',
                                     type='text',
-                                    placeholder="input username"
+                                    placeholder="input username",
+                                    maxLength=12
                                 ),
                                 width='auto'
                             ),
-                            dbc.Col(html.Div(id='selected-user'))
+                            dbc.Col(html.Div(id='player-query-text'))
                         ],
                         align='center'
                     ),
@@ -214,7 +184,7 @@ def build_layout(app, app_data):
                             dbc.Col(html.Div(children="Point size:"), width='auto'),
                             dbc.Col(
                                 dcc.Dropdown(
-                                    id='point-size-dropdown',
+                                    id='point-size',
                                     options=[
                                         {'label': s, 'value': s}
                                         for s in ['small', 'medium', 'large']
@@ -233,38 +203,45 @@ def build_layout(app, app_data):
             style={'padding-bottom': '1vh'}
         ),
 
+        dcc.Store(id='current-player'),
+        dcc.Store(id='current-cluster'),
         dbc.Row([
             dbc.Col(
                 [
                     html.Br(),
                     dbc.Row(
-                        dbc.Col([
-                            html.Div(id='selected-cluster'),
-                            level_table(app, list(range(1, 24)))
-                        ]),
+                        [
+                            dbc.Col([
+                                html.Strong(id='player-table-title'),
+                                get_level_table(name='player-table'),
+                            ]),
+                            dbc.Col([
+                                html.Strong(id='cluster-table-title'),
+                                get_level_table(name='cluster-table')
+                            ]),
+                        ],
                         align='center'
                     ),
+
                     html.Br(),
                     dbc.Row(
                         dbc.Col(
                             dcc.Graph(
                                 id='box-plot',
-                                figure=get_boxplot(app_data['all']['cluster_quartiles'][112]),
                                 style={'height': '20vh'},
                             )
                         ),
                         align='center'
                     )
                 ],
-                width=4
+                width=5
             ),
             dbc.Col(
                 dcc.Graph(
                     id='scatter-plot',
-                    figure=get_scatterplot(app_data['all'], 'total', [1, 2277], 'small', 5, 0.0),
                     clear_on_unhover=True
                 ),
-                width=8
+                width=7
             )
         ]),
         dcc.Tooltip(id='tooltip'),

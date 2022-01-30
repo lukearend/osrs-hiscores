@@ -1,4 +1,5 @@
 import csv
+import pathlib
 from subprocess import check_output
 
 import numpy as np
@@ -10,7 +11,7 @@ def line_count(file):
 
 
 def load_stats_data(file):
-    print("reading stats data...")
+    print("loading stats data...")
 
     num_players = line_count(file) - 1
     with open(file, 'r') as f:
@@ -23,11 +24,10 @@ def load_stats_data(file):
 
         usernames = np.zeros(num_players, dtype='<U12')
         stats = np.zeros((num_players, len(skills)), dtype='int')
-        with tqdm(total=num_players) as pbar:
-            for line in tqdm(reader):
-                usernames[i] = line[0]
-                stats[i, :] = line[2::3]    # Just take skill level (not rank, xp)
-                pbar.update(1)
+        for i in tqdm(range(num_players)):
+            line = next(reader)
+            usernames[i] = line[0]
+            stats[i, :] = line[2::3]    # Just take skill level (not rank, xp)
 
     return usernames, skills, stats
 
@@ -43,10 +43,9 @@ def load_cluster_data(file):
 
         usernames = np.zeros(num_players, dtype='<U12')
         cluster_ids = np.zeros((num_players, len(splits)), dtype='int')
-        with tqdm(total=num_players) as pbar:
-            for i, line in enumerate(reader):
-                usernames[i] = line[0]
-                cluster_ids[i, :] = line[1:]
-                pbar.update(1)
+        for i in tqdm(range(num_players)):
+            line = next(reader)
+            usernames[i] = line[0]
+            cluster_ids[i, :] = line[1:]
 
     return usernames, splits, cluster_ids

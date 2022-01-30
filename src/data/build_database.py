@@ -9,10 +9,10 @@ from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
 from tqdm import tqdm
 
-from src.data import load_cluster_data
+from src.data import line_count, load_cluster_data, load_stats_data
 
 
-def main(clusters_file, mongo_port):
+def main(clusters_file, stats_file, mongo_port):
     print("building database...")
 
     print("connecting...", end=' ', flush=True)
@@ -26,13 +26,13 @@ def main(clusters_file, mongo_port):
     collection = db['players']
     print("ok")
 
-    usernames, splits, cluster_ids = load_cluster_data(clusters_file)
-
-    # If the final username in usernames file has an entry in database,
-    # assume database has already been filled and take no further action.
-    if collection.find_one(usernames[-1].lower()):
+    num_players = line_count(stats_file) - 1
+    if collection.count_documents({}) == num_players:
         print("database already populated, nothing to do")
         return
+
+    usernames, skills, stats = load_stats_data(stats_file)
+    _, splits, cluster_ids = load_cluster_data(clusters_file)
 
     print("writing records...")
     collection.drop()
@@ -40,11 +40,14 @@ def main(clusters_file, mongo_port):
 
     batch = []
     for i, username in enumerate(tqdm(usernames)):
+        player_stats = [int(v) for v in stats[i, :]]
+        player_clusters = {split: int(cluster_ids[i, j]) for j, split in enumerate(splits)}
 
         document = {
             '_id': username.lower(),
             'username': username,
-            'cluster_id': {split: int(cluster_ids[i, j]) for j, split in enumerate(splits)}
+            'cluster_ids': player_clusters,
+            'stats': player_stats
         }
         batch.append(document)
 
@@ -59,4 +62,4 @@ def main(clusters_file, mongo_port):
 
 
 if __name__ == '__main__':
-    main(sys.argv[1], int(sys.argv[2]))
+    main(*sys.argv[1:3], int(sys.argv[3]))

@@ -1,10 +1,10 @@
 [
-    ["Attack", "Hitpoints", "Mining"],
-    ["Strength", "Agility", "Smithing"],
-    ["Defence", "Herblore", "Fishing"],
-    ["Ranged", "Thieving", "Cooking"],
-    ["Prayer", "Crafting", "Firemaking"],
-    ["Magic", "Fletching", "Woodcutting"],
-    ["Runecraft", "Slayer", "Farming"],
-    ["Construction", "Hunter", "Total"]
+    ["attack", "hitpoints", "mining"],
+    ["strength", "agility", "smithing"],
+    ["defence", "herblore", "fishing"],
+    ["ranged", "thieving", "cooking"],
+    ["prayer", "crafting", "firemaking"],
+    ["magic", "fletching", "woodcutting"],
+    ["runecraft", "slayer", "farming"],
+    ["construction", "hunter", "total"]
 ]

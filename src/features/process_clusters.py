@@ -44,6 +44,8 @@ def main(stats_file, clusters_file, out_file):
         print("computing quartiles for split '{}'...".format(split))
 
         # Include total level when computing percentiles.
+        dataset = None
+        result = None
         num_clusters = max(cluster_ids[:, s])
         if split == 'all':
             dataset = stats
@@ -70,7 +72,7 @@ def main(stats_file, clusters_file, out_file):
         cluster_quartiles[split] = result
 
     # Compute 'percent uniqueness' for each cluster.
-    print("computing cluster uniqueness...".format(split))
+    print("computing cluster uniqueness...")
     num_players = len(stats)
     cluster_uniqueness = {}
     for split in splits:

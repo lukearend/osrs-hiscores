@@ -1,15 +1,21 @@
+import base64
+import json
+import os
+import pathlib
+
+import dash_bootstrap_components as dbc
+import dash_html_components as html
 import numpy as np
-import pandas
 import pandas as pd
 
 import plotly.express as px
 import plotly.graph_objects as go
 
-from app import skill_pretty
+from app import skill_format
 
 
 def get_scatterplot(split_data, skill, level_range, point_size,
-                    n_neighbors, min_dist, highlight_cluster=None):
+                    n_neighbors, min_dist, highlight_player=None, highlight_cluster=None):
 
     if skill == 'total':
         color_range = [500, 2277]
@@ -18,7 +24,6 @@ def get_scatterplot(split_data, skill, level_range, point_size,
 
     # When level selector is used, we display only those clusters whose
     # interquartile range in the chosen skill overlaps the selected range.
-
     skill_i = split_data['skills'].index(skill)
     show_inds = np.where(np.logical_and(
         split_data['cluster_quartiles'][:, 3, skill_i] >= level_range[0],   # 75th percentile
@@ -30,33 +35,32 @@ def get_scatterplot(split_data, skill, level_range, point_size,
         'cluster_id': show_inds + 1,
         'num_players': split_data['cluster_sizes'][show_inds],
         'uniqueness': 100 * split_data['cluster_uniqueness'][show_inds],
-        'median': split_data['cluster_quartiles'][:, 2, skill_i][show_inds],
         'min': split_data['cluster_quartiles'][:, 0, skill_i][show_inds],
+        'med': split_data['cluster_quartiles'][:, 2, skill_i][show_inds],
         'max': split_data['cluster_quartiles'][:, 4, skill_i][show_inds],
         'q1': split_data['cluster_quartiles'][:, 1, skill_i][show_inds],
-        'q3': split_data['cluster_quartiles'][:, 3, skill_i][show_inds],
+        'q3': split_data['cluster_quartiles'][:, 3, skill_i][show_inds]
     })
     df = pd.concat([xyz_df, info_df], axis=1)
 
     # We use a px.scatter_3d instead of a go.Scatter3d because it
     # is much easier for color and hover data formatting.
-
     fig = px.scatter_3d(
         df,
         x='x',
         y='y',
         z='z',
-        color='median',
+        color='med',
         range_color=color_range,
         hover_name=[f'Cluster {i}' for i in df['cluster_id']],
-        custom_data=['cluster_id', 'num_players', 'uniqueness', 'min', 'q1', 'median', 'q3', 'max']
+        custom_data=['cluster_id', 'num_players', 'uniqueness', 'min', 'q1', 'med', 'q3', 'max']
     )
 
     hover_box = '<br>'.join([
         '<b>Cluster %{customdata[0]}</b>',
         '%{customdata[1]} players',
         '%{customdata[2]:.2f}% unique',
-        f'{skill_pretty(skill)} quantiles:',
+        f'{skill_format(skill)} quantiles:',
         '[%{customdata[3]:d}, %{customdata[4]:d}, %{customdata[5]:d}, %{customdata[6]:d}, %{customdata[7]:d}]'
     ])
     fig.update_traces(hovertemplate=hover_box)
@@ -80,6 +84,21 @@ def get_scatterplot(split_data, skill, level_range, point_size,
     ymin, ymax = split_data['axis_limits'][n_neighbors][min_dist]['y']
     zmin, zmax = split_data['axis_limits'][n_neighbors][min_dist]['z']
 
+    if highlight_player is not None:
+        x, y, z = split_data['xyz'][n_neighbors][min_dist][highlight_cluster - 1]
+        fig.add_trace(
+            go.Scatter3d(
+                x=[xmin, xmax, None, x, x, None, x, x],
+                y=[y, y, None, ymin, ymax, None, y, y],
+                z=[z, z, None, z, z, None, zmin, zmax],
+                mode='lines',
+                line_color='red',
+                line_width=2,
+                showlegend=False,
+                name='player-highlight'
+            )
+        )
+
     if highlight_cluster is not None:
         x, y, z = split_data['xyz'][n_neighbors][min_dist][highlight_cluster - 1]
         fig.add_trace(
@@ -91,9 +110,9 @@ def get_scatterplot(split_data, skill, level_range, point_size,
                 line_color='white',
                 line_width=2,
                 showlegend=False,
-                name='crosshairs'
             )
         )
+        fig.update_traces(hoverinfo='skip', hovertemplate=None)
 
     fig.update_layout(
         uirevision='constant',
@@ -115,7 +134,7 @@ def get_scatterplot(split_data, skill, level_range, point_size,
         ),
         coloraxis_colorbar=dict(
             title=dict(
-                text=skill_pretty(skill).replace(' ', '\n'),
+                text=skill_format(skill).replace(' ', '\n'),
                 side='right'
             ),
             xanchor='right'
@@ -125,24 +144,51 @@ def get_scatterplot(split_data, skill, level_range, point_size,
     return fig
 
 
-def get_boxplot(percentile_data):
-    fig = go.Figure()
+def get_level_table(name):
+    layout_file = pathlib.Path(__name__).resolve().parent / 'assets' / 'skill_layout.json'
+    with open(layout_file, 'r') as f:
+        skills_layout = json.load(f)
 
+    table_rows = []
+    for skill_row in skills_layout:
+
+        table_row = []
+        for skill in skill_row:
+            icon = html.Div(html.Img(src=f'/assets/icons/{skill}_icon.png'))
+            value = html.Div(id=f'{name}-{skill}')
+
+            table_elem = dbc.Row(
+                [
+                    dbc.Col(icon, width=6),
+                    dbc.Col(value, width=6)
+                ],
+                align='center',
+                justify='center',
+                className='g-1'  # almost no gutter between icon and number
+            )
+            table_row.append(dbc.Col(table_elem, width=4))
+
+        table_rows.append(dbc.Row(table_row, align='center'))
+
+    return dbc.Col(table_rows)
+
+
+def get_boxplot(percentile_data):
     percentile_data = percentile_data[:, 1:]    # Drop total level.
     mins, q1, median, q3, maxes = percentile_data
 
     iqr = q3 - q1
-    lowerfence = q1 - 1.5 * iqr
-    upperfence = q3 + 1.5 * iqr
+    lower_fence = q1 - 1.5 * iqr
+    upper_fence = q3 + 1.5 * iqr
 
     fig = go.Figure(
         data=[
             go.Box(
-                lowerfence=np.maximum(mins, lowerfence),
+                lowerfence=np.maximum(mins, lower_fence),
                 q1=q1,
                 median=median,
                 q3=q3,
-                upperfence=np.minimum(maxes, upperfence)
+                upperfence=np.minimum(maxes, upper_fence)
             )
         ],
         layout=dict(margin=dict(l=0, r=0, t=0, b=0))

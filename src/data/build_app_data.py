@@ -21,16 +21,16 @@ def main(cluster_analytics_file, dim_reduced_file, out_file):
     with open(dim_reduced_file, 'rb') as f:
         xyz_data = pickle.load(f)
 
-    splits = list(xyz_data.keys())
+    data_splits = list(xyz_data.keys())
 
     app_data = {}
-    for split in splits:
-        if split == 'all':
-            skills_in_split = skills
-        elif split == 'cb':
+    for split in data_splits:
+        if split == 'cb':
             skills_in_split = skills[:8]
         elif split == 'noncb':
             skills_in_split = [skills[0]] + skills[8:]
+        else:
+            skills_in_split = skills
 
         axis_limits = {}
         for n_neighbors, nn_dict in xyz_data[split].items():

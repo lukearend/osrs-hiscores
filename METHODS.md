@@ -1,7 +1,7 @@
 methods
 =======
 
-In this document I explain how I reached the results shown in this repository.
+This document explains how to reach the results shown in this repository.
 
 Data collection and cleaning
 ----------------------------
@@ -27,6 +27,8 @@ At this point we have a CSV file containing the ranked usernames of the top 2 mi
 
 Data analysis
 -------------
+
+todo
 
 ### Histograms
 ### Clustering
