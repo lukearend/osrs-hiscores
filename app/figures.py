@@ -1,10 +1,14 @@
+import json
+import pathlib
+
 import numpy as np
 import pandas as pd
-
 import plotly.express as px
 import plotly.graph_objects as go
 
 from app import skill_format
+
+from PIL import Image
 
 
 def get_scatterplot(split_data, skill, level_range, point_size,
@@ -28,11 +32,7 @@ def get_scatterplot(split_data, skill, level_range, point_size,
         'cluster_id': show_inds + 1,
         'num_players': split_data['cluster_sizes'][show_inds],
         'uniqueness': 100 * split_data['cluster_uniqueness'][show_inds],
-        'min': split_data['cluster_quartiles'][:, 0, skill_i][show_inds],
-        'med': split_data['cluster_quartiles'][:, 2, skill_i][show_inds],
-        'max': split_data['cluster_quartiles'][:, 4, skill_i][show_inds],
-        'q1': split_data['cluster_quartiles'][:, 1, skill_i][show_inds],
-        'q3': split_data['cluster_quartiles'][:, 3, skill_i][show_inds]
+        'median': split_data['cluster_quartiles'][:, 2, skill_i][show_inds],
     })
     df = pd.concat([xyz_df, info_df], axis=1)
 
@@ -43,18 +43,16 @@ def get_scatterplot(split_data, skill, level_range, point_size,
         x='x',
         y='y',
         z='z',
-        color='med',
+        color='median',
         range_color=color_range,
         hover_name=[f'Cluster {i}' for i in df['cluster_id']],
-        custom_data=['cluster_id', 'num_players', 'uniqueness', 'min', 'q1', 'med', 'q3', 'max']
+        custom_data=['cluster_id', 'num_players', 'uniqueness']
     )
 
     hover_box = '<br>'.join([
         '<b>Cluster %{customdata[0]}</b>',
         '%{customdata[1]} players',
-        '%{customdata[2]:.2f}% unique',
-        f'{skill_format(skill)} quantiles:',
-        '[%{customdata[3]:d}, %{customdata[4]:d}, %{customdata[5]:d}, %{customdata[6]:d}, %{customdata[7]:d}]'
+        '%{customdata[2]:.2f}% unique'
     ])
     fig.update_traces(hovertemplate=hover_box)
 
@@ -103,9 +101,9 @@ def get_scatterplot(split_data, skill, level_range, point_size,
                 line_color='white',
                 line_width=2,
                 showlegend=False,
+                hoverinfo='skip'
             )
         )
-        fig.update_traces(hoverinfo='skip', hovertemplate=None)
 
     fig.update_layout(
         uirevision='constant',
@@ -137,25 +135,47 @@ def get_scatterplot(split_data, skill, level_range, point_size,
     return fig
 
 
-def get_boxplot(percentile_data):
-    percentile_data = percentile_data[:, 1:]    # Drop total level.
-    mins, q1, median, q3, maxes = percentile_data
+def get_boxplot(split):
+    layout_file = pathlib.Path(__name__).resolve().parent / 'assets' / 'boxplot_ticks.json'
+    with open(layout_file, 'r') as f:
+        tick_labels = json.load(f)[split]
 
-    iqr = q3 - q1
-    lower_fence = q1 - 1.5 * iqr
-    upper_fence = q3 + 1.5 * iqr
+    nans = {
+        'all': 23 * [np.nan],
+        'cb': np.full(7, np.nan),
+        'noncb': np.full(16, np.nan)
+    }[split]
 
     fig = go.Figure(
         data=[
             go.Box(
-                lowerfence=np.maximum(mins, lower_fence),
-                q1=q1,
-                median=median,
-                q3=q3,
-                upperfence=np.minimum(maxes, upper_fence)
+                lowerfence=nans,
+                q1=nans,
+                median=nans,
+                q3=nans,
+                upperfence=nans
             )
         ],
-        layout=dict(margin=dict(l=0, r=0, t=0, b=0))
+        layout_uirevision='constant',
+        layout_margin=dict(b=0, l=0, r=0, t=0),
+        layout_xaxis_tickvals=[],
+        layout_yaxis_range=[-15, 100],
+        layout_yaxis_tickvals=[1, 20, 40, 60, 80, 99],
     )
 
+    icon_offset_x = {'all': 0.43, 'cb': 0.13, 'noncb': 0.30}[split]
+    for i, skill in enumerate(tick_labels):
+        icon = Image.open(f"/Users/lukearend/projects/osrs-hiscores/app/assets/icons/{skill}_icon.png")
+        fig.add_layout_image(
+            dict(
+                source=icon,
+                xref="x",
+                yref="y",
+                x=i - icon_offset_x,
+                y=-2,
+                sizex=1,
+                sizey=12,
+                sizing="contain",
+                layer="above")
+        )
     return fig

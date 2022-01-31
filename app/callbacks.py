@@ -1,5 +1,7 @@
-import math
+import json
+import pathlib
 
+import numpy as np
 from dash import no_update
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
@@ -10,6 +12,18 @@ from app.figures import get_scatterplot, get_boxplot
 
 def add_callbacks(app, app_data, player_collection):
     all_skills = app_data['all']['skills']
+
+    # Build utility functions for reordering skills from canonical order
+    # to order of tick marks along x-axis of box plot.
+    boxplot_file = pathlib.Path(__name__).resolve().parent / 'assets' / 'boxplot_ticks.json'
+    with open(boxplot_file, 'r') as f:
+        boxplot_skills = json.load(f)
+
+    reorder_fn = {}
+    for split in app_data.keys():
+        split_skills = app_data[split]['skills'][1:]  # exclude total level
+        reorder_inds = [split_skills.index(skill) for skill in boxplot_skills[split]]
+        reorder_fn[split] = lambda arr, reorder_inds=reorder_inds: arr[reorder_inds]
 
     @app.callback(
         Output('scatter-plot', 'figure'),
@@ -96,10 +110,9 @@ def add_callbacks(app, app_data, player_collection):
 
     @app.callback(
         Output('query-event', 'data'),
-        Input('username-text', 'value'),
-        Input('current-split', 'value')
+        Input('username-text', 'value')
     )
-    def query_player(username, split):
+    def query_player(username):
         if not username:
             return {
                 'query': '',
@@ -119,6 +132,8 @@ def add_callbacks(app, app_data, player_collection):
                 'response': 404  # not found
             }
 
+        # todo: read
+        # todo: transform stats to dict with stat names
         return {
             'query': username,
             'response': {
@@ -155,7 +170,6 @@ def add_callbacks(app, app_data, player_collection):
     )
     def set_current_player(query_event):
         response = query_event['response']
-
         if response is None:
             return None
         elif response == 400:
@@ -164,7 +178,6 @@ def add_callbacks(app, app_data, player_collection):
             raise PreventUpdate
         elif not response:
             raise PreventUpdate
-
         return response
 
     @app.callback(
@@ -177,7 +190,16 @@ def add_callbacks(app, app_data, player_collection):
     def set_current_cluster(player_data, hover_data, split, scatterplot):
         if hover_data is None:
             if player_data is None:
-                return None
+                num_skills = len(app_data[split]['skills'])
+                return {
+                    'id': None,
+                    'size': None,
+                    'centroid': np.full(num_skills, np.nan),
+                    'boxplot': {
+                        q: np.full(num_skills, np.nan)
+                        for q in ['lowerfence', 'q1', 'median', 'q3', 'upperfence']
+                    }
+                }
             else:
                 cluster_id = player_data['cluster_ids'][split]
         else:
@@ -192,15 +214,33 @@ def add_callbacks(app, app_data, player_collection):
             point_data = trace_data['customdata'][pt_idx]
             cluster_id = point_data[0]
 
-        quartiles = {}
-        for i, q in enumerate(['min', 'q1', 'med', 'q3', 'max']):
-            quartile = app_data[split]['cluster_quartiles'][cluster_id - 1, i, :]
-            quartiles[q] = [None if math.isnan(v) else round(v) for v in quartile]
+        size = app_data[split]['cluster_sizes'][cluster_id - 1]
+        uniqueness = app_data[split]['cluster_uniqueness'][cluster_id - 1]
+
+        quartiles = app_data[split]['cluster_quartiles'][cluster_id - 1]
+        quartiles = quartiles[:, 1:]  # drop total level
+        q0, q1, q2, q3, q4 = quartiles
+        iqr = q3 - q1
+        lower_fence = np.maximum(q1 - 1.5 * iqr, q0)
+        upper_fence = np.minimum(q3 - 1.5 * iqr, q4)
+
+        centroid = np.round(q2)
+
+        reorder = reorder_fn[split]
+        boxplot = {
+            'lowerfence': reorder(np.round(lower_fence)),
+            'q1': reorder(np.round(q1)),
+            'median': reorder(np.round(q2)),
+            'q3': reorder(np.round(q3)),
+            'upperfence': reorder(np.round(upper_fence))
+        }
 
         return {
             'id': cluster_id,
-            'size': app_data[split]['cluster_sizes'][cluster_id - 1],
-            'quartiles': quartiles
+            'size': size,
+            'uniqueness': uniqueness,
+            'centroid': centroid,
+            'boxplot': boxplot
         }
 
     @app.callback(
@@ -222,18 +262,66 @@ def add_callbacks(app, app_data, player_collection):
         State('current-split', 'value')
     )
     def update_cluster_table(cluster, split):
-        if cluster is None:
+        if cluster['id'] is None:
             return "Cluster stats", *('' for _ in range(24))
 
         cluster_id = cluster['id']
-        cluster_centroid = cluster['quartiles']['med']
+        cluster_centroid = cluster['centroid']
 
-        table_values = ['' if v is None else str(v) for v in cluster_centroid]
+        table_values = ['-' if v is None else str(v) for v in cluster_centroid]
         if split == 'cb':
             table_values += 16 * ['']
         elif split == 'noncb':
-            table_values = table_values[:1] + 7 * [''] + table_values[1:]
+            table_values = 7 * [''] + table_values
+        table_values = [''] + table_values  # empty field for total level
 
         return f"Cluster {cluster_id}", *table_values
+
+    @app.callback(
+        Output('box-plot', 'figure'),
+        Input('current-split', 'value')
+    )
+    def redraw_box_plot(split):
+        return get_boxplot(split)
+
+    # Use a client-side callback in JavaScript to update boxplot as fast as possible.
+    app.clientside_callback(
+        """
+        function (cluster, split) {
+            var numSkills;
+            if (split == "all") {
+                numSkills = 23
+            } else if (split == "cb") {
+                numSkills = 7
+            } else if (split == "noncb") {
+                numSkills = 16
+            };
+            return [[
+                {
+                    lowerfence: [cluster.boxplot.lowerfence],
+                    q1: [cluster.boxplot.q1],
+                    median: [cluster.boxplot.median],
+                    q3: [cluster.boxplot.q3],
+                    upperfence: [cluster.boxplot.upperfence],
+                },
+                [0],
+                numSkills
+            ]]
+        }
+        """,
+        [Output('box-plot', 'extendData')],
+        [Input('current-cluster', 'data')],
+        [State('current-split', 'value')]
+    )
+
+    @app.callback(
+        Output('box-plot-text', 'children'),
+        Input('current-cluster', 'data')
+    )
+    def update_box_plot_text(cluster):
+        if cluster['id'] is None:
+            return "Cluster level ranges"
+        return f"Cluster {cluster['id']} level ranges "\
+               f"({cluster['size']} player{'' if cluster['size'] == 1 else 's'})"
 
     return app

@@ -6,10 +6,11 @@ import dash_core_components as dcc
 import dash_html_components as html
 
 from app import get_level_tick_marks, skill_format
+from app.figures import get_boxplot
 
 
 def build_level_table(name):
-    layout_file = pathlib.Path(__name__).resolve().parent / 'assets' / 'skill_layout.json'
+    layout_file = pathlib.Path(__name__).resolve().parent / 'assets' / 'table_layout.json'
     with open(layout_file, 'r') as f:
         skills_layout = json.load(f)
 
@@ -256,12 +257,14 @@ def build_layout(app, app_data):
 
                     html.Br(),
                     dbc.Row(
-                        dbc.Col(
+                        dbc.Col([
+                            html.Div(id='box-plot-text'),
                             dcc.Graph(
                                 id='box-plot',
                                 style={'height': '20vh'},
+                                figure=get_boxplot('all')
                             )
-                        ),
+                        ]),
                         align='center'
                     )
                 ],
