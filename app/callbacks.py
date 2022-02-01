@@ -2,11 +2,12 @@ import json
 import pathlib
 
 import numpy as np
+import pandas as pd
 from dash import no_update
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
-from app import get_level_tick_marks, validate_username, skill_format
+from app import get_level_tick_marks, validate_username
 from app.figures import get_scatterplot, get_boxplot
 
 
@@ -19,11 +20,11 @@ def add_callbacks(app, app_data, player_collection):
     with open(boxplot_file, 'r') as f:
         boxplot_skills = json.load(f)
 
-    reorder_fn = {}
+    boxplot_skill_inds = {}
     for split in app_data.keys():
         split_skills = app_data[split]['skills'][1:]  # exclude total level
         reorder_inds = [split_skills.index(skill) for skill in boxplot_skills[split]]
-        reorder_fn[split] = lambda arr, reorder_inds=reorder_inds: arr[reorder_inds]
+        boxplot_skill_inds[split] = reorder_inds
 
     @app.callback(
         Output('scatter-plot', 'figure'),
@@ -35,13 +36,59 @@ def add_callbacks(app, app_data, player_collection):
         Input('n-neighbors', 'value'),
         Input('min-dist', 'value')
     )
-    def redraw_scatterplot(split, skill, level_range, player_data, point_size, n_neighbors, min_dist):
-        if player_data is None:
-            highlight_cluster = None
+    def redraw_scatterplot(split, skill, level_range, player_data, ptsize_name, n_neighbors, min_dist):
+        # When level selector is used, we display only those clusters whose
+        # interquartile range in the chosen skill overlaps the selected range.
+        skill_i = app_data[split]['skills'].index(skill)
+        levels_q1 = app_data[split]['cluster_quartiles'][:, 1, skill_i]  # 25th percentile
+        levels_q3 = app_data[split]['cluster_quartiles'][:, 3, skill_i]  # 75th percentile
+
+        level_min, level_max = level_range
+        show_inds = np.where(np.logical_and(
+            levels_q3 >= level_min,
+            levels_q1 <= level_max,
+            ))[0]
+
+        cluster_ids = show_inds + 1
+        xyz_data = app_data[split]['xyz'][n_neighbors][min_dist][show_inds]
+        num_players = app_data[split]['cluster_sizes'][show_inds]
+        uniqueness = 100 * app_data[split]['cluster_uniqueness'][show_inds]
+        median_level = app_data[split]['cluster_quartiles'][:, 2, skill_i][show_inds]
+
+        df = pd.DataFrame({
+            'x': xyz_data[:, 0],
+            'y': xyz_data[:, 1],
+            'z': xyz_data[:, 2],
+            'id': cluster_ids,
+            'size': num_players,
+            'uniqueness': uniqueness,
+            'level': median_level
+        })
+
+        skill_name = skill[0].upper() + skill[1:]
+        color_label = f"{skill_name}\nlevel"
+        if skill == 'total':
+            color_range = [500, 2277]
         else:
-            highlight_cluster = player_data['cluster_ids'][split]
-        return get_scatterplot(app_data[split], skill, level_range, point_size,
-                               n_neighbors, min_dist, highlight_cluster=highlight_cluster)
+            color_range = [1, 99]
+
+        if player_data is None:
+            highlight_xyz = None
+        else:
+            highlight_cluster = player_data['id'][split]
+            highlight_xyz = app_data[split]['xyz'][n_neighbors][min_dist][highlight_cluster - 1]
+
+        axis_limits = app_data[split]['axis_limits'][n_neighbors][min_dist]
+        point_size = {'small': 1, 'medium': 2, 'large': 3}[ptsize_name]
+
+        return get_scatterplot(
+            df,
+            colorlims=color_range,
+            colorlabel=color_label,
+            pointsize=point_size,
+            axlims=axis_limits,
+            crosshairs=highlight_xyz
+        )
 
     @app.callback(
         Output('current-skill', 'options'),
@@ -63,8 +110,9 @@ def add_callbacks(app, app_data, player_collection):
 
         options = []
         for skill in all_skills:
+            skill_name = skill[0].upper() + skill[1:]
             options.append({
-                'label': skill_format(skill),
+                'label': f"{skill_name} level",
                 'value': skill,
                 'disabled': True if skill in excluded_skills else False
             })
@@ -162,7 +210,7 @@ def add_callbacks(app, app_data, player_collection):
         cluster_id = response['cluster_ids'][split]
         cluster_size = app_data[split]['cluster_sizes'][cluster_id - 1]
         uniqueness = app_data[split]['cluster_uniqueness'][cluster_id - 1]
-        return f"cluster {cluster_id} ({cluster_size} players, {uniqueness:.2%} unique)"
+        return f"Cluster {cluster_id} ({cluster_size} players, {uniqueness:.2%} unique)"
 
     @app.callback(
         Output('current-player', 'data'),
@@ -178,7 +226,12 @@ def add_callbacks(app, app_data, player_collection):
             raise PreventUpdate
         elif not response:
             raise PreventUpdate
-        return response
+
+        return {
+            'username': response['username'],
+            'id': response['cluster_ids'],
+            'stats': response['stats']
+        }
 
     @app.callback(
         Output('current-cluster', 'data'),
@@ -188,59 +241,32 @@ def add_callbacks(app, app_data, player_collection):
         State('scatter-plot', 'figure')
     )
     def set_current_cluster(player_data, hover_data, split, scatterplot):
+        if scatterplot is None:  # todo: why is this statement necessary?
+            raise PreventUpdate
+
         if hover_data is None:
             if player_data is None:
-                num_skills = len(app_data[split]['skills'])
-                return {
-                    'id': None,
-                    'size': None,
-                    'centroid': np.full(num_skills, np.nan),
-                    'boxplot': {
-                        q: np.full(num_skills, np.nan)
-                        for q in ['lowerfence', 'q1', 'median', 'q3', 'upperfence']
-                    }
-                }
-            else:
-                cluster_id = player_data['cluster_ids'][split]
+                return None
+            cluster_id = player_data['id'][split]
         else:
             pt = hover_data['points'][0]
             if pt['curveNumber'] == 1:  # hovered over a line
                 raise PreventUpdate
-            pt_idx = pt['pointNumber']
 
-            if scatterplot is None:
-                raise PreventUpdate
+            pt_idx = pt['pointNumber']
             trace_data = scatterplot['data'][0]
             point_data = trace_data['customdata'][pt_idx]
             cluster_id = point_data[0]
 
-        size = app_data[split]['cluster_sizes'][cluster_id - 1]
+        cluster_size = app_data[split]['cluster_sizes'][cluster_id - 1]
         uniqueness = app_data[split]['cluster_uniqueness'][cluster_id - 1]
-
-        quartiles = app_data[split]['cluster_quartiles'][cluster_id - 1]
-        quartiles = quartiles[:, 1:]  # drop total level
-        q0, q1, q2, q3, q4 = quartiles
-        iqr = q3 - q1
-        lower_fence = np.maximum(q1 - 1.5 * iqr, q0)
-        upper_fence = np.minimum(q3 - 1.5 * iqr, q4)
-
-        centroid = np.round(q2)
-
-        reorder = reorder_fn[split]
-        boxplot = {
-            'lowerfence': reorder(np.round(lower_fence)),
-            'q1': reorder(np.round(q1)),
-            'median': reorder(np.round(q2)),
-            'q3': reorder(np.round(q3)),
-            'upperfence': reorder(np.round(upper_fence))
-        }
+        median_levels = app_data[split]['cluster_quartiles'][cluster_id - 1, 2]
 
         return {
             'id': cluster_id,
-            'size': size,
+            'size': cluster_size,
             'uniqueness': uniqueness,
-            'centroid': centroid,
-            'boxplot': boxplot
+            'centroid': median_levels
         }
 
     @app.callback(
@@ -262,13 +288,14 @@ def add_callbacks(app, app_data, player_collection):
         State('current-split', 'value')
     )
     def update_cluster_table(cluster, split):
-        if cluster['id'] is None:
+        if cluster is None:
             return "Cluster stats", *('' for _ in range(24))
 
         cluster_id = cluster['id']
-        cluster_centroid = cluster['centroid']
+        centroid = cluster['centroid'][1:]  # drop total level
+        centroid = [None if np.isnan(v) else round(v) for v in centroid]
 
-        table_values = ['-' if v is None else str(v) for v in cluster_centroid]
+        table_values = ['-' if v is None else str(v) for v in centroid]
         if split == 'cb':
             table_values += 16 * ['']
         elif split == 'noncb':
@@ -278,16 +305,49 @@ def add_callbacks(app, app_data, player_collection):
         return f"Cluster {cluster_id}", *table_values
 
     @app.callback(
-        Output('box-plot', 'figure'),
-        Input('current-split', 'value')
+        Output('boxplot-data', 'data'),
+        Input('current-cluster', 'data'),
+        State('current-split', 'value')
     )
-    def redraw_box_plot(split):
-        return get_boxplot(split)
+    def set_boxplot_data(cluster, split):
+        num_skills = {'all': 23, 'cb': 7, 'noncb': 16}[split]
+        boxplot_data = {'numskills': num_skills}
 
-    # Use a client-side callback in JavaScript to update boxplot as fast as possible.
+        if cluster is None:
+            for q in ['lowerfence', 'q1', 'median', 'q3', 'upperfence']:
+                boxplot_data[q] = np.full(num_skills, np.nan)
+            return boxplot_data
+
+        quartiles = app_data[split]['cluster_quartiles'][cluster['id'] - 1]
+        quartiles = quartiles[:, 1:]  # drop total level
+        q0, q1, q2, q3, q4 = quartiles
+        iqr = q3 - q1
+        lower_fence = np.maximum(q1 - 1.5 * iqr, q0)
+        upper_fence = np.minimum(q3 - 1.5 * iqr, q4)
+
+        data = np.array([lower_fence, q1, q2, q3, upper_fence])
+        data = np.round(data)
+        data = data[:, boxplot_skill_inds[split]]
+
+        for i, q in enumerate(['lowerfence', 'q1', 'median', 'q3', 'upperfence']):
+            boxplot_data[q] = data[i]
+
+        return boxplot_data
+
+    @app.callback(
+        Output('box-plot', 'figure'),
+        Input('current-split', 'value'),
+        State('boxplot-data', 'data')
+    )
+    def redraw_box_plot(split, boxplot_data):
+        if boxplot_data is None:
+            return get_boxplot(split, data=None)
+        return get_boxplot(split, data=boxplot_data)
+
+    # Use a client-side callback in JavaScript so boxplot updates as fast as possible.
     app.clientside_callback(
         """
-        function (cluster, split) {
+        function (boxplotData, figure, split) {
             var numSkills;
             if (split == "all") {
                 numSkills = 23
@@ -298,20 +358,19 @@ def add_callbacks(app, app_data, player_collection):
             };
             return [[
                 {
-                    lowerfence: [cluster.boxplot.lowerfence],
-                    q1: [cluster.boxplot.q1],
-                    median: [cluster.boxplot.median],
-                    q3: [cluster.boxplot.q3],
-                    upperfence: [cluster.boxplot.upperfence],
+                    lowerfence: [boxplotData.lowerfence],
+                    q1: [boxplotData.q1],
+                    median: [boxplotData.median],
+                    q3: [boxplotData.q3],
+                    upperfence: [boxplotData.upperfence],
                 },
                 [0],
-                numSkills
+                boxplotData.numskills
             ]]
         }
         """,
         [Output('box-plot', 'extendData')],
-        [Input('current-cluster', 'data')],
-        [State('current-split', 'value')]
+        [Input('boxplot-data', 'data')]
     )
 
     @app.callback(
@@ -319,7 +378,7 @@ def add_callbacks(app, app_data, player_collection):
         Input('current-cluster', 'data')
     )
     def update_box_plot_text(cluster):
-        if cluster['id'] is None:
+        if cluster is None:
             return "Cluster level ranges"
         return f"Cluster {cluster['id']} level ranges "\
                f"({cluster['size']} player{'' if cluster['size'] == 1 else 's'})"

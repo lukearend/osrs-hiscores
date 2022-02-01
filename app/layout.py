@@ -5,7 +5,7 @@ import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 
-from app import get_level_tick_marks, skill_format
+from app import get_level_tick_marks
 from app.figures import get_boxplot
 
 
@@ -96,7 +96,7 @@ def build_layout(app, app_data):
                                 dcc.Dropdown(
                                     id='current-skill',
                                     options=[
-                                        {'label': skill_format(skill), 'value': skill}
+                                        {'label': f"{skill[0].upper() + skill[1:]} level", 'value': skill}
                                         for skill in app_data['all']['skills']
                                     ],
                                     value='total',
@@ -237,6 +237,7 @@ def build_layout(app, app_data):
 
         dcc.Store(id='current-player'),
         dcc.Store(id='current-cluster'),
+        dcc.Store(id='boxplot-data'),
         dbc.Row([
             dbc.Col(
                 [
