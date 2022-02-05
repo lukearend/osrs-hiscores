@@ -9,9 +9,8 @@ from PIL import Image
 
 
 def get_scatterplot(df, colorlims, colorlabel, pointsize, axlims, crosshairs=None):
-    # px.scatter_3d works better than go.Scatter3d
-    # for color and hover data formatting.
-    # todo: with new refactoring, can I use a go.Scatter3d graph object here instead?
+    # While go.Scatter3d (from graph objects module) would be preferred,
+    # it doesn't allow color and hover data formatting using a dataframe.
     fig = px.scatter_3d(
         df,
         x='x',
@@ -88,37 +87,32 @@ def get_scatterplot(df, colorlims, colorlabel, pointsize, axlims, crosshairs=Non
     return fig
 
 
-def get_boxplot(split, data=None):
+def get_boxplot(split):
     layout_file = pathlib.Path(__name__).resolve().parent / 'assets' / 'boxplot_ticks.json'
     with open(layout_file, 'r') as f:
         tick_labels = json.load(f)[split]
+        num_skills = len(tick_labels)
 
-    if data is None:
-        nans = {
-            'all': 23 * [np.nan],
-            'cb': np.full(7, np.nan),
-            'noncb': np.full(16, np.nan)
-        }[split]
-        data = {q: nans for q in ['lowerfence', 'q1', 'median', 'q3', 'upperfence']}
-
+    nans = np.full(num_skills, np.nan)
     fig = go.Figure(
         data=[
             go.Box(
-                lowerfence=data['lowerfence'],
-                q1=data['q1'],
-                median=data['median'],
-                q3=data['q3'],
-                upperfence=data['upperfence']
+                lowerfence=nans,
+                q1=nans,
+                median=nans,
+                q3=nans,
+                upperfence=nans
             )
         ],
         layout_uirevision='constant',
         layout_margin=dict(b=0, l=0, r=0, t=0),
         layout_xaxis_tickvals=[],
+        layout_xaxis_range=np.array([0, num_skills]) - 0.5,
         layout_yaxis_range=[-15, 100],
         layout_yaxis_tickvals=[1, 20, 40, 60, 80, 99],
     )
 
-    icon_offset_x = {'all': 0.43, 'cb': 0.13, 'noncb': 0.30}[split]
+    icon_offset_x = {'all': 0.38, 'cb': 0.106, 'noncb': 0.26}[split]
     for i, skill in enumerate(tick_labels):
         icon = Image.open(f"/Users/lukearend/projects/osrs-hiscores/app/assets/icons/{skill}_icon.png")
         fig.add_layout_image(

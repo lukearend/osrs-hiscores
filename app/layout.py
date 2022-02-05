@@ -5,42 +5,22 @@ import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 
-from app import get_level_tick_marks
-from app.figures import get_boxplot
+from app import (format_skill, get_level_tick_marks,
+                 get_color_label, get_color_range, get_point_size)
+from app.data import (app_data, compute_scatterplot_data,
+                      default_n_neighbors, default_min_dist)
+from app.figures import get_boxplot, get_scatterplot
 
 
-def build_level_table(name):
-    layout_file = pathlib.Path(__name__).resolve().parent / 'assets' / 'table_layout.json'
-    with open(layout_file, 'r') as f:
-        skills_layout = json.load(f)
+def build_layout(app):
+    init_split = 'all'
+    init_skill = 'total'
+    init_level_range = [1, 2277]
+    init_ptsize = 'small'
+    init_n_neighbors = default_n_neighbors(init_split)
+    init_min_dist = default_min_dist(init_split)
 
-    table_rows = []
-    for skill_row in skills_layout:
-
-        table_row = []
-        for skill in skill_row:
-            icon = html.Div(html.Img(src=f'/assets/icons/{skill}_icon.png'))
-            value = html.Div(id=f'{name}-{skill}')
-
-            table_elem = dbc.Row(
-                [
-                    dbc.Col(icon, width=6),
-                    dbc.Col(value, width=6)
-                ],
-                align='center',
-                justify='center',
-                className='g-1'  # almost no gutter between icon and number
-            )
-            table_row.append(dbc.Col(table_elem, width=4))
-
-        table_rows.append(dbc.Row(table_row, align='center'))
-
-    return dbc.Col(table_rows)
-
-
-def build_layout(app, app_data):
     app.layout = dbc.Container([
-
         dbc.Row(
             dbc.Col(
                 [
@@ -76,7 +56,7 @@ def build_layout(app, app_data):
                                         {'label': 'Combat skills', 'value': 'cb'},
                                         {'label': 'Non-combat skills', 'value': 'noncb'},
                                     ],
-                                    value='all',
+                                    value=init_split,
                                     clearable=False
                                 )
                             )
@@ -96,10 +76,10 @@ def build_layout(app, app_data):
                                 dcc.Dropdown(
                                     id='current-skill',
                                     options=[
-                                        {'label': f"{skill[0].upper() + skill[1:]} level", 'value': skill}
+                                        {'label': format_skill(init_skill), 'value': skill}
                                         for skill in app_data['all']['skills']
                                     ],
-                                    value='total',
+                                    value=init_skill,
                                     clearable=False
                                 )
                             )
@@ -129,7 +109,7 @@ def build_layout(app, app_data):
                                         {'label': str(n), 'value': n}
                                         for n in [5, 10, 15, 20]
                                     ],
-                                    value=5,
+                                    value=init_n_neighbors,
                                     clearable=False
                                 )
                             )
@@ -152,7 +132,7 @@ def build_layout(app, app_data):
                                         {'label': '{:.2f}'.format(d), 'value': d}
                                         for d in [0.0, 0.1, 0.25, 0.50]
                                     ],
-                                    value=0.0,
+                                    value=init_min_dist,
                                     clearable=False
                                 )
                             )
@@ -174,10 +154,10 @@ def build_layout(app, app_data):
                 dbc.Col(
                     dcc.RangeSlider(
                         id='level-range',
-                        min=1,
-                        max=2277,
+                        min=init_level_range[0],
+                        max=init_level_range[1],
                         step=1,
-                        value=[1, 2277],
+                        value=init_level_range,
                         tooltip={'placement': 'bottom'},
                         allowCross=False,
                         marks=get_level_tick_marks('total')
@@ -221,7 +201,7 @@ def build_layout(app, app_data):
                                         {'label': s, 'value': s}
                                         for s in ['small', 'medium', 'large']
                                     ],
-                                    value='small',
+                                    value=init_ptsize,
                                     clearable=False
                                 )
                             )
@@ -237,7 +217,6 @@ def build_layout(app, app_data):
 
         dcc.Store(id='current-player'),
         dcc.Store(id='current-cluster'),
-        dcc.Store(id='boxplot-data'),
         dbc.Row([
             dbc.Col(
                 [
@@ -250,7 +229,7 @@ def build_layout(app, app_data):
                             ]),
                             dbc.Col([
                                 html.Strong(id='cluster-table-title'),
-                                build_level_table(name='cluster-table')
+                                build_level_table(name='cluster-table', include_total=False)
                             ]),
                         ],
                         align='center'
@@ -263,7 +242,7 @@ def build_layout(app, app_data):
                             dcc.Graph(
                                 id='box-plot',
                                 style={'height': '20vh'},
-                                figure=get_boxplot('all')
+                                figure=get_boxplot(init_split)
                             )
                         ]),
                         align='center'
@@ -274,7 +253,15 @@ def build_layout(app, app_data):
             dbc.Col(
                 dcc.Graph(
                     id='scatter-plot',
-                    clear_on_unhover=True
+                    clear_on_unhover=True,
+                    figure=get_scatterplot(
+                        df=compute_scatterplot_data(init_split, init_skill, init_level_range,
+                                                    init_n_neighbors, init_min_dist),
+                        colorlims=get_color_range(init_skill),
+                        colorlabel=get_color_label(init_skill),
+                        pointsize=get_point_size(init_ptsize),
+                        axlims=app_data[init_split]['axis_limits'][init_n_neighbors][init_min_dist]
+                    ),
                 ),
                 width=7
             )
@@ -285,3 +272,36 @@ def build_layout(app, app_data):
     ])
 
     return app
+
+
+def build_level_table(name, include_total=True):
+    layout_file = pathlib.Path(__name__).resolve().parent / 'assets' / 'table_layout.json'
+    with open(layout_file, 'r') as f:
+        skills_layout = json.load(f)
+
+    table_rows = []
+    for skill_row in skills_layout:
+
+        table_row = []
+        for skill in skill_row:
+            if skill == 'total' and not include_total:
+                icon = html.Div(children='')
+                value = html.Div(children='')
+            else:
+                icon = html.Div(html.Img(src=f'/assets/icons/{skill}_icon.png'))
+                value = html.Div(id=f'{name}-{skill}')
+
+            table_elem = dbc.Row(
+                [
+                    dbc.Col(icon, width=6),
+                    dbc.Col(value, width=6)
+                ],
+                align='center',
+                justify='center',
+                className='g-1'  # almost no gutter between icon and number
+            )
+            table_row.append(dbc.Col(table_elem, width=4))
+
+        table_rows.append(dbc.Row(table_row, align='center'))
+
+    return dbc.Col(table_rows)

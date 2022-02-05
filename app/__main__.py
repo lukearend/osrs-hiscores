@@ -2,8 +2,6 @@
 
 """ Visualize 3d-embedded cluster data with a Dash application. """
 
-import pathlib
-import pickle
 import sys
 
 from dash import Dash
@@ -24,12 +22,8 @@ except ServerSelectionTimeoutError:
     raise ValueError("could not connect to mongodb")
 player_db = db['players']
 
-data_file = pathlib.Path(__file__).resolve().parent / 'assets/app_data.pkl'
-with open(data_file, 'rb') as f:
-    app_data = pickle.load(f)
-
 app = Dash(__name__, external_stylesheets=[themes.BOOTSTRAP])
-app = build_layout(app, app_data)
-app = add_callbacks(app, app_data, player_db)
+app = build_layout(app)
+app = add_callbacks(app, player_db)
 
 app.run_server(debug=True)
