@@ -5,10 +5,9 @@ import dash_bootstrap_components as dbc
 import dash_core_components as dcc
 import dash_html_components as html
 
-from app import (format_skill, get_level_tick_marks,
-                 get_color_label, get_color_range, get_point_size)
-from app.data import (app_data, compute_scatterplot_data,
-                      default_n_neighbors, default_min_dist)
+from app import format_skill, default_n_neighbors, default_min_dist,\
+                get_level_tick_marks, get_color_label, get_color_range, get_point_size
+from app.data import app_data, compute_scatterplot_data
 from app.figures import get_boxplot, get_scatterplot
 
 

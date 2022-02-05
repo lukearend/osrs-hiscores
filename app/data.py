@@ -11,14 +11,6 @@ with open(data_file, 'rb') as f:
     app_data = pickle.load(f)
 
 
-def default_n_neighbors(split):
-    return {'all': 5, 'cb': 15, 'noncb': 5}[split]
-
-
-def default_min_dist(split):
-    return {'all': 0.25, 'cb': 0.25, 'noncb': 0.00}[split]
-
-
 def compute_scatterplot_data(split, skill, level_range, n_neighbors, min_dist):
     # When level selector is used, we display only those clusters whose
     # interquartile range in the chosen skill overlaps the selected range.
