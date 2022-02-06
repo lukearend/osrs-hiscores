@@ -2,7 +2,7 @@
 
 """ Visualize 3d-embedded cluster data with a Dash application. """
 
-import sys
+import os
 
 from dash import Dash
 from pymongo import MongoClient
@@ -12,8 +12,11 @@ from dash_bootstrap_components import themes
 from app.layout import build_layout
 from app.callbacks import add_callbacks
 
+try:
+    url = os.environ["MONGO_URI"]
+except KeyError:
+    raise ValueError("MONGO_URI is not set in environment")
 
-url = 'localhost:{}'.format(sys.argv[1])
 client = MongoClient(url, serverSelectionTimeoutMS=10000)
 db = client['osrs-hiscores']
 try:

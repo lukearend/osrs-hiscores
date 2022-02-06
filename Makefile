@@ -7,15 +7,14 @@ DATA_TMP:=$(ROOT_DIR)/data/interim
 DATA_FINAL:=$(ROOT_DIR)/data/processed
 APP_DIR:=$(ROOT_DIR)/app
 DB_DIR:=$(ROOT_DIR)/volume
-DB_PORT:=27017
 
 .DEFAULT_GOAL := help
 
 all: lint init scrape cluster app
-clean: env-clean data-clean results-clean 
+clean: env-clean data-clean results-clean
 
 # Setup -------------------------------------------------------------------------------------------
-init: db-pull env extensions ## Setup project dependencies.
+init: env extensions ## Setup project dependencies.
 
 env:
 	@echo "building virtual environment..."
@@ -107,45 +106,26 @@ $(DATA_TMP)/dim_reduced.pkl: $(DATA_TMP)/cluster_analytics.pkl
 
 .PHONY: dimreduce dimreduce-clean
 
-# Visualization -----------------------------------------------------------------------------------
-app: $(APP_DIR)/assets/app_data.pkl db ## Build application data/database.
+# Application -------------------------------------------------------------------------------------
+app: $(DATA_FINAL)/clusters.csv $(APP_DIR)/assets/app_data.pkl ## Build application data/database.
+	@source env/bin/activate && \
+	cd src/data && python3 build_database.py $<
+	@echo
 
-app-clean: db-stop
+app-clean:
 	rm -f $(DATA_FINAL)/app_data.pkl
 	rm -f $(APP_DIR)/assets/app_data.pkl
 	rm -rf $(DB_DIR)
 
-# app-run: db-start ## Run main application for visualizing results.
 app-run:
-	@source env/bin/activate && python3 app $(DB_PORT)
+	@source env/bin/activate && python3 app
 
 $(APP_DIR)/assets/app_data.pkl: $(DATA_TMP)/cluster_analytics.pkl $(DATA_TMP)/dim_reduced.pkl
 	@source env/bin/activate && \
 	cd src/data && python3 build_app_data.py $^ $@
 	@echo
 
-.PHONY: app app-clean app-run
-
-# Database ----------------------------------------------------------------------------------------
-db: $(DATA_FINAL)/clusters.csv db-pull db-start ## Build application database.
-	@source env/bin/activate && \
-	cd src/data && python3 build_database.py $< $(DB_PORT)
-	@echo
-
-db-pull: ## Pull latest version of MongoDB.
-	@docker pull mongo
-
-db-start: ## Start database container.
-	@mkdir -p $(DB_DIR) && \
-	docker stop osrs-hiscores-db > /dev/null 2>&1 ; \
-	docker run --rm -d --name osrs-hiscores-db \
-	-v $(DB_DIR):/data/db -p $(DB_PORT):$(DB_PORT) mongo
-	@echo -n "starting database... " && sleep 2 && echo -e "done\n"
-
-db-stop: ## Stop database container.
-	@docker stop osrs-hiscores-db 2> /dev/null
-
-.PHONY: db db-pull db-start db-stop
+.PHONY: app db app-clean app-run
 
 # Other -------------------------------------------------------------------------------------------
 vim-binding:

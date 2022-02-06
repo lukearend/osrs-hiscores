@@ -9,7 +9,7 @@ matplotlib
 numpy
 pandas
 pycodestyle
-pymongo
+pymongo[srv]
 requests
 seaborn
 scipy

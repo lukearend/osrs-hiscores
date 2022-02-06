@@ -2,7 +2,7 @@
 
 """ Build a database of mappings from usernames to cluster ID. """
 
-import csv
+import os
 import sys
 
 from pymongo import MongoClient
@@ -12,12 +12,15 @@ from tqdm import tqdm
 from src.data import line_count, load_cluster_data, load_stats_data
 
 
-def main(clusters_file, stats_file, mongo_port):
+def main(clusters_file, stats_file):
     print("building database...")
+    try:
+        url = os.environ["MONGO_URI"]
+    except KeyError:
+        raise ValueError("MONGO_URI is not set in environment")
 
     print("connecting...", end=' ', flush=True)
-    url = 'localhost:{}'.format(mongo_port)
-    client = MongoClient(url, serverSelectionTimeoutMS=10000)
+    client = MongoClient(url, serverSelectionTimeoutMS=10000, authSource='admin')
     db = client['osrs-hiscores']
     try:
         db.command('ping')
@@ -62,4 +65,4 @@ def main(clusters_file, stats_file, mongo_port):
 
 
 if __name__ == '__main__':
-    main(*sys.argv[1:3], int(sys.argv[3]))
+    main(*sys.argv[1:])
