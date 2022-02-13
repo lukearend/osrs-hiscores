@@ -5,8 +5,10 @@ import dash_bootstrap_components as dbc
 from dash import dcc
 from dash import html
 
-from app import format_skill, default_n_neighbors, default_min_dist,\
-                get_level_tick_marks, get_color_label, get_color_range, get_point_size
+from app import (
+    format_skill, default_n_neighbors, default_min_dist,
+    get_level_tick_marks, get_color_label, get_color_range, get_point_size
+)
 from app.data import compute_scatterplot_data
 from app.figures import get_boxplot, get_scatterplot
 
@@ -254,7 +256,7 @@ def build_layout(app, app_data):
                     id='scatter-plot',
                     clear_on_unhover=True,
                     figure=get_scatterplot(
-                        df=compute_scatterplot_data(app_data, init_split, init_skill,init_level_range,
+                        df=compute_scatterplot_data(app_data, init_split, init_skill, init_level_range,
                                                     init_n_neighbors, init_min_dist),
                         colorlims=get_color_range(init_skill),
                         colorlabel=get_color_label(init_skill),

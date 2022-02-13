@@ -1,25 +1,24 @@
 export SHELL:=/bin/bash
 export AMBER_LICENSE_ID:=luke-dev
 
-ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-DATA_RAW:=$(ROOT_DIR)/data/raw
-DATA_TMP:=$(ROOT_DIR)/data/interim
-DATA_FINAL:=$(ROOT_DIR)/data/processed
-DB_DIR:=$(ROOT_DIR)/volume
-GDRIVE_DIR:=***REMOVED***
-S3_BUCKET:=osrshiscores
-
 ifneq (,$(wildcard ./.env))
 	include .env
 	export
 endif
 
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+DATA_RAW:=$(ROOT_DIR)/data/raw
+DATA_TMP:=$(ROOT_DIR)/data/interim
+DATA_FINAL:=$(ROOT_DIR)/data/processed
+GDRIVE_DIR:=***REMOVED***
+S3_BUCKET:=osrshiscores
+
 .DEFAULT_GOAL := help
 
-all: init download dimreduce app
-full: init scrape cluster dimreduce app
+all: init scrape cluster dimreduce app # Scrape data, process it and build application from scratch.
+build: init download dimreduce app # Build final application from downloaded data.
+clean: env-clean scrape-clean cluster-clean dimreduce-clean app-clean
 test: lint app-run
-clean: env-clean data-clean results-clean
 
 # Setup -------------------------------------------------------------------------------------------
 init: env nbextensions ## Setup project dependencies.
@@ -32,21 +31,14 @@ env:
 	pip3 install -r requirements.txt && \
 	rm -rf *.egg-info && \
 	source env/bin/activate
-	@echo
 
 env-clean:
-	@rm -rf env
+	rm -rf env
 
 .PHONY: all clean init env-clean
 
 # Data scraping -----------------------------------------------------------------------------------
 scrape: $(DATA_FINAL)/stats.csv ## Run data scrape of OSRS hiscores.
-
-scrape-clean:
-	@[ -f $(DATA_RAW)/usernames-raw.csv ] && touch $(DATA_RAW)/usernames-raw.csv; \
-	[ -f $(DATA_RAW)/stats-raw.csv ] &&  touch $(DATA_RAW)/stats-raw.csv ; \
-	rm -f $(DATA_TMP)/usernames.csv && \
-	rm -f $(DATA_FINAL)/stats.csv &&
 
 $(DATA_RAW)/usernames-raw.csv:
 	@source env/bin/activate && \
@@ -56,12 +48,10 @@ $(DATA_RAW)/usernames-raw.csv:
 		loc=`expresso locations | grep -- '- USA - ' | sed 's/^.*(//;s/)$$//' | shuf -n 1` && \
 		expresso connect --change $$loc ; \
 	done
-	@echo
 
 $(DATA_TMP)/usernames.csv: $(DATA_RAW)/usernames-raw.csv
 	@source env/bin/activate && \
 	cd src/data && python3 cleanup_usernames.py $< $@
-	@echo
 
 $(DATA_RAW)/stats-raw.csv: $(DATA_TMP)/usernames.csv
 	@source env/bin/activate && \
@@ -71,90 +61,95 @@ $(DATA_RAW)/stats-raw.csv: $(DATA_TMP)/usernames.csv
 		loc=`expresso locations | grep -- '- USA - ' | sed 's/^.*(//;s/)$$//' | shuf -n 1` && \
 		expresso connect --change $$loc; \
 	done
-	@echo
 
 $(DATA_FINAL)/stats.csv: $(DATA_RAW)/stats-raw.csv
 	@source env/bin/activate && \
 	cd src/data && python3 cleanup_stats.py $(DATA_RAW)/stats-raw.csv $@
-	@echo
 
-.PHONY: scrape scrape-clean upload
+scrape-clean: # Keep raw dump files.
+	rm -f $(DATA_TMP)/usernames.csv
+	rm -f $(DATA_FINAL)/stats.csv
+
+scrape-clobber: # Delete all files from scraping process.
+	rm -f $(DATA_RAW)/usernames-raw.csv
+	rm -f $(DATA_TMP)/usernames.csv
+	rm -f $(DATA_RAW)/stats-raw.csv
+	rm -f $(DATA_FINAL)/stats.csv
+
+.PHONY: scrape scrape-clean
 .PRECIOUS: $(DATA_RAW)/usernames-raw.csv $(DATA_RAW)/stats-raw.csv
-
-# Upload/download ---------------------------------------------------------------------------------
-
-upload: $(DATA_FINAL)/stats.csv $(DATA_FINAL)/clusters.csv ## Upload scraped data to S3/Google Drive.
-	@gdrive upload --parent $(GDRIVE_DIR) --name player-clusters.csv data/processed/clusters.csv && \
-	gdrive upload --parent $(GDRIVE_DIR) --name player-stats.csv data/processed/stats.csv && \
-	aws s3 cp $< s3://osrshiscores/dataset/player-stats.csv && \
-	aws s3 cp $(word 2,$^) s3://osrshiscores/dataset/player-clusters.csv
-
-download: $(DATA_FINAL)/stats.csv $(DATA_FINAL)/clusters.csv
-	@aws s3 cp s3://osrshiscores/dataset/player-stats.csv $< && \
-	aws s3 cp s3://osrshiscores/dataset/player-clusters.csv $(word 2,$^)
-
-.PHONY: upload download
 
 # Clustering --------------------------------------------------------------------------------------
 cluster: $(DATA_FINAL)/clusters.csv ## Cluster players according to scraped stats.
 
-cluster-clean:
-	@[ -f $(DATA_FINAL)/clusters.csv ] && touch $(DATA_FINAL)/clusters.csv
-
-$(DATA_FINAL)/clusters.csv: $(DATA_FINAL)/stats.csv
+$(DATA_FINAL)/clusters.csv:
 	@source env/bin/activate && \
-	cd src/models && python3 cluster_players.py $< $@
-	@echo
+	cd src/models && python3 cluster_players.py $(DATA_FINAL)/stats.csv $@
+
+cluster-clean:
+	rm -f $(DATA_FINAL)/clusters.csv
 
 .PHONY: cluster cluster-clean
-.PRECIOUS: $(DATA_FINAL)/clusters.csv
 
 # Dimensionality reduction ------------------------------------------------------------------------
 dimreduce: $(DATA_TMP)/dim_reduced.pkl ## Reduce cluster dimensionality for visualization.
 
-dimreduce-clean:
-	rm -f $(DATA_TMP)/cluster_analytics.pkl && \
-	rm -f $(DATA_TMP)/dim_reduced.pkl
-
-$(DATA_TMP)/cluster_analytics.pkl: $(DATA_FINAL)/stats.csv $(DATA_FINAL)/clusters.csv
+$(DATA_TMP)/cluster_analytics.pkl:
 	@source env/bin/activate && \
-	cd src/features && python3 process_clusters.py $^ $@
-	@echo
+	cd src/features && python3 process_clusters.py $(DATA_FINAL)/stats.csv $(DATA_FINAL)/clusters.cs v$@
 
 $(DATA_TMP)/dim_reduced.pkl: $(DATA_TMP)/cluster_analytics.pkl
 	@source env/bin/activate && \
 	cd src/models && python3 dim_reduce_clusters.py $< $@
-	@echo
+
+dimreduce-clean:
+	rm -f $(DATA_TMP)/cluster_analytics.pkl
+	rm -f $(DATA_TMP)/dim_reduced.pkl
 
 .PHONY: dimreduce dimreduce-clean
 
 # Application -------------------------------------------------------------------------------------
-app: app-data app-db
-	@cp $< $(OSRS_APPDATA_LOCAL)
-	@aws s3 cp $< $(OSRS_APPDATA_S3)
-
-app-data: $(DATA_FINAL)/app_data.pkl
-	@cp $< $(OSRS_APPDATA_LOCAL) 2>/dev/null || : && \
-	aws s3 cp $< s3://osrshiscores/$(OSRS_APPDATA_S3)
-
-app-db: $(DATA_FINAL)/clusters.csv $(DATA_FINAL)/stats.csv ## Build application database.
-	@source env/bin/activate && \
-	cd src/data && python3 build_database.py $^
-	@echo
-
-app-clean:
-	rm -f $(DATA_FINAL)/app_data.pkl
-	rm -rf $(DB_DIR)
-
-app-run:
-	@source env/bin/activate && python3 app
+app: $(DATA_FINAL)/app_data.pkl app-db ## Build data file and database for visualization app.
+	cp $< $(OSRS_APPDATA_FILE)
+	aws s3 cp $< $(OSRS_APPDATA_S3KEY)
 
 $(DATA_FINAL)/app_data.pkl: $(DATA_TMP)/cluster_analytics.pkl $(DATA_TMP)/dim_reduced.pkl
 	@source env/bin/activate && \
 	cd src/data && python3 build_app_data.py $^ $@
-	@echo
 
-.PHONY: app db app-clean app-run
+app-db: $(DATA_FINAL)/clusters.csv $(DATA_FINAL)/stats.csv
+	@source env/bin/activate && \
+	cd src/data && python3 build_database.py $^
+
+app-run:
+	@source env/bin/activate && python3 app
+
+app-clean:
+	rm -f $(DATA_FINAL)/app_data.pkl
+
+.PHONY: app app-db app-run app-clean
+
+# Upload/download ---------------------------------------------------------------------------------
+
+upload-appdata: $(DATA_FINAL)/app_data.pkl
+	aws s3 cp $< s3://$(S3_BUCKET)/$(OSRS_APPDATA_S3KEY)
+
+upload-dataset: $(DATA_FINAL)/stats.csv $(DATA_FINAL)/clusters.csv
+	aws s3 cp $(word 2,$^) s3://$(S3_BUCKET)/dataset/player-clusters.csv
+	aws s3 cp $< s3://$(S3_BUCKET)/dataset/player-stats.csv
+	gdrive upload --parent $(GDRIVE_DIR) --name player-clusters.csv data/processed/clusters.csv
+	gdrive upload --parent $(GDRIVE_DIR) --name player-stats.csv data/processed/stats.csv
+
+download: ## Download processed dataset from S3.
+	@source env/bin/activate && \
+	python -c "from src.data import download_from_s3; \
+	download_from_s3('$(S3_BUCKET)', 'dataset/player-clusters.csv', '$(DATA_FINAL)/clusters.csv'); \
+	print()" && \
+	python -c "from src.data import download_from_s3; \
+	download_from_s3('$(S3_BUCKET)', 'dataset/player-stats.csv', '$(DATA_FINAL)/stats.csv'); \
+	print()"
+
+.PHONY: upload-appdata upload-dataset download
 
 # Other -------------------------------------------------------------------------------------------
 vim-binding:
@@ -165,9 +160,9 @@ vim-binding:
 	cd vim_binding && git pull
 
 nbextensions: vim-binding
-	jupyter nbextension enable vim_binding/vim_binding && \
-	jupyter nbextension enable rubberband/main && \
-	jupyter nbextension enable toggle_all_line_numbers/main && \
+	jupyter nbextension enable vim_binding/vim_binding
+	jupyter nbextension enable rubberband/main
+	jupyter nbextension enable toggle_all_line_numbers/main
 	jupyter nbextension enable varInspector/main
 
 notebook: nbextensions ## Start a local jupyter notebook server.
@@ -176,11 +171,11 @@ notebook: nbextensions ## Start a local jupyter notebook server.
 
 lint: ## Run code style checker.
 	@source env/bin/activate && \
-	pycodestyle app src --ignore=E501 && \
+	pycodestyle app src --ignore=E501,E302 && \
 	echo "ok"
 
 help: ## Show this help.
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
+	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(firstword $(MAKEFILE_LIST)) | \
 	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
 .PHONY: vim-binding nbextensions notebook lint help

@@ -47,13 +47,17 @@ Project organization
 Usage
 -----
 
+Run `make build` to install dependencies, download dataset, process the data and build application. This takes about 30 mins on a 2021 M1 Mac.
+
+To run the app locally, run `make app-run` and visit the URL `localhost:8050` in your web browser.
+
+The build process consists of the following steps which can be run separately:
+1. `make init`: set up Python virtual environment. This includes dependencies for the code used in the project.
+2. `make download`: download dataset from an AWS bucket. The dataset consists of one file for player stats and another file for the clustering results.
+3. `make dimreduce`: project cluster centroids from high-dimensional space to 3D for visualization purposes.
+4. `make app`: build application data and database from analytic results. Expects MongoDB to be available at the URI specified by env variable `OSRS_MONGODB_URI`, and expects `OSRS_APPDATA_LOCAL` to point to the 
+
+
 Run `make init` to set up virtual environment. Run `make analytics` to run the full analytics pipeline on the raw data, producing final results (takes about TODO seconds on M1 mac). To launch the visualization, run `make app` and then navigate to `localhost:8050` in the browser.
 
 The virtual environment must be activated to work interactively with python. To do this, run `source env/bin/activate` from the top-level directory. You can then open a notebook server by running `make notebook` and going to `localhost:8888` in the browser. The notebooks in this repository were used to generate the final figures.
-
-Dependencies
-------------
-
-* `expresso` expressVPN CLI for IP hopping in data scraping scripts
-* `aws-cli`: AWS CLI for uploading scraped data
-* `gdrive`: Google Drive CLI for uploading scraped data

@@ -1,11 +1,10 @@
 #!/usr/bin/env python3
 
-""" Reduce dimensionality of cluster centroids to 3d using UMAP. 
+""" Reduce dimensionality of cluster centroids to 3d using UMAP.
     Full grid search over 3 splits, 16 parameter sets takes 10 mins.
 """
 
 import json
-import os
 import pathlib
 import pickle
 import time

@@ -1,8 +1,10 @@
 import csv
-import pathlib
 from subprocess import check_output
 
+import boto3
 import numpy as np
+import progressbar as progressbar
+from botocore.exceptions import NoCredentialsError
 from tqdm import tqdm
 
 
@@ -49,3 +51,22 @@ def load_cluster_data(file):
             cluster_ids[i, :] = line[1:]
 
     return usernames, splits, cluster_ids
+
+
+def download_from_s3(bucket, s3_file, local_file):
+    print(f"downloading s3://{bucket}/{s3_file}")
+    s3 = boto3.client('s3')
+    response = s3.head_object(Bucket=bucket, Key=s3_file)
+    size = response['ContentLength']
+    progress = progressbar.progressbar.ProgressBar(maxval=size)
+    progress.start()
+
+    def update_progress(chunk):
+        progress.update(progress.currval + chunk)
+
+    try:
+        s3.download_file(bucket, s3_file, local_file, Callback=update_progress)
+    except FileNotFoundError:
+        print(f"file not found")
+    except NoCredentialsError:
+        print(f"credentials not available")

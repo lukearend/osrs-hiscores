@@ -4,8 +4,10 @@ from dash import no_update
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
-from app import validate_username, format_skill, default_n_neighbors, default_min_dist,\
-                get_level_tick_marks, get_color_label, get_color_range, get_point_size
+from app import (
+    validate_username, format_skill, default_n_neighbors, default_min_dist,
+    get_level_tick_marks, get_color_label, get_color_range, get_point_size
+)
 from app.data import get_boxplot_inds
 from app.data import compute_boxplot_data as boxplot_data_fn
 from app.data import compute_scatterplot_data as scatterplot_data_fn

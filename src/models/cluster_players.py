@@ -71,9 +71,9 @@ def main(stats_file, out_file):
             # weighted 2:1 to balance their influence on clustering.
             weights = 7 * [2 * 16] + 16 * [7]
         pv = {
-            'all'   : 0.103,
-            'cb'    : 0.039,
-            'noncb' : 0.123
+            'all': 0.103,
+            'cb': 0.039,
+            'noncb': 0.123
         }[split]
 
         success, response = nano.configure_nano(feature_count=num_features,

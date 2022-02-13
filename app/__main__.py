@@ -18,12 +18,13 @@ from app.callbacks import add_callbacks
 env_mode = os.getenv("OSRS_APP_ENV", 'development')
 print(f"env_mode: {env_mode}")
 if env_mode in ['production', 'test']:
-    obj_name = get_env_variable("OSRS_APPDATA_S3")
-    app_data = load_appdata_s3(obj_name)
+    bucket = get_env_variable("OSRS_APPDATA_S3BUCKET")
+    obj_key = get_env_variable("OSRS_APPDATA_S3KEY")
+    app_data = load_appdata_s3(bucket, obj_key)
     debug = False
 else:
     load_dotenv(find_dotenv())
-    file_path = get_env_variable("OSRS_APPDATA_LOCAL")
+    file_path = get_env_variable("OSRS_APPDATA_FILE")
     app_data = load_appdata_local(file_path)
     debug = True
 

@@ -9,6 +9,7 @@ jupyter_contrib_nbextensions
 matplotlib
 numpy
 pandas
+progressbar
 pycodestyle
 pymongo[srv]
 requests

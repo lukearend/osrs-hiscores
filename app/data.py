@@ -19,7 +19,7 @@ def compute_scatterplot_data(app_data, split, skill, level_range, n_neighbors, m
     show_inds = np.where(np.logical_and(
         levels_q3 >= level_min,
         levels_q1 <= level_max,
-        ))[0]
+    ))[0]
 
     cluster_ids = show_inds + 1
     xyz_data = app_data[split]['xyz'][n_neighbors][min_dist][show_inds]
@@ -90,11 +90,11 @@ def load_appdata_local(path):
         return pickle.load(f)
 
 
-def load_appdata_s3(obj_name):
+def load_appdata_s3(bucket, obj_key):
     print("loading app data...", end=' ', flush=True)
     f = BytesIO()
     s3 = boto3.client('s3')
-    s3.download_fileobj("osrshiscores", obj_name, f)
+    s3.download_fileobj(bucket, obj_key, f)
     f.seek(0)
     app_data = pickle.load(f)
     print("done")
