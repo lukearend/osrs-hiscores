@@ -15,12 +15,12 @@ from src.data import line_count, load_cluster_data, load_stats_data
 def main(clusters_file, stats_file):
     print("building database...")
     try:
-        url = os.environ["MONGO_URI"]
-    except KeyError:
-        raise ValueError("MONGO_URI is not set in environment")
+        url = os.environ["OSRS_MONGO_URI"]
+    except KeyError as e:
+        raise ValueError(f"{e} is not set in environment")
 
     print("connecting...", end=' ', flush=True)
-    client = MongoClient(url, serverSelectionTimeoutMS=10000, authSource='admin')
+    client = MongoClient(url, serverSelectionTimeoutMS=10000)
     db = client['osrs-hiscores']
     try:
         db.command('ping')

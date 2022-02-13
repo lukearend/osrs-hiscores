@@ -15,7 +15,7 @@ import sys
 import aiohttp
 from tqdm import tqdm
 
-from src.scrape import request_stats
+from src.scrape import request_stats, HiscoresApiError
 
 
 async def process_stats(session, job_queue, out_file, file_lock, pbar):
@@ -29,16 +29,14 @@ async def process_stats(session, job_queue, out_file, file_lock, pbar):
             try:
                 stats_csv = await request_stats(session, username)
             except KeyError as e:
-                print("could not find user '{}': {}".format(username, e))
-
                 # Make a row representing the missing data.
+                print(f"user '{e}' not found")
                 await file_lock.acquire()
                 f.write(username + '\n')
                 file_lock.release()
                 continue
-
-            except ValueError as e:
-                print("could not process user '{}': {}".format(username, e))
+            except HiscoresApiError as e:
+                print(f"could not process user '{username}': {e}")
                 continue
 
             await file_lock.acquire()

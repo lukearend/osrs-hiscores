@@ -1,17 +1,14 @@
 import json
 import pathlib
 import pickle
+from io import BytesIO
 
+import boto3
 import numpy as np
 import pandas as pd
 
 
-data_file = pathlib.Path(__file__).resolve().parent / 'assets/app_data.pkl'
-with open(data_file, 'rb') as f:
-    app_data = pickle.load(f)
-
-
-def compute_scatterplot_data(split, skill, level_range, n_neighbors, min_dist):
+def compute_scatterplot_data(app_data, split, skill, level_range, n_neighbors, min_dist):
     # When level selector is used, we display only those clusters whose
     # interquartile range in the chosen skill overlaps the selected range.
     skill_i = app_data[split]['skills'].index(skill)
@@ -41,19 +38,7 @@ def compute_scatterplot_data(split, skill, level_range, n_neighbors, min_dist):
     })
 
 
-# Build index lists for reordering skills from canonical order
-# to order of tick marks along x-axis of box plot.
-boxplot_file = pathlib.Path(__name__).resolve().parent / 'assets' / 'boxplot_ticks.json'
-with open(boxplot_file, 'r') as f:
-    boxplot_skills = json.load(f)
-
-boxplot_skill_inds = {}
-for split in app_data.keys():
-    split_skills = app_data[split]['skills'][1:]  # exclude total level
-    reorder_inds = [split_skills.index(skill) for skill in boxplot_skills[split]]
-    boxplot_skill_inds[split] = reorder_inds
-
-def compute_boxplot_data(split, cluster_id=None):
+def compute_boxplot_data(app_data, boxplot_inds, split, cluster_id=None):
     # Replace nans with -100 so we don't see them on the chart (a bit hacky)
     hide_value = -100
     if cluster_id is None:
@@ -73,7 +58,7 @@ def compute_boxplot_data(split, cluster_id=None):
 
     data = np.array([lower_fence, q1, q2, q3, upper_fence])
     data = np.round(data)
-    data = data[:, boxplot_skill_inds[split]]
+    data = data[:, boxplot_inds[split]]
 
     nan_inds = np.isnan(data[2, :])
     data[:, nan_inds] = hide_value
@@ -82,3 +67,35 @@ def compute_boxplot_data(split, cluster_id=None):
     for i, q in enumerate(['lowerfence', 'q1', 'median', 'q3', 'upperfence']):
         plot_data[q] = data[i]
     return plot_data
+
+
+def get_boxplot_inds(app_data):
+    # Build index lists for reordering skills from canonical order
+    # to order of tick marks along x-axis of box plot.
+    boxplot_file = pathlib.Path(__name__).resolve().parent / 'assets' / 'boxplot_ticks.json'
+    with open(boxplot_file, 'r') as f:
+        boxplot_skills = json.load(f)
+
+    boxplot_inds = {}
+    for split in app_data.keys():
+        split_skills = app_data[split]['skills'][1:]  # exclude total level
+        reorder_inds = [split_skills.index(skill) for skill in boxplot_skills[split]]
+        boxplot_inds[split] = reorder_inds
+
+    return boxplot_inds
+
+
+def load_appdata_local(path):
+    with open(path, 'rb') as f:
+        return pickle.load(f)
+
+
+def load_appdata_s3(obj_name):
+    print("loading app data...", end=' ', flush=True)
+    f = BytesIO()
+    s3 = boto3.client('s3')
+    s3.download_fileobj("osrshiscores", obj_name, f)
+    f.seek(0)
+    app_data = pickle.load(f)
+    print("done")
+    return app_data

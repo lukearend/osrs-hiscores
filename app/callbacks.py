@@ -1,16 +1,22 @@
+from functools import partial
+
 from dash import no_update
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 
 from app import validate_username, format_skill, default_n_neighbors, default_min_dist,\
                 get_level_tick_marks, get_color_label, get_color_range, get_point_size
-from app.data import app_data, compute_scatterplot_data, compute_boxplot_data
-
+from app.data import get_boxplot_inds
+from app.data import compute_boxplot_data as boxplot_data_fn
+from app.data import compute_scatterplot_data as scatterplot_data_fn
 from app.figures import get_scatterplot, get_boxplot
 
 
-def add_callbacks(app, player_collection):
+def add_callbacks(app, app_data, player_collection):
     all_skills = app_data['all']['skills']
+    boxplot_inds = get_boxplot_inds(app_data)
+    compute_boxplot_data = partial(boxplot_data_fn, app_data, boxplot_inds)
+    compute_scatterplot_data = partial(scatterplot_data_fn, app_data)
 
     @app.callback(
         Output('scatter-plot', 'figure'),

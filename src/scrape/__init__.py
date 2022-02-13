@@ -1,5 +1,12 @@
-import requests
 from bs4 import BeautifulSoup
+
+
+class PageParseError(Exception):
+    pass
+
+
+class HiscoresApiError(Exception):
+    pass
 
 
 def parse_page(page_html):
@@ -13,14 +20,14 @@ def parse_page(page_html):
         table_rows = personal_hiscores.div.table.tbody
         player_rows = table_rows.find_all('tr')[1:]
     except IndexError as e:
-        raise ValueError("could not parse page body:\n{}".format(page_body))
+        raise PageParseError("could not parse page body:\n{}".format(page_body))
 
     result = {}
     for row in player_rows:
         try:
             rank, username, total_level = row.find_all('td')[:3]
         except IndexError as e:
-            raise ValueError("could not parse row: {}".format(e))
+            raise PageParseError("could not parse row: {}".format(e))
 
         rank = int(rank.string.strip().replace(',', ''))
         username = username.a.string.replace('\xa0', ' ')
@@ -53,7 +60,7 @@ async def request_page(session, page_num, max_attempts=5):
 
     else:
         error = await response.text()
-        raise ApiError("could not get page after {} tries: {}".format(max_attempts, error))
+        raise HiscoresApiError("could not get page after {} tries: {}".format(max_attempts, error))
 
 
 async def request_stats(session, username, max_attempts=5):
@@ -69,7 +76,7 @@ async def request_stats(session, username, max_attempts=5):
             }
         ) as response:
             if response.status == 404:
-                raise KeyError("user '{}' not found".format(username))
+                raise KeyError(username)
             elif response.status != 200:
                 continue
 
@@ -80,4 +87,4 @@ async def request_stats(session, username, max_attempts=5):
 
     else:
         error = await response.text()
-        raise ApiError("could not get page after {} tries: {}".format(max_attempts, error))
+        raise HiscoresApiError("could not get page after {} tries: {}".format(max_attempts, error))

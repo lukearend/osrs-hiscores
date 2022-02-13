@@ -5,16 +5,24 @@ ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 DATA_RAW:=$(ROOT_DIR)/data/raw
 DATA_TMP:=$(ROOT_DIR)/data/interim
 DATA_FINAL:=$(ROOT_DIR)/data/processed
-APP_DIR:=$(ROOT_DIR)/app
 DB_DIR:=$(ROOT_DIR)/volume
+GDRIVE_DIR:=***REMOVED***
+S3_BUCKET:=osrshiscores
+
+ifneq (,$(wildcard ./.env))
+	include .env
+	export
+endif
 
 .DEFAULT_GOAL := help
 
-all: lint init scrape cluster app
+all: init download dimreduce app
+full: init scrape cluster dimreduce app
+test: lint app-run
 clean: env-clean data-clean results-clean
 
 # Setup -------------------------------------------------------------------------------------------
-init: env extensions ## Setup project dependencies.
+init: env nbextensions ## Setup project dependencies.
 
 env:
 	@echo "building virtual environment..."
@@ -70,8 +78,22 @@ $(DATA_FINAL)/stats.csv: $(DATA_RAW)/stats-raw.csv
 	cd src/data && python3 cleanup_stats.py $(DATA_RAW)/stats-raw.csv $@
 	@echo
 
-.PHONY: scrape scrape-clean
+.PHONY: scrape scrape-clean upload
 .PRECIOUS: $(DATA_RAW)/usernames-raw.csv $(DATA_RAW)/stats-raw.csv
+
+# Upload/download ---------------------------------------------------------------------------------
+
+upload: $(DATA_FINAL)/stats.csv $(DATA_FINAL)/clusters.csv ## Upload scraped data to S3/Google Drive.
+	@gdrive upload --parent $(GDRIVE_DIR) --name player-clusters.csv data/processed/clusters.csv && \
+	gdrive upload --parent $(GDRIVE_DIR) --name player-stats.csv data/processed/stats.csv && \
+	aws s3 cp $< s3://osrshiscores/dataset/player-stats.csv && \
+	aws s3 cp $(word 2,$^) s3://osrshiscores/dataset/player-clusters.csv
+
+download: $(DATA_FINAL)/stats.csv $(DATA_FINAL)/clusters.csv
+	@aws s3 cp s3://osrshiscores/dataset/player-stats.csv $< && \
+	aws s3 cp s3://osrshiscores/dataset/player-clusters.csv $(word 2,$^)
+
+.PHONY: upload download
 
 # Clustering --------------------------------------------------------------------------------------
 cluster: $(DATA_FINAL)/clusters.csv ## Cluster players according to scraped stats.
@@ -107,20 +129,27 @@ $(DATA_TMP)/dim_reduced.pkl: $(DATA_TMP)/cluster_analytics.pkl
 .PHONY: dimreduce dimreduce-clean
 
 # Application -------------------------------------------------------------------------------------
-app: $(DATA_FINAL)/clusters.csv $(APP_DIR)/assets/app_data.pkl ## Build application data/database.
+app: app-data app-db
+	@cp $< $(OSRS_APPDATA_LOCAL)
+	@aws s3 cp $< $(OSRS_APPDATA_S3)
+
+app-data: $(DATA_FINAL)/app_data.pkl
+	@cp $< $(OSRS_APPDATA_LOCAL) 2>/dev/null || : && \
+	aws s3 cp $< s3://osrshiscores/$(OSRS_APPDATA_S3)
+
+app-db: $(DATA_FINAL)/clusters.csv $(DATA_FINAL)/stats.csv ## Build application database.
 	@source env/bin/activate && \
-	cd src/data && python3 build_database.py $<
+	cd src/data && python3 build_database.py $^
 	@echo
 
 app-clean:
 	rm -f $(DATA_FINAL)/app_data.pkl
-	rm -f $(APP_DIR)/assets/app_data.pkl
 	rm -rf $(DB_DIR)
 
 app-run:
 	@source env/bin/activate && python3 app
 
-$(APP_DIR)/assets/app_data.pkl: $(DATA_TMP)/cluster_analytics.pkl $(DATA_TMP)/dim_reduced.pkl
+$(DATA_FINAL)/app_data.pkl: $(DATA_TMP)/cluster_analytics.pkl $(DATA_TMP)/dim_reduced.pkl
 	@source env/bin/activate && \
 	cd src/data && python3 build_app_data.py $^ $@
 	@echo

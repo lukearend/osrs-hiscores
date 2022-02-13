@@ -11,9 +11,6 @@
 import asyncio
 import csv
 import os
-import pickle
-import random
-import subprocess
 import sys
 from collections import defaultdict
 
@@ -63,7 +60,8 @@ def main(out_file):
     print("scraping usernames...")
 
     # There are 80,000 pages, giving rankings 1-25, 26-50, ..., etc. up to 2 million.
-    pages_to_scrape = set(range(1, 80001))
+    total_pages = 80000
+    pages_to_scrape = set(range(1, total_pages))
 
     # Write ranked usernames as they are extracted from pages into a CSV file.
     # If that file exists, find out what's already been computed.
@@ -92,7 +90,7 @@ def main(out_file):
 
     print("{}/80000 pages left to scrape".format(len(pages_to_scrape)))
 
-    with tqdm(total=80000, initial=80000 - len(pages_to_scrape)) as pbar:
+    with tqdm(total=total_pages, initial=total_pages - len(pages_to_scrape)) as pbar:
         loop = asyncio.get_event_loop()
         loop.run_until_complete(
             run_workers(pages_to_scrape, out_file, pbar)

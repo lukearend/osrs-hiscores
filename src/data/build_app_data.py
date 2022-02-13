@@ -1,13 +1,11 @@
 #!/usr/bin/env python3
 
 """ Preprocess and build a single file for the data to be used in Dash app. """
-
 import pathlib
 import pickle
 import sys
 
 import numpy as np
-import pandas as pd
 
 
 def main(cluster_analytics_file, dim_reduced_file, out_file):
@@ -22,7 +20,6 @@ def main(cluster_analytics_file, dim_reduced_file, out_file):
         xyz_data = pickle.load(f)
 
     data_splits = list(xyz_data.keys())
-
     app_data = {}
     for split in data_splits:
         if split == 'cb':
@@ -54,7 +51,6 @@ def main(cluster_analytics_file, dim_reduced_file, out_file):
 
     with open(out_file, 'wb') as f:
         pickle.dump(app_data, f)
-
     print("done")
 
 

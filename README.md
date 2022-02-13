@@ -3,6 +3,20 @@ osrs-hiscores
 
 A quantitative analysis of the OSRS hiscores, complete with open-source dataset and code.
 
+This repository is accompanied by two important data files:
+
+1. `player-stats.csv`: Rank, levels, xp, clues and achievements stats for the top \~2 million OSRS players.
+2. `player-clusters.csv`: Cluster IDs per player for three separate clustering runs, grouping similar accounts according to (i) all skills, (ii) combat skills only and (iii) non-combat skills only.
+
+These files are **not included in the repo** due to file size restraints, and must be downloaded separately from one of the following:
+
+* Google Drive: <https://drive.google.com/drive/folders/***REMOVED***?usp=sharing>
+* S3 bucket:
+  * [s3://osrshiscores/datasets/player-stats.csv]()
+  * [s3://osrshiscores/datasets/player-clusters.csv]()
+
+Player stats were scraped from the [official OSRS hiscores](https://secure.runescape.com/m=hiscore_oldschool/overall) on Dec 28, 2021 between 00:00 and 18:00 CST.
+
 Project organization
 --------------------
 
@@ -30,16 +44,6 @@ Project organization
     ├── requirements.txt <- Dependencies file for reproducing the project environment.
     └── setup.py         <- Setup file for installing this project through pip.
 
-This repo is accompanied by two important data files:
-
-TODO: instructions for downloading both files and adding to repo under the data/processed directory.
-
-1. `data/processed/stats.csv`: Rank, levels, xp, clues and achievements stats for the top \~2 million OSRS players. This file is *not currently in the repo* due to github file size restraints, and must be downloaded separately and added to the repo. To do this, run `wget TODO: get stats.csv from Google Drive or S3 bucket and place in repo` from the command line in this directory or (i) click TODO: [here]() to download and (ii) copy the downloaded file into the folder `data/processed/` under the this repo directory.
-
-2. `data/processed/clusters.csv`: TODO: cluster data file
-
-Player stats were scraped on Dec 28, 2021 between 00:00 and 18:00 CST.
-
 Usage
 -----
 
@@ -50,8 +54,6 @@ The virtual environment must be activated to work interactively with python. To 
 Dependencies
 ------------
 
-Needs `docker` to run MongoDB, uses `expresso` (command line interface to ExpressVPN) in data scraping scripts.
-
---------
-
-<p><small>Project based on the <a target="_blank" href="https://drivendata.github.io/cookiecutter-data-science/">cookiecutter data science project template</a>.
+* `expresso` expressVPN CLI for IP hopping in data scraping scripts
+* `aws-cli`: AWS CLI for uploading scraped data
+* `gdrive`: Google Drive CLI for uploading scraped data

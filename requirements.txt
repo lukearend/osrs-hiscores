@@ -1,5 +1,6 @@
 aiohttp
 boonnano
+boto3
 dash
 dash-bootstrap-components
 beautifulsoup4
