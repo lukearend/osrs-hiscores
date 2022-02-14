@@ -9,7 +9,7 @@ from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
 from tqdm import tqdm
 
-from src.data import line_count, load_cluster_data, load_stats_data
+from src import line_count, load_cluster_data, load_stats_data
 
 
 def main(clusters_file, stats_file):

@@ -1,11 +1,9 @@
-import json
-import pathlib
-
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
-
 from PIL import Image
+
+from app.data import load_boxplot_layout
 
 
 def get_scatterplot(df, colorlims, colorlabel, pointsize, axlims, crosshairs=None):
@@ -88,10 +86,8 @@ def get_scatterplot(df, colorlims, colorlabel, pointsize, axlims, crosshairs=Non
 
 
 def get_boxplot(split):
-    layout_file = pathlib.Path(__name__).resolve().parent / 'assets' / 'boxplot_ticks.json'
-    with open(layout_file, 'r') as f:
-        tick_labels = json.load(f)[split]
-        num_skills = len(tick_labels)
+    tick_labels = load_boxplot_layout()[split]
+    num_skills = len(tick_labels)
 
     nans = np.full(num_skills, np.nan)
     fig = go.Figure(

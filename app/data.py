@@ -1,7 +1,8 @@
+from functools import lru_cache
 import json
-import pathlib
 import pickle
 from io import BytesIO
+from pathlib import Path
 
 import boto3
 import numpy as np
@@ -70,12 +71,10 @@ def compute_boxplot_data(app_data, boxplot_inds, split, cluster_id=None):
 
 
 def get_boxplot_inds(app_data):
+    boxplot_skills = load_boxplot_layout()
+
     # Build index lists for reordering skills from canonical order
     # to order of tick marks along x-axis of box plot.
-    boxplot_file = pathlib.Path(__name__).resolve().parent / 'assets' / 'boxplot_ticks.json'
-    with open(boxplot_file, 'r') as f:
-        boxplot_skills = json.load(f)
-
     boxplot_inds = {}
     for split in app_data.keys():
         split_skills = app_data[split]['skills'][1:]  # exclude total level
@@ -85,8 +84,23 @@ def get_boxplot_inds(app_data):
     return boxplot_inds
 
 
-def load_appdata_local(path):
-    with open(path, 'rb') as f:
+@lru_cache(maxsize=None)
+def load_boxplot_layout():
+    boxplot_file = Path(__file__).resolve().parent / 'assets' / 'boxplot_ticks.json'
+    with open(boxplot_file, 'r') as f:
+        return json.load(f)
+
+
+@lru_cache(maxsize=None)
+def load_table_layout():
+    layout_file = Path(__file__).resolve().parent / 'assets' / 'table_layout.json'
+    with open(layout_file, 'r') as f:
+        return json.load(f)
+
+
+def load_appdata_local():
+    file_path = Path(__file__).resolve().parent.parent / 'data' / 'processed' / 'app_data.pkl'
+    with open(file_path, 'rb') as f:
         return pickle.load(f)
 
 

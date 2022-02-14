@@ -4,7 +4,6 @@
     This script runs in about ~5 mins on an M1 Mac.
 """
 
-import csv
 import pickle
 import sys
 from collections import defaultdict
@@ -12,7 +11,7 @@ from collections import defaultdict
 import numpy as np
 from tqdm import tqdm
 
-from src.data import load_cluster_data, load_stats_data
+from src import load_cluster_data, load_stats_data
 
 
 def main(stats_file, clusters_file, out_file):

@@ -8,7 +8,6 @@ from dash import Dash
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
 from dash_bootstrap_components import themes
-from dotenv import find_dotenv, load_dotenv
 
 from app import get_env_variable
 from app.data import load_appdata_local, load_appdata_s3
@@ -16,16 +15,13 @@ from app.layout import build_layout
 from app.callbacks import add_callbacks
 
 env_mode = os.getenv("OSRS_APP_ENV", 'development')
-print(f"env_mode: {env_mode}")
 if env_mode in ['production', 'test']:
     bucket = get_env_variable("OSRS_APPDATA_S3BUCKET")
     obj_key = get_env_variable("OSRS_APPDATA_S3KEY")
     app_data = load_appdata_s3(bucket, obj_key)
     debug = False
 else:
-    load_dotenv(find_dotenv())
-    file_path = get_env_variable("OSRS_APPDATA_FILE")
-    app_data = load_appdata_local(file_path)
+    app_data = load_appdata_local()
     debug = True
 
 mongo_url = get_env_variable("OSRS_MONGO_URI")

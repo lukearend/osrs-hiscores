@@ -29,8 +29,7 @@ env:
 	source env/bin/activate && \
 	pip3 install --upgrade pip && \
 	pip3 install -r requirements.txt && \
-	rm -rf *.egg-info && \
-	source env/bin/activate
+	rm -rf *.egg-info
 
 env-clean:
 	rm -rf env
@@ -42,7 +41,7 @@ scrape: $(DATA_FINAL)/stats.csv ## Run data scrape of OSRS hiscores.
 
 $(DATA_RAW)/usernames-raw.csv:
 	@source env/bin/activate && \
-	cd src/data && \
+	cd src/scrape && \
 	until python3 scrape_usernames.py $@ ; do \
 		echo "resetting vpn connection..." ; \
 		loc=`expresso locations | grep -- '- USA - ' | sed 's/^.*(//;s/)$$//' | shuf -n 1` && \
@@ -51,11 +50,11 @@ $(DATA_RAW)/usernames-raw.csv:
 
 $(DATA_TMP)/usernames.csv: $(DATA_RAW)/usernames-raw.csv
 	@source env/bin/activate && \
-	cd src/data && python3 cleanup_usernames.py $< $@
+	cd src/scrape && python3 cleanup_usernames.py $< $@
 
 $(DATA_RAW)/stats-raw.csv: $(DATA_TMP)/usernames.csv
 	@source env/bin/activate && \
-	cd src/data && \
+	cd src/scrape && \
 	until python3 scrape_stats.py $< $@; do \
 		echo "resetting vpn connection..."; \
 		loc=`expresso locations | grep -- '- USA - ' | sed 's/^.*(//;s/)$$//' | shuf -n 1` && \
@@ -64,7 +63,7 @@ $(DATA_RAW)/stats-raw.csv: $(DATA_TMP)/usernames.csv
 
 $(DATA_FINAL)/stats.csv: $(DATA_RAW)/stats-raw.csv
 	@source env/bin/activate && \
-	cd src/data && python3 cleanup_stats.py $(DATA_RAW)/stats-raw.csv $@
+	cd src/scrape && python3 cleanup_stats.py $(DATA_RAW)/stats-raw.csv $@
 
 scrape-clean: # Keep raw dump files.
 	rm -f $(DATA_TMP)/usernames.csv
@@ -84,7 +83,7 @@ cluster: $(DATA_FINAL)/clusters.csv ## Cluster players according to scraped stat
 
 $(DATA_FINAL)/clusters.csv:
 	@source env/bin/activate && \
-	cd src/models && python3 cluster_players.py $(DATA_FINAL)/stats.csv $@
+	cd src/cluster && python3 cluster_players.py $(DATA_FINAL)/stats.csv $@
 
 cluster-clean:
 	rm -f $(DATA_FINAL)/clusters.csv
@@ -96,11 +95,11 @@ dimreduce: $(DATA_TMP)/dim_reduced.pkl ## Reduce cluster dimensionality for visu
 
 $(DATA_TMP)/cluster_analytics.pkl:
 	@source env/bin/activate && \
-	cd src/features && python3 process_clusters.py $(DATA_FINAL)/stats.csv $(DATA_FINAL)/clusters.cs v$@
+	cd src/cluster && python3 process_clusters.py $(DATA_FINAL)/stats.csv $(DATA_FINAL)/clusters.cs v$@
 
 $(DATA_TMP)/dim_reduced.pkl: $(DATA_TMP)/cluster_analytics.pkl
 	@source env/bin/activate && \
-	cd src/models && python3 dim_reduce_clusters.py $< $@
+	cd src/cluster && python3 dim_reduce_clusters.py $< $@
 
 dimreduce-clean:
 	rm -f $(DATA_TMP)/cluster_analytics.pkl
@@ -110,16 +109,14 @@ dimreduce-clean:
 
 # Application -------------------------------------------------------------------------------------
 app: $(DATA_FINAL)/app_data.pkl app-db ## Build data file and database for visualization app.
-	cp $< $(OSRS_APPDATA_FILE)
-	aws s3 cp $< $(OSRS_APPDATA_S3KEY)
 
 $(DATA_FINAL)/app_data.pkl: $(DATA_TMP)/cluster_analytics.pkl $(DATA_TMP)/dim_reduced.pkl
 	@source env/bin/activate && \
-	cd src/data && python3 build_app_data.py $^ $@
+	cd src/app && python3 build_app_data.py $^ $@
 
 app-db: $(DATA_FINAL)/clusters.csv $(DATA_FINAL)/stats.csv
 	@source env/bin/activate && \
-	cd src/data && python3 build_database.py $^
+	cd src/app && python3 build_database.py $^
 
 app-run:
 	@source env/bin/activate && python3 app
@@ -142,10 +139,10 @@ upload-dataset: $(DATA_FINAL)/stats.csv $(DATA_FINAL)/clusters.csv
 
 download: ## Download processed dataset from S3.
 	@source env/bin/activate && \
-	python -c "from src.data import download_from_s3; \
+	[ -f $(DATA_FINAL)/clusters.csv ] || python -c "from src import download_from_s3; \
 	download_from_s3('$(S3_BUCKET)', 'dataset/player-clusters.csv', '$(DATA_FINAL)/clusters.csv'); \
 	print()" && \
-	python -c "from src.data import download_from_s3; \
+	[ -f $(DATA_FINAL)/stats.csv ] || python -c "from src import download_from_s3; \
 	download_from_s3('$(S3_BUCKET)', 'dataset/player-stats.csv', '$(DATA_FINAL)/stats.csv'); \
 	print()"
 

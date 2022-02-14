@@ -1,5 +1,0 @@
-Goal: choose parameter set that qualitatively "looks best"--is best spread out and brings out the most structure.
-
-Grid search the following parameters, visually inspecting results from each:
-n_neighbors: [5, 10, 15, 20]
-min_dist: [0.0, 0.1, 0.25, 0.05]

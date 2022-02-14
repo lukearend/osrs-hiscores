@@ -15,6 +15,8 @@ These files are **not included in the repo** due to file size restraints, and mu
   * [s3://osrshiscores/datasets/player-stats.csv]()
   * [s3://osrshiscores/datasets/player-clusters.csv]()
 
+The files can be downloaded programmatically by cloning this repository and running `make download`.
+
 Player stats were scraped from the [official OSRS hiscores](https://secure.runescape.com/m=hiscore_oldschool/overall) on Dec 28, 2021 between 00:00 and 18:00 CST.
 
 Project organization
@@ -24,21 +26,22 @@ Project organization
     ├── README.md        <- The top-level README for developers using this project.
     │
     ├── app              <- Dash application for visualizing final results.
+    │   ├── callbacks    <- Dynamic behavior of application elements.
+    │   ├── data         <- Data loading and processing.
+    │   ├── figures      <- Plotly figures and graphical elements.
+    │   └── layout       <- Global layout of application page.
     │
     ├── data
     │   ├── interim      <- Intermediate data that has been transformed.
     │   ├── processed    <- The final, canonical data sets for modeling.
     │   └── raw          <- The original, immutable data dump.
     │
-    ├── figures          <- Graphics and figures generated from the data.
-    ├── notebooks        <- Jupyter notebooks for exploring data and generating figures.
     ├── reference        <- Reference files used in data processing.
     │
-    ├── src              <- Python source code for this project.
-    │   ├── data         <- Scripts to download, generate and/or clean data.
-    │   ├── features     <- Scripts to turn raw data into features for modeling.
-    │   ├── models       <- Scripts to train and use machine learning models.
-    │   └── visuals      <- Scripts to create exploratory visualizations.
+    ├── src              <- Python source code for data analytics.
+    │   ├── app          <- Scripts for building application data.
+    │   ├── cluster      <- Scripts to run clustering and dimensionality reduction.
+    │   └── scrape       <- Scripts for scraping raw hiscores data.
     │
     ├── Makefile         <- Top-level Makefile for building and running project.
     ├── requirements.txt <- Dependencies file for reproducing the project environment.
@@ -47,17 +50,22 @@ Project organization
 Usage
 -----
 
-Run `make build` to install dependencies, download dataset, process the data and build application. This takes about 30 mins on a 2021 M1 Mac.
+At a high level, this repository implements the following data pipeline:
 
-To run the app locally, run `make app-run` and visit the URL `localhost:8050` in your web browser.
+```
+scrape hiscores data -> cluster players -> project clusters to 3D -> build application
+```
 
-The build process consists of the following steps which can be run separately:
-1. `make init`: set up Python virtual environment. This includes dependencies for the code used in the project.
-2. `make download`: download dataset from an AWS bucket. The dataset consists of one file for player stats and another file for the clustering results.
-3. `make dimreduce`: project cluster centroids from high-dimensional space to 3D for visualization purposes.
-4. `make app`: build application data and database from analytic results. Expects MongoDB to be available at the URI specified by env variable `OSRS_MONGODB_URI`, and expects `OSRS_APPDATA_LOCAL` to point to the 
+These stages are driven by a Makefile with top-level `make` targets for each data processing step:
 
+1. `make init`: set up Python virtual environment. This installs all dependencies for the Python code used in the project.
+2. `make scrape`: scrape data from the official OSRS hiscores. The full scraping process takes about 18 hours.
+3. `make cluster`: cluster players into similar groups according to their stats. The clustering algorithm used is the [Boon Nano](https://docs.boonlogic.com/docs/NanoDocs/Overview.html), a distance-based segmentation which is comparable to [k-means](https://en.wikipedia.org/wiki/K-means_clustering) but several orders of magnitude faster for large datasets.
+4. `make dimreduce`: project cluster centroids from high-dimensional space to 3D for visualization purposes. This dimensionality reduction is done with [UMAP](https://umap-learn.readthedocs.io/en/latest/index.html#).
+5. `make app`: build application data and database from analytic results. Expects a MongoDB instance running at the URI specified by the environment variable `OSRS_MONGO_URI`.
 
-Run `make init` to set up virtual environment. Run `make analytics` to run the full analytics pipeline on the raw data, producing final results (takes about TODO seconds on M1 mac). To launch the visualization, run `make app` and then navigate to `localhost:8050` in the browser.
+Steps 1-3 can be skipped by simply running `make download`, which fetches the final dataset from an S3 bucket.
 
-The virtual environment must be activated to work interactively with python. To do this, run `source env/bin/activate` from the top-level directory. You can then open a notebook server by running `make notebook` and going to `localhost:8888` in the browser. The notebooks in this repository were used to generate the final figures.
+All steps can be run in one shot via `make build` (which starts from the S3 download) or `make all` (which actually scrapes and clusters the data from scratch).
+
+To launch the application, run `make app-run` and visit the URL `localhost:8050` in a web browser. The application expects the environment variable `OSRS_MONGO_URI` to point to the database populated during `make app`.

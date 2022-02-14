@@ -12,6 +12,7 @@ pandas
 progressbar
 pycodestyle
 pymongo[srv]
+python-dotenv
 requests
 seaborn
 scipy

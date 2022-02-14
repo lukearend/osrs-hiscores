@@ -14,7 +14,6 @@ def line_count(file):
 
 def load_stats_data(file):
     print("loading stats data...")
-
     num_players = line_count(file) - 1
     with open(file, 'r') as f:
         reader = csv.reader(f)
@@ -36,7 +35,6 @@ def load_stats_data(file):
 
 def load_cluster_data(file):
     print("loading cluster data...")
-
     num_players = line_count(file) - 1
     with open(file, 'r') as f:
         reader = csv.reader(f)
