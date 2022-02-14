@@ -36,7 +36,7 @@ def main(in_file, out_file):
     print("writing results to csv...")
     with open(out_file, 'w') as f:
         for rank, (name, total_level) in tqdm(enumerate(players, 1)):
-            f.write('{},{},{}\n'.format(rank, name, total_level))
+            f.write(f'{rank},{name},{total_level}\n')
 
     print("done")
 

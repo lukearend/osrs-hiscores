@@ -83,7 +83,7 @@ def main(stats_file, out_file):
             raise ValueError(response)
 
         # Inference the data in batches.
-        print("clustering split '{}'...".format(split))
+        print(f"clustering split '{split}')
         cluster_ids = np.zeros(len(dataset), dtype='int')
         batch_size = 10000
         done = False
@@ -108,15 +108,15 @@ def main(stats_file, out_file):
                 cluster_ids[start_i:end_i] = response['ID']
                 pbar.update(1)
 
-        print("split: {}, pv: {}, num clusters: {}".format(split, pv, max(cluster_ids)))
+        print(f"split: {split}, pv: {pv}, num clusters: {max(cluster_ids)}")
         results[split] = cluster_ids
 
     print("writing cluster IDs to CSV...")
     with open(out_file, 'w') as f:
-        f.write('username,{}\n'.format(','.join(splits)))
+        f.write(f"username,{','.join(splits)}\n")
         for i, username in tqdm(enumerate(usernames)):
             player_ids = ','.join([str(results[split][i]) for split in splits])
-            f.write("{},{}\n".format(username, player_ids))
+            f.write(f"{username},{player_ids}\n")
 
     print("done")
 

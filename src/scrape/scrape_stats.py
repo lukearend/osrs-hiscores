@@ -84,7 +84,7 @@ def main(in_file, out_file):
     if not names_to_scrape:
         return True
 
-    print("{}/{} users left to process".format(len(names_to_scrape), num_players))
+    print(f"{len(names_to_scrape)}/{num_players} users left to process")
 
     with tqdm(total=num_players, initial=num_players - len(names_to_scrape)) as pbar:
         loop = asyncio.get_event_loop()

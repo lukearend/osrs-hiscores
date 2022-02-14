@@ -33,8 +33,7 @@ async def process_pages(session, job_queue, out_file, file_lock, pbar):
 
             await file_lock.acquire()
             for rank, player in result.items():
-                f.write("{},{},{},{}\n".format(
-                        rank, page_number, player['username'], player['total_level']))
+                f.write(f"{rank},{page_number},{player['username']},{player['total_level']}\n")
             pbar.update(1)
             file_lock.release()
 
@@ -88,7 +87,7 @@ def main(out_file):
     if not pages_to_scrape:
         return True
 
-    print("{}/80000 pages left to scrape".format(len(pages_to_scrape)))
+    print(f"{len(pages_to_scrape)}/80000 pages left to scrape")
 
     with tqdm(total=total_pages, initial=total_pages - len(pages_to_scrape)) as pbar:
         loop = asyncio.get_event_loop()

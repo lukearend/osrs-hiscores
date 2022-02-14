@@ -20,7 +20,7 @@ def parse_page(page_html):
         table_rows = personal_hiscores.div.table.tbody
         player_rows = table_rows.find_all('tr')[1:]
     except IndexError as e:
-        raise PageParseError("could not parse page body:\n{}".format(page_body))
+        raise PageParseError(f"could not parse page body:\n{page_body}")
 
     result = {}
     for row in player_rows:
@@ -82,9 +82,9 @@ async def request_stats(session, username, max_attempts=5):
 
             csv = await response.text()
             csv = csv.strip().replace('\n', ',')
-            csv = '{},{}'.format(username, csv)
+            csv = f'{username},{csv}'
             return csv
 
     else:
         error = await response.text()
-        raise HiscoresApiError("could not get page after {} tries: {}".format(max_attempts, error))
+        raise HiscoresApiError(f"could not get page after {max_attempts} tries: {error}")

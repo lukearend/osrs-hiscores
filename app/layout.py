@@ -127,7 +127,7 @@ def build_layout(app, app_data):
                                 dcc.Dropdown(
                                     id='min-dist',
                                     options=[
-                                        {'label': '{:.2f}'.format(d), 'value': d}
+                                        {'label': f'{d:.2f}', 'value': d}
                                         for d in [0.0, 0.1, 0.25, 0.50]
                                     ],
                                     value=init_min_dist,

@@ -5,7 +5,6 @@
 
 import csv
 import pathlib
-import pickle
 import sys
 
 import numpy as np
@@ -21,9 +20,9 @@ def main(in_file, out_file):
 
     fields = ['username']
     for skill in skills:
-        fields.append('{}_rank'.format(skill))
-        fields.append('{}_level'.format(skill))
-        fields.append('{}_xp'.format(skill))
+        fields.append(f'{skill}_rank')
+        fields.append(f'{skill}_level')
+        fields.append(f'{skill}_xp')
 
     with open(in_file, 'r') as f:
         print("cleaning rank/level/xp data...")

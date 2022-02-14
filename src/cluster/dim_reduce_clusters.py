@@ -48,9 +48,9 @@ def main(in_file, out_file):
                 np.random.seed(0)
                 t0 = time.time()
 
-                progress = "{}/{}".format(i, num_jobs).ljust(8)
-                print("{} running split '{}' (n_neighbors = {}, min_dist = {:.2f})... "
-                      .format(progress, split, n_neighbors, min_dist), end='', flush=True)
+                progress = f"{i}/{num_jobs}".ljust(8)
+                print(f"{progress} running split '{split}' "
+                      f"(n_neighbors = {n_neighbors}, min_dist = {min_dist:.2f})... ", end='', flush=True)
                 fit = umap.UMAP(
                     n_neighbors=n_neighbors,
                     min_dist=min_dist,
@@ -60,7 +60,7 @@ def main(in_file, out_file):
                 u = fit.fit_transform(centroids[split])
 
                 elapsed = time.time() - t0
-                print("done ({:.2f} sec)".format(elapsed))
+                print(f"done ({elapsed:.2f} sec)")
 
                 out[split][n_neighbors][min_dist] = u
                 i += 1

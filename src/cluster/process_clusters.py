@@ -40,7 +40,7 @@ def main(stats_file, clusters_file, out_file):
     cluster_quartiles = defaultdict(dict)
     percentiles = [0, 25, 50, 75, 100]
     for s, split in enumerate(splits):
-        print("computing quartiles for split '{}'...".format(split))
+        print(f"computing quartiles for split '{split}'...")
 
         # Include total level when computing percentiles.
         dataset = None
