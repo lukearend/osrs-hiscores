@@ -16,8 +16,8 @@ from src import load_cluster_data, load_stats_data
 
 def main(stats_file, clusters_file, out_file):
     print("computing cluster percentiles...")
-    _, skills, stats = load_stats_data(stats_file)
     _, splits, cluster_ids = load_cluster_data(clusters_file)
+    _, skills, stats = load_stats_data(stats_file)
 
     # Change missing values from -1 to Nan.
     stats = stats.astype('float')
@@ -58,7 +58,7 @@ def main(stats_file, clusters_file, out_file):
             result = np.zeros((num_clusters, len(percentiles), len(skills) - 7))
 
         for i in tqdm(range(num_clusters)):
-            cluster_inds = cluster_ids[:, s] == i
+            cluster_inds = cluster_ids[:, s] == i + 1  # cluster IDs start from 1
             cluster_points = dataset[cluster_inds]
             for j, p in enumerate(percentiles):
 
@@ -79,8 +79,8 @@ def main(stats_file, clusters_file, out_file):
         # An account's 'percent uniqueness' is the percentage of accounts
         # which are as unique or less unique than itself. First, line up
         # all clusters in order from smallest to largest (most to least
-        # unique). Percent uniqueness for an account is then the sum of
-        # cluster sizes for all clusters of the same size or larger than
+        # unique). Percent uniqueness for an account is then the number of
+        # players in all clusters of the same size or larger than
         # that account's cluster, divided by the total number of players.
         # Accounts in a cluster of size 1 are 100% unique.
         sort_inds = np.argsort(cluster_sizes[split])

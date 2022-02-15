@@ -95,7 +95,7 @@ dimreduce: $(DATA_TMP)/dim_reduced.pkl ## Reduce cluster dimensionality for visu
 
 $(DATA_TMP)/cluster_analytics.pkl:
 	@source env/bin/activate && \
-	cd src/cluster && python3 process_clusters.py $(DATA_FINAL)/stats.csv $(DATA_FINAL)/clusters.cs v$@
+	cd src/cluster && python3 process_clusters.py $(DATA_FINAL)/stats.csv $(DATA_FINAL)/clusters.csv $@
 
 $(DATA_TMP)/dim_reduced.pkl: $(DATA_TMP)/cluster_analytics.pkl
 	@source env/bin/activate && \
