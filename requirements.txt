@@ -4,6 +4,7 @@ boto3
 dash
 dash-bootstrap-components
 beautifulsoup4
+faiss-cpu
 jupyter
 jupyter_contrib_nbextensions
 matplotlib

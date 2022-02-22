@@ -1,4 +1,5 @@
 import csv
+from collections import defaultdict
 from subprocess import check_output
 
 import boto3
@@ -31,6 +32,37 @@ def load_stats_data(file):
             stats[i, :] = line[2::3]    # Just take skill level (not rank, xp)
 
     return usernames, skills, stats
+
+def load_centroid_data(file):
+    print("loading centroids data...")
+    num_records = line_count(file) - 1
+    with open(file, 'r') as f:
+        reader = csv.reader(f)
+
+        header = next(reader)
+        skills = header[2:]  # drop split, cluster ID columns
+
+        clusters_per_split = defaultdict(int)
+        splits = np.zeros(num_records, dtype='str')
+        ids = np.zeros(num_records)
+        all_centroids = np.zeros((num_records, len(skills)))
+        for i in tqdm(range(num_records)):
+            line = next(reader)
+            split = line[0]
+            splits[i] = split
+            ids[i] = line[1]
+            all_centroids[i, :] = line[2:]
+            clusters_per_split[split] += 1
+
+    print("rearranging into map...", end=' ', flush=True)
+    centroids = {}
+    for split in set(splits):
+        centroids[split] = np.zeros((clusters_per_split[split], len(skills)))
+    for split, id, centroid in zip(splits, ids, all_centroids):
+        centroids[split][id, :] = centroid
+    print("done")
+
+    return centroids
 
 
 def load_cluster_data(file):

@@ -81,11 +81,16 @@ scrape-clobber: # Delete all files from scraping process.
 # Clustering --------------------------------------------------------------------------------------
 cluster: $(DATA_FINAL)/clusters.csv ## Cluster players according to scraped stats.
 
-$(DATA_FINAL)/clusters.csv:
+$(DATA_FINAL)/centroids.csv:
 	@source env/bin/activate && \
-	cd src/cluster && python3 cluster_players.py $(DATA_FINAL)/stats.csv $@
+	cd src/cluster && python3 fit_kmeans.py $(DATA_FINAL)/stats.csv $@
+
+$(DATA_FINAL)/clusters.csv: $(DATA_FINAL)/centroids.csv
+	@source env/bin/activate && \
+	cd src/cluster && python3 cluster_players.py $(DATA_FINAL)/stats.csv $< $@
 
 cluster-clean:
+	rm -f $(DATA_FINAL)/centroids.csv
 	rm -f $(DATA_FINAL)/clusters.csv
 
 .PHONY: cluster cluster-clean
