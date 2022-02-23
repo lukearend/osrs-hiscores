@@ -13,13 +13,14 @@ def main(stats_file, centroids_file, out_file):
     data = np.delete(data, stats.index("total"), axis=1)  # drop total levels
 
     results = {}
-    for splitname, split in splits.items():
+    for split in splits:
         player_vectors = data[:, split.skill_inds]
         clusterids = cluster_L2(player_vectors, centroids=centroids)
         clusterids = np.array(clusterids).astype('int')
-        results[splitname] = clusterids
+        results[split.name] = clusterids
 
-    print(clusterids)
+    print(results)
+    print(out_file)
 
 
 if __name__ == "__main__":

@@ -2,7 +2,7 @@
     other in 23D space. Each account is represented as a length-23
     vector of the player's levels in each skill. The distance between
     two accounts is then measured as the sum of squared stat-by-stat
-    differences. This is just like taking the Euclidean distance
+    differences. This is much like taking the Euclidean distance
     between points in 3D space, except the points live in a 23-
     dimensional space instead.
 """
@@ -15,30 +15,9 @@ from src import load_kmeans_params, load_skill_splits, load_stats_data
 from src.models import fit_kmeans
 
 
-def main(stats_file, out_file):
-    params = load_kmeans_params()
-    splits = load_skill_splits()
-    _, stats, data = load_stats_data(stats_file)
-    data = np.delete(data, stats.index("total"), axis=1)  # drop total level column
-
-    centroids = {}
-    for split in splits:
-        player_vectors = data[:, split.skill_inds].copy()
-
-        # Player weight is proportional to the number of ranked skills.
-        weights = np.sum(player_vectors != -1, axis=1) / split.nskills
-
-        # Replace missing data, i.e. unranked stats, with 1s. This is
-        # a reasonable substitution for clustering purposes since an
-        # unranked stat is known to be relatively low.
-        player_vectors[player_vectors == -1] = 1
-
-        k = params[split.name]
-        centroids[split.name] = fit_kmeans(player_vectors, k=k, w=weights)
-
+def write_results(splits, skills, centroids, out_file):
     print("writing cluster centroids to CSV...", end=' ', flush=True)
     with open(out_file, 'w') as f:
-        skills = stats[1:]
         f.write(f"split,clusterid,{','.join(s for s in skills)}\n")
 
         for split in splits:
@@ -65,6 +44,31 @@ def main(stats_file, out_file):
                 f.write(line)
 
     print("done")
+
+
+def main(stats_file, out_file):
+    params = load_kmeans_params()
+    splits = load_skill_splits()
+    _, stats, data = load_stats_data(stats_file)
+    data = np.delete(data, stats.index("total"), axis=1)  # drop total level column
+
+    centroids = {}
+    for split in splits:
+        player_vectors = data[:, split.skill_inds].copy()
+
+        # Player weight is proportional to the number of ranked skills.
+        weights = np.sum(player_vectors != -1, axis=1) / split.nskills
+
+        # Replace missing data, i.e. unranked stats, with 1s. This is
+        # a reasonable substitution for clustering purposes since an
+        # unranked stat is known to be relatively low.
+        player_vectors[player_vectors == -1] = 1
+
+        k = params[split.name]
+        centroids[split.name] = fit_kmeans(player_vectors, k=k, w=weights)
+
+    skills = stats[1:]
+    write_results(splits, skills, centroids, out_file)
 
 
 if __name__ == '__main__':

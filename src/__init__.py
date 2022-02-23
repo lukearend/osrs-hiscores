@@ -32,6 +32,29 @@ def load_kmeans_params() -> Dict[str, int]:
         return json.load(f)
 
 
+def load_stats_data(file: str) -> Tuple[List[str], List[str], NDArray]:
+    print("loading player hiscores data...")
+    with open(file, 'r') as f:
+        reader = csv.reader(f)
+        header = next(reader)
+
+        statnames = []
+        for field in header[2::3]:
+            statnames.append(field[:-len('_level')])
+
+        nplayers = line_count(file) - 1
+        usernames = np.zeros(nplayers, dtype='<U12')
+        stats = np.zeros((nplayers, len(statnames)), dtype='int')
+
+        with tqdm(total=nplayers) as pbar:
+            for i, line in enumerate(reader):
+                usernames[i] = line[0]
+                stats[i, :] = [int(i) for i in line[2::3]]  # take levels, drop rank and xp columns
+                pbar.update(1)
+
+    return usernames, statnames, stats
+
+
 @dataclass
 class DataSplit:
     name: str
@@ -62,29 +85,6 @@ def load_skill_splits() -> List[DataSplit]:
     return splits
 
 
-def load_stats_data(file: str) -> Tuple[List[str], List[str], NDArray]:
-    print("loading player hiscores data...")
-    with open(file, 'r') as f:
-        reader = csv.reader(f)
-        header = next(reader)
-
-        statnames = []
-        for field in header[2::3]:
-            statnames.append(field[:-len('_level')])
-
-        nplayers = line_count(file) - 1
-        usernames = np.zeros(nplayers, dtype='<U12')
-        stats = np.zeros((nplayers, len(statnames)), dtype='int')
-
-        with tqdm(total=nplayers) as pbar:
-            for i, line in enumerate(reader):
-                usernames[i] = line[0]
-                stats[i, :] = [int(i) for i in line[2::3]]  # take levels, drop rank and xp columns
-                pbar.update(1)
-
-    return usernames, statnames, stats
-
-
 def load_centroid_data(file: str) -> Dict[str, NDArray]:
     print("loading centroids data...")
     splits = load_skill_splits()
@@ -111,9 +111,9 @@ def load_centroid_data(file: str) -> Dict[str, NDArray]:
                 pbar.update(1)
 
     results = {}
-    for splitname, split in splits.items():
-        nclusters = nclusters_per_split[splitname]
-        results[splitname] = np.zeros((nclusters, split.nskills))
+    for split in splits:
+        nclusters = nclusters_per_split[split.name]
+        results[split.name] = np.zeros((nclusters, split.nskills))
 
     print("rearranging into map...", end=' ', flush=True)
     for splitname, clusterid, centroid in zip(splitnames, clusterids, centroids):
