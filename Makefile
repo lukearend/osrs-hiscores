@@ -83,7 +83,7 @@ cluster: $(DATA_FINAL)/clusters.csv ## Cluster players according to scraped stat
 
 $(DATA_FINAL)/centroids.csv:
 	@source env/bin/activate && \
-	cd src/cluster && python3 fit_kmeans.py $(DATA_FINAL)/stats.csv $@
+	cd src/cluster && python3 fit_clusters.py $(DATA_FINAL)/stats.csv $@
 
 $(DATA_FINAL)/clusters.csv: $(DATA_FINAL)/centroids.csv
 	@source env/bin/activate && \
@@ -98,13 +98,9 @@ cluster-clean:
 # Dimensionality reduction ------------------------------------------------------------------------
 dimreduce: $(DATA_TMP)/dim_reduced.pkl ## Reduce cluster dimensionality for visualization.
 
-$(DATA_TMP)/cluster_analytics.pkl:
+$(DATA_TMP)/dim_reduced.pkl:
 	@source env/bin/activate && \
-	cd src/cluster && python3 process_clusters.py $(DATA_FINAL)/stats.csv $(DATA_FINAL)/clusters.csv $@
-
-$(DATA_TMP)/dim_reduced.pkl: $(DATA_TMP)/cluster_analytics.pkl
-	@source env/bin/activate && \
-	cd src/cluster && python3 dim_reduce_clusters.py $< $@
+	cd src/cluster && python3 $(DATA_FINAL)/centroids.csv $@
 
 dimreduce-clean:
 	rm -f $(DATA_TMP)/cluster_analytics.pkl
@@ -115,7 +111,11 @@ dimreduce-clean:
 # Application -------------------------------------------------------------------------------------
 app: $(DATA_FINAL)/app_data.pkl app-db ## Build data file and database for visualization app.
 
-$(DATA_FINAL)/app_data.pkl: $(DATA_TMP)/cluster_analytics.pkl $(DATA_TMP)/dim_reduced.pkl
+$(DATA_TMP)/cluster_analytics.pkl:
+	@source env/bin/activate && \
+	cd src/app && python3 postprocess_clusters.py $(DATA_FINAL)/stats.csv $(DATA_FINAL)/clusters.csv $@
+
+$(DATA_FINAL)/app_data.pkl: $(DATA_TMP)/cluster_analytics.pkl $(DATA_FINAL)/centroids.csv $(DATA_TMP)/dim_reduced.pkl
 	@source env/bin/activate && \
 	cd src/app && python3 build_app_data.py $^ $@
 
@@ -169,7 +169,7 @@ nbextensions: vim-binding
 
 notebook: nbextensions ## Start a local jupyter notebook server.
 	@source env/bin/activate && \
-	cd notebooks && jupyter notebook
+	jupyter notebook
 
 lint: ## Run code style checker.
 	@source env/bin/activate && \

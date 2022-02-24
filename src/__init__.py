@@ -26,14 +26,19 @@ def load_skill_list() -> List[str]:
 
 
 def load_kmeans_params() -> Dict[str, int]:
-    print("clustering player stats...")
     params_file = Path(__file__).resolve().parent.parent / 'reference/kmeans_params.json'
     with open(params_file, 'r') as f:
         return json.load(f)
 
 
+def load_umap_params() -> Dict[str, int]:
+    params_file = Path(__file__).resolve().parent.parent / 'reference/umap_params.json'
+    with open(params_file, 'r') as f:
+        return json.load(f)
+
+
 def load_stats_data(file: str) -> Tuple[List[str], List[str], NDArray]:
-    print("loading player hiscores data...")
+    print("loading player stats data...")
     with open(file, 'r') as f:
         reader = csv.reader(f)
         header = next(reader)
@@ -62,6 +67,7 @@ class DataSplit:
     skills: List[str]
     skill_inds: List[int]
 
+
 def load_skill_splits() -> List[DataSplit]:
     splits_file = Path(__file__).resolve().parent.parent / "reference" / "data_splits.json"
     with open(splits_file, 'r') as f:
@@ -86,44 +92,31 @@ def load_skill_splits() -> List[DataSplit]:
 
 
 def load_centroid_data(file: str) -> Dict[str, NDArray]:
-    print("loading centroids data...")
     splits = load_skill_splits()
 
     with open(file, 'r') as f:
         reader = csv.reader(f)
-        header = next(reader)
-        skills = header[2:]  # drop split and cluster ID fields
+        next(reader)  # discard header
 
-        nrecords = line_count(file) - 1
-        nclusters_per_split = defaultdict(int)
-        splitnames = np.zeros(nrecords, dtype='str')
-        clusterids = np.zeros(nrecords, dtype='int')
-        centroids = np.zeros((nrecords, len(skills)), dtype='float')
+        clusterids = defaultdict(list)
+        centroids = defaultdict(list)
+        for i, line in enumerate(reader):
+            splitname = line[0]
+            clusterid = int(line[1])
+            centroid = [float(v) for v in line[2:] if v != '']
+            clusterids[splitname].append(clusterid)
+            centroids[splitname].append(centroid)
 
-        with tqdm(total=nrecords) as pbar:
-            for i, line in enumerate(reader):
-                splitname = line[0]
-                nclusters_per_split[splitname] += 1
-
-                splitnames[i] = splitname
-                clusterids[i] = int(line[1])
-                centroids[i, :] = [float(v) for v in line[2:]]
-                pbar.update(1)
-
-    results = {}
+    centroids_per_split = {}
     for split in splits:
-        nclusters = nclusters_per_split[split.name]
-        results[split.name] = np.zeros((nclusters, split.nskills))
-
-    print("rearranging into map...", end=' ', flush=True)
-    for splitname, clusterid, centroid in zip(splitnames, clusterids, centroids):
-        results[splitname][clusterid, :] = centroid
-    print("done")
-
-    return results
+        split_centroids = np.zeros_like(centroids[split.name])
+        for i, cid in enumerate(clusterids[split.name]):
+            split_centroids[cid, :] = centroids[split.name][i]
+        centroids_per_split[split.name] = split_centroids
+    return centroids_per_split
 
 
-def load_cluster_ids(file):
+def load_clusterids_data(file):
     print("loading cluster IDs...")
     num_players = line_count(file) - 1
     with open(file, 'r') as f:

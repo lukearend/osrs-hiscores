@@ -5,6 +5,9 @@
     differences. This is much like taking the Euclidean distance
     between points in 3D space, except the points live in a 23-
     dimensional space instead.
+
+    For k = {"all": 4000, "cb": 2000, "noncb", 2000}, this script
+    runs in about 4 hours on a 2021 M1 Mac.
 """
 
 import sys
@@ -40,7 +43,7 @@ def write_results(splits, skills, centroids, out_file):
                     line.append(stat_value)
 
                 centroid_csv = ','.join(str(v) for v in line)
-                line = f"{split.name},{i},{centroid_csv}\n"
+                line = f"{split.name},{clusterid},{centroid_csv}\n"
                 f.write(line)
 
     print("done")
@@ -54,7 +57,8 @@ def main(stats_file, out_file):
 
     centroids = {}
     for split in splits:
-        player_vectors = data[:, split.skill_inds].copy()
+        player_vectors = data[:, split.skill_inds]
+        player_vectors = player_vectors.copy()  # copy to make C-contiguous array
 
         # Player weight is proportional to the number of ranked skills.
         weights = np.sum(player_vectors != -1, axis=1) / split.nskills

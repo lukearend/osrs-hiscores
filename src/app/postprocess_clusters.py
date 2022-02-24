@@ -6,42 +6,21 @@
 
 import pickle
 import sys
-from collections import defaultdict
 
 import numpy as np
-from tqdm import tqdm
 
-from src import load_cluster_data, load_stats_data
+from src import load_clusterids_data, load_stats_data
+from src.app import (compute_cluster_sizes, compute_cluster_quantiles,
+                     compute_percent_uniqueness)
 
 
-def main(stats_file, clusters_file, out_file):
-    print("computing cluster percentiles...")
-    _, splits, cluster_ids = load_cluster_data(clusters_file)
-    _, skills, stats = load_stats_data(stats_file)
+def compute_cluster_quartiles(stats, skills):
+    splits =
 
-    # Change missing values from -1 to Nan.
-    stats = stats.astype('float')
-    stats[stats < 0] = np.nan
-
-    print("computing cluster sizes...")
-    cluster_sizes = {split: defaultdict(int) for split in splits}
-    for player_clusters in tqdm(cluster_ids):
-        for split, cluster_id in zip(splits, player_clusters):
-            cluster_sizes[split][cluster_id] += 1
-
-    for split, sizes_dict in cluster_sizes.items():
-        sizes_array = np.zeros(max(sizes_dict.keys()), dtype='int')
-        for cluster_id, size in sizes_dict.items():
-            sizes_array[cluster_id - 1] = size
-
-        cluster_sizes[split] = sizes_array
-
-    # Compute quartiles for each cluster as summary statistics.
     cluster_quartiles = defaultdict(dict)
     percentiles = [0, 25, 50, 75, 100]
     for s, split in enumerate(splits):
         print(f"computing quartiles for split '{split}'...")
-
         # Include total level when computing percentiles.
         dataset = None
         result = None
@@ -58,10 +37,9 @@ def main(stats_file, clusters_file, out_file):
             result = np.zeros((num_clusters, len(percentiles), len(skills) - 7))
 
         for i in tqdm(range(num_clusters)):
-            cluster_inds = cluster_ids[:, s] == i + 1  # cluster IDs start from 1
+            cluster_inds = cluster_ids[:, s] == i
             cluster_points = dataset[cluster_inds]
             for j, p in enumerate(percentiles):
-
                 # A good number of clusters have one or more nan columns. This is
                 # because accounts in the cluster had one or more skills below the
                 # threshold to have that skill's data included in the official OSRS
@@ -69,13 +47,29 @@ def main(stats_file, clusters_file, out_file):
                 result[i, j, :] = np.nanpercentile(cluster_points, axis=0, q=p)
 
         cluster_quartiles[split] = result
+    pass  # todo: factor out
+
+
+def compute_cluster_uniqueness():
+    pass  # todo: factor out
+
+
+def main(stats_file, clusters_file, out_file):
+    _, splits, cluster_ids = load_clusterids_data(clusters_file)
+    _, skills, stats = load_stats_data(stats_file)
+
+    # Change missing stat values from -1 to Nan.
+    stats = stats.astype('float')
+    stats[stats < 0] = np.nan
+
+    print("computing cluster sizes...")
+    cluster_sizes = compute_cluster_sizes(cluster_ids, splits)
 
     # Compute 'percent uniqueness' for each cluster.
     print("computing cluster uniqueness...")
     num_players = len(stats)
     cluster_uniqueness = {}
     for split in splits:
-
         # An account's 'percent uniqueness' is the percentage of accounts
         # which are as unique or less unique than itself. First, line up
         # all clusters in order from smallest to largest (most to least
@@ -90,13 +84,13 @@ def main(stats_file, clusters_file, out_file):
         uniqueness = sorted_uniqueness[unsort_inds]
         cluster_uniqueness[split] = uniqueness
 
-    out = {
-        'cluster_sizes': cluster_sizes,
-        'cluster_quartiles': cluster_quartiles,
-        'cluster_uniqueness': cluster_uniqueness
+    cluster_data = {
+        'sizes': cluster_sizes,
+        'quartiles': cluster_quartiles,
+        'uniqueness': cluster_uniqueness
     }
     with open(out_file, 'wb') as f:
-        pickle.dump(out, f)
+        pickle.dump(cluster_data, f)
 
     print("done")
 

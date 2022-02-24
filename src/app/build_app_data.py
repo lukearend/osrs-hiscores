@@ -8,7 +8,7 @@ import sys
 import numpy as np
 
 
-def main(cluster_analytics_file, dim_reduced_file, out_file):
+def main(cluster_analytics_file, centroids_file, dim_reduced_file, out_file):
     print("building app data...", end=' ', flush=True)
 
     skills_file = pathlib.Path(__file__).resolve().parents[2] / 'reference/osrs_skills.csv'

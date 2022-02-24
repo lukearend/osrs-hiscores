@@ -1,11 +1,34 @@
-import time
-
 import faiss
 import numpy as np
+import umap
 from numpy.typing import NDArray
 
 
-def cluster_L2(X: NDArray, centroids: NDArray) -> NDArray:
+def umap_reduce(X: NDArray, d: int, n_neighbors: int, min_dist: float) -> NDArray:
+    """
+    Project the vectors in X from their native dimensionality to
+    d dimensions using UMAP. UMAP is a nonlinear, topology-preserving
+    dimensionality reduction algorithm which transforms a set of points
+    from a higher to a lower dimension in such a way that the spatial
+    relationships between points are preserved.
+
+    :param X: 2D array of vectors to be transformed
+    :param d: points are projected into this dimensionality (e.g. 3 for 3D)
+    :param n_neighbors: UMAP `n_neighbors` parameter
+    :param min_dist: UMAP `min_dist` parameter
+    :return: 2D array of projected points with d columns
+    """
+    fit = umap.UMAP(
+        n_neighbors=n_neighbors,
+        min_dist=min_dist,
+        n_components=d,
+        metric='euclidean',
+        random_state = 0
+    )
+    return fit.fit_transform(X)
+
+
+def cluster_l2(X: NDArray, centroids: NDArray) -> NDArray:
     """
     Cluster the vectors in X according to a given list of cluster
     centroids. Each vector is assigned a cluster ID which is the
@@ -15,12 +38,9 @@ def cluster_L2(X: NDArray, centroids: NDArray) -> NDArray:
     :param centroids: 2D array of cluster centroids
     :return: 1D array of cluster IDs
     """
-    t0 = time.time()
-    index = faiss.IndexFlatL2()
-    index.add(centroids)
+    index = faiss.IndexFlatL2(centroids.shape[1])
+    index.add(centroids.astype('float32'))
     _, ids = index.search(X.astype('float32'), k=1)
-    print(f"done ({time.time() - t0:.2f} sec)")
-
     ids = [i[0] for i in ids]  # index.search() returns an array of length-1 arrays
     return np.array(ids).astype('int')
 

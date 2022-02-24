@@ -10,63 +10,38 @@ import pickle
 import time
 import sys
 
-import numpy as np
-import umap
+from src import load_centroid_data, load_skill_splits, load_umap_params
+from src.models import umap_reduce
 
 
 def main(in_file, out_file):
-    with open(in_file, 'rb') as f:
-        data = pickle.load(f)
-
-    quartiles = data['cluster_quartiles']
-    splits = quartiles.keys()
-
-    centroids = {}
-    for split in splits:
-        medians = quartiles[split][:, 2, 1:]        # Take 50th percentile, drop total level.
-        medians = np.nan_to_num(medians, nan=1.0)   # Set missing data to 1 for embedding purposes.
-        centroids[split] = medians
-
-    params_file = pathlib.Path(__file__).resolve().parents[2] / 'reference/umap_params.json'
-    with open(params_file, 'r') as f:
-        params = json.load(f)
+    splits = load_skill_splits()
+    params = load_umap_params()
+    centroids = load_centroid_data(in_file)
 
     print("computing 3d embeddings...")
     num_jobs = len(splits) * len(params['n_neighbors']) * len(params['min_dist'])
-
-    i = 1
-    out = {}
+    xyz = {}
+    job_i = 0
     for split in splits:
-
-        out[split] = {}
+        xyz[split.name] = {}
         for n_neighbors in params['n_neighbors']:
-
-            out[split][n_neighbors] = {}
+            xyz[split.name][n_neighbors] = {}
             for min_dist in params['min_dist']:
-
-                # For reproducibility.
-                np.random.seed(0)
-                t0 = time.time()
-
-                progress = f"{i}/{num_jobs}".ljust(8)
-                print(f"{progress} running split '{split}' "
+                progress = f"{job_i + 1}/{num_jobs}".ljust(8)
+                print(f"{progress} running split '{split.name}' "
                       f"(n_neighbors = {n_neighbors}, min_dist = {min_dist:.2f})... ", end='', flush=True)
-                fit = umap.UMAP(
-                    n_neighbors=n_neighbors,
-                    min_dist=min_dist,
-                    n_components=3,
-                    metric='euclidean'
-                )
-                u = fit.fit_transform(centroids[split])
 
-                elapsed = time.time() - t0
-                print(f"done ({elapsed:.2f} sec)")
+                t0 = time.time()
+                X = centroids[split.name]
+                u = umap_reduce(X, d=3, n_neighbors=n_neighbors, min_dist=min_dist)
+                print(f"done ({time.time() - t0:.2f} sec)")
 
-                out[split][n_neighbors][min_dist] = u
-                i += 1
+                xyz[split.name][n_neighbors][min_dist] = u
+                job_i += 1
 
     with open(out_file, 'wb') as f:
-        pickle.dump(out, f)
+        pickle.dump(xyz, f)
 
     print("saved results to file")
 
