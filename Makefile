@@ -15,10 +15,13 @@ S3_BUCKET:=osrshiscores
 
 .DEFAULT_GOAL := help
 
-all: init scrape cluster dimreduce app # Scrape data, process it and build application from scratch.
-build: init download dimreduce app # Build final application from downloaded data.
+all: init scrape cluster dimreduce app # Scrape data, process it and build final application.
+build: init download dimreduce app # Build final application from downloaded pre-scraped data.
 clean: env-clean scrape-clean cluster-clean dimreduce-clean app-clean
-test: lint app-run
+run:
+	@source env/bin/activate && python3 app
+
+.PHONY: all build clean run
 
 # Setup -------------------------------------------------------------------------------------------
 init: env nbextensions ## Setup project dependencies.
@@ -34,7 +37,7 @@ env:
 env-clean:
 	rm -rf env
 
-.PHONY: all clean init env-clean
+.PHONY: init env env-clean
 
 # Data scraping -----------------------------------------------------------------------------------
 scrape: $(DATA_FINAL)/stats.csv ## Run data scrape of OSRS hiscores.
@@ -75,7 +78,7 @@ scrape-clobber: # Delete all files from scraping process.
 	rm -f $(DATA_RAW)/stats-raw.csv
 	rm -f $(DATA_FINAL)/stats.csv
 
-.PHONY: scrape scrape-clean
+.PHONY: scrape scrape-clean scrape-clobber
 .PRECIOUS: $(DATA_RAW)/usernames-raw.csv $(DATA_RAW)/stats-raw.csv
 
 # Clustering --------------------------------------------------------------------------------------
@@ -83,11 +86,11 @@ cluster: $(DATA_FINAL)/clusters.csv ## Cluster players according to scraped stat
 
 $(DATA_FINAL)/centroids.csv:
 	@source env/bin/activate && \
-	cd src/cluster && python3 fit_clusters.py $(DATA_FINAL)/stats.csv $@
+	cd src/models && python3 fit_clusters.py $(DATA_FINAL)/stats.csv $@
 
 $(DATA_FINAL)/clusters.csv: $(DATA_FINAL)/centroids.csv
 	@source env/bin/activate && \
-	cd src/cluster && python3 cluster_players.py $(DATA_FINAL)/stats.csv $< $@
+	cd src/models && python3 cluster_players.py $(DATA_FINAL)/stats.csv $< $@
 
 cluster-clean:
 	rm -f $(DATA_FINAL)/centroids.csv
@@ -100,11 +103,10 @@ dimreduce: $(DATA_TMP)/dim_reduced.pkl ## Reduce cluster dimensionality for visu
 
 $(DATA_TMP)/dim_reduced.pkl:
 	@source env/bin/activate && \
-	cd src/cluster && python3 $(DATA_FINAL)/centroids.csv $@
+	cd src/models && python3 dim_reduce_clusters.py $(DATA_FINAL)/centroids.csv $@
 
 dimreduce-clean:
-	rm -f $(DATA_TMP)/cluster_analytics.pkl
-	rm -f $(DATA_TMP)/dim_reduced.pkl
+	rm -f $(DATA_TMP)/clusters_xyz.pkl
 
 .PHONY: dimreduce dimreduce-clean
 
@@ -115,7 +117,7 @@ $(DATA_TMP)/cluster_analytics.pkl:
 	@source env/bin/activate && \
 	cd src/app && python3 postprocess_clusters.py $(DATA_FINAL)/stats.csv $(DATA_FINAL)/clusters.csv $@
 
-$(DATA_FINAL)/app_data.pkl: $(DATA_TMP)/cluster_analytics.pkl $(DATA_FINAL)/centroids.csv $(DATA_TMP)/dim_reduced.pkl
+$(DATA_FINAL)/app_data.pkl: $(DATA_FINAL)/centroids.csv $(DATA_TMP)/cluster_analytics.pkl $(DATA_TMP)/clusters_xyz.pkl
 	@source env/bin/activate && \
 	cd src/app && python3 build_app_data.py $^ $@
 
@@ -123,13 +125,10 @@ app-db: $(DATA_FINAL)/clusters.csv $(DATA_FINAL)/stats.csv
 	@source env/bin/activate && \
 	cd src/app && python3 build_database.py $^
 
-app-run:
-	@source env/bin/activate && python3 app
-
 app-clean:
 	rm -f $(DATA_FINAL)/app_data.pkl
 
-.PHONY: app app-db app-run app-clean
+.PHONY: app app-db app-clean
 
 # Upload/download ---------------------------------------------------------------------------------
 

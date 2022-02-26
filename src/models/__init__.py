@@ -8,13 +8,13 @@ from numpy.typing import NDArray
 
 
 def kmeans_params() -> Dict[str, int]:
-    params_file = Path(__file__).resolve().parent.parent / 'reference/kmeans_params.json'
+    params_file = Path(__file__).resolve().parents[2] / 'reference/kmeans_params.json'
     with open(params_file, 'r') as f:
         return json.load(f)
 
 
 def umap_params() -> Dict[str, int]:
-    params_file = Path(__file__).resolve().parent.parent / 'reference/umap_params.json'
+    params_file = Path(__file__).resolve().parents[2] / 'reference/umap_params.json'
     with open(params_file, 'r') as f:
         return json.load(f)
 

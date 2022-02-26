@@ -10,15 +10,15 @@ import sys
 import numpy as np
 from tqdm import tqdm
 
-from src import load_skill_splits, load_clusterids_data, load_stats_data, split_dataset
-from src import compute_cluster_sizes, compute_cluster_uniqueness, compute_skill_quartiles
+from src.common import skill_splits, split_dataset, load_clusterids_data, load_stats_data
+from src.results import compute_cluster_sizes, compute_cluster_uniqueness, compute_skill_quartiles
 
 
 def main(stats_file, clusters_file, out_file):
     _, splits, clusterids = load_clusterids_data(clusters_file)
     print("computing cluster sizes...")
     cluster_sizes = {}
-    for s, split in splits:
+    for s, split in enumerate(splits):
         cluster_sizes[split] = compute_cluster_sizes(clusterids[:, s])
 
     print("computing cluster uniqueness...")
@@ -26,7 +26,7 @@ def main(stats_file, clusters_file, out_file):
     for split in splits:
         cluster_uniqueness[split] = compute_cluster_uniqueness(cluster_sizes[split])
 
-    splits = load_skill_splits()
+    splits = skill_splits()
     _, skills, stats = load_stats_data(stats_file)
     stats = stats.astype('float')
     stats[stats < 0] = np.nan  # change missing values from -1 to nan
@@ -36,14 +36,13 @@ def main(stats_file, clusters_file, out_file):
     for s, split in enumerate(splits):
         print(f"computing quartiles for split '{split.name}'...")
         quartiles = np.zeros((nclusters, 5, split.nskills))
-        player_vectors = split_dataset(stats)
+        player_vectors = split_dataset(stats, split)
 
         for cid in tqdm(range(nclusters)):
             id_locs = clusterids[:, s] == cid
             vectors_in_cluster = player_vectors[id_locs]
             quartiles[cid, :, :] = compute_skill_quartiles(vectors_in_cluster)
-
-        cluster_quartiles[split] = quartiles
+        cluster_quartiles[split.name] = quartiles
 
     cluster_data = {
         'sizes': cluster_sizes,

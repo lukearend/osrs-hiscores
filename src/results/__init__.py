@@ -1,5 +1,32 @@
+from dataclasses import dataclass
+from typing import List, Dict
+
 import numpy as np
 from numpy.typing import NDArray
+
+from src.common import DataSplit
+
+
+@dataclass
+class ClusterData:
+    xyz: NDArray
+    sizes: NDArray
+    centroids: NDArray
+    quartiles: NDArray
+    uniqueness: NDArray
+
+
+@dataclass
+class SplitResults:
+    skills: List[str]
+    clusters: ClusterData
+    axlims: Dict
+
+
+@dataclass
+class AppData:
+    splitnames: List[DataSplit]
+    results: Dict[str, SplitResults]
 
 
 def compute_cluster_sizes(clusterids: NDArray) -> NDArray:
@@ -8,8 +35,8 @@ def compute_cluster_sizes(clusterids: NDArray) -> NDArray:
     :param cluster_ids: array of cluster IDs
     :return: array where value at index N is the size of cluster N
     """
-    ids, counts = np.unique(clusterids.astype('int'))
-    sizes = np.array(max(ids) + 1)
+    ids, counts = np.unique(clusterids.astype('int'), return_index=True)
+    sizes = np.zeros(max(ids) + 1)
     sizes[ids] = counts
     return sizes
 
@@ -45,6 +72,6 @@ def compute_skill_quartiles(player_vectors: NDArray) -> NDArray:
              skill for the 0, 25, 50, 75, and 100th percentiles
     """
     quartiles = np.zeros((5, player_vectors.shape[1]))
-    for i, p in [0, 25, 50, 75, 100]:
+    for i, p in enumerate([0, 25, 50, 75, 100]):
         # Use np.nanpercentile as player vectors may have missing data.
-        quartiles[i, j, :] = np.nanpercentile(player_vectors, axis=0, q=p)
+        quartiles[i, :] = np.nanpercentile(player_vectors, axis=0, q=p)

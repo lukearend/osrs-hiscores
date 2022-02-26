@@ -29,7 +29,7 @@ def osrs_statnames() -> List[str]:
 
     :return: list of OSRS skill names
     """
-    splits_file = Path(__file__).resolve().parent.parent / "reference" / "osrs_skills.csv"
+    splits_file = Path(__file__).resolve().parents[2] / "reference" / "osrs_skills.csv"
     with open(splits_file, 'r') as f:
         reader = csv.reader(f)
         return [line[0] for line in reader]
@@ -52,7 +52,7 @@ def skill_splits() -> List[DataSplit]:
 
     :return: list of objects representing metadata about each split
     """
-    splits_file = Path(__file__).resolve().parent.parent / "reference" / "data_splits.json"
+    splits_file = Path(__file__).resolve().parents[2] / "reference" / "data_splits.json"
     with open(splits_file, 'r') as f:
         split_config = json.load(f)
 

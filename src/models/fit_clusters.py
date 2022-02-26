@@ -6,7 +6,7 @@
     between points in 3D space, except the points live in a 23-
     dimensional space instead.
 
-    For k = {"all": 4000, "cb": 2000, "noncb", 2000}, this script
+    For k = {"all": 4000, "cb": 2000, "noncb": 2000}, this script
     runs in about 4 hours on a 2021 M1 Mac.
 """
 
@@ -55,6 +55,7 @@ def main(stats_file, out_file):
     centroids = {}
     splits = skill_splits()
     params = kmeans_params()
+    params = {"all": 40, "cb": 20, "noncb": 20}
     for split in splits:
         player_vectors = split_dataset(data, split)
 
