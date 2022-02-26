@@ -8,7 +8,5 @@ __pycache__
 /data/processed/app_data.pkl
 /figures/scatterplots/player-clusters-*-*.pdf
 
-todo.txt
-
 .env
 .idea

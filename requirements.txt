@@ -1,6 +1,7 @@
 aiohttp
 boonnano
 boto3
+botocore
 dash
 dash-bootstrap-components
 beautifulsoup4
@@ -19,4 +20,4 @@ seaborn
 scipy
 tqdm
 umap-learn
--e .
+-e .  # install src package in editable mode

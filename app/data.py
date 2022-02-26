@@ -24,7 +24,7 @@ def compute_scatterplot_data(app_data, split, skill, level_range, n_neighbors, m
 
     cluster_ids = show_inds + 1
     xyz_data = app_data[split]['xyz'][n_neighbors][min_dist][show_inds]
-    num_players = app_data[split]['cluster_sizes'][show_inds]
+    nplayers = app_data[split]['cluster_sizes'][show_inds]
     uniqueness = 100 * app_data[split]['cluster_uniqueness'][show_inds]
     median_level = app_data[split]['cluster_quartiles'][:, 2, skill_i][show_inds]
 
@@ -33,7 +33,7 @@ def compute_scatterplot_data(app_data, split, skill, level_range, n_neighbors, m
         'y': xyz_data[:, 1],
         'z': xyz_data[:, 2],
         'id': cluster_ids,
-        'size': num_players,
+        'size': nplayers,
         'uniqueness': uniqueness,
         'level': median_level
     })
@@ -43,10 +43,10 @@ def compute_boxplot_data(app_data, boxplot_inds, split, cluster_id=None):
     # Replace nans with -100 so we don't see them on the chart (a bit hacky)
     hide_value = -100
     if cluster_id is None:
-        num_skills = len(app_data[split]['skills'])
+        nskills = len(app_data[split]['skills'])
         plot_data = {}
         for q in ['lowerfence', 'q1', 'median', 'q3', 'upperfence']:
-            plot_data[q] = np.full(num_skills, hide_value)
+            plot_data[q] = np.full(nskills, hide_value)
         return plot_data
 
     quartiles = app_data[split]['cluster_quartiles'][cluster_id - 1]

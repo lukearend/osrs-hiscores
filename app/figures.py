@@ -87,9 +87,9 @@ def get_scatterplot(df, colorlims, colorlabel, pointsize, axlims, crosshairs=Non
 
 def get_boxplot(split):
     tick_labels = load_boxplot_layout()[split]
-    num_skills = len(tick_labels)
+    nskills = len(tick_labels)
 
-    nans = np.full(num_skills, np.nan)
+    nans = np.full(nskills, np.nan)
     fig = go.Figure(
         data=[
             go.Box(
@@ -103,7 +103,7 @@ def get_boxplot(split):
         layout_uirevision='constant',
         layout_margin=dict(b=0, l=0, r=0, t=0),
         layout_xaxis_tickvals=[],
-        layout_xaxis_range=np.array([0, num_skills]) - 0.5,
+        layout_xaxis_range=np.array([0, nskills]) - 0.5,
         layout_yaxis_range=[-15, 100],
         layout_yaxis_tickvals=[1, 20, 40, 60, 80, 99],
     )

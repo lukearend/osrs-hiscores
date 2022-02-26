@@ -14,8 +14,8 @@ import sys
 
 import numpy as np
 
-from src import load_kmeans_params, load_skill_splits, load_stats_data
-from src.models import fit_kmeans
+from src.common import skill_splits, load_stats_data, split_dataset
+from src.models import kmeans_params, fit_kmeans
 
 
 def write_results(splits, skills, centroids, out_file):
@@ -50,15 +50,13 @@ def write_results(splits, skills, centroids, out_file):
 
 
 def main(stats_file, out_file):
-    params = load_kmeans_params()
-    splits = load_skill_splits()
-    _, stats, data = load_stats_data(stats_file)
-    data = np.delete(data, stats.index("total"), axis=1)  # drop total level column
+    _, statnames, data = load_stats_data(stats_file)
 
     centroids = {}
+    splits = skill_splits()
+    params = kmeans_params()
     for split in splits:
-        player_vectors = data[:, split.skill_inds]
-        player_vectors = player_vectors.copy()  # copy to make C-contiguous array
+        player_vectors = split_dataset(data, split)
 
         # Player weight is proportional to the number of ranked skills.
         weights = np.sum(player_vectors != -1, axis=1) / split.nskills
@@ -71,7 +69,7 @@ def main(stats_file, out_file):
         k = params[split.name]
         centroids[split.name] = fit_kmeans(player_vectors, k=k, w=weights)
 
-    skills = stats[1:]
+    skills = statnames[1:]
     write_results(splits, skills, centroids, out_file)
 
 

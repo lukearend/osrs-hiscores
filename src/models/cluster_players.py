@@ -2,26 +2,22 @@ import csv
 import time
 import sys
 
-import numpy as np
-
-from src import load_skill_splits, load_stats_data, load_centroid_data
-from src.models import cluster_L2
+from src.common import skill_splits, load_stats_data, load_centroid_data, split_dataset
+from src.models import cluster_l2
 
 
 def main(stats_file, centroids_file, out_file):
-    splits = load_skill_splits()
     centroids = load_centroid_data(centroids_file)
-    usernames, stats, data = load_stats_data(stats_file)
-    data = np.delete(data, stats.index("total"), axis=1)  # drop total levels
+    usernames, _, data = load_stats_data(stats_file)
 
+    splits = skill_splits()
     clusterids_per_split = {}
     for split in splits:
-        player_vectors = data[:, split.skill_inds]
-        player_vectors = player_vectors.copy()  # copy to make C-contiguous array
+        player_vectors = split_dataset(data, split)
 
         print(f"clustering split '{split.name}'...", end=' ', flush=True)
         t0 = time.time()
-        clusterids = cluster_L2(player_vectors, centroids=centroids[split.name])
+        clusterids = cluster_l2(player_vectors, centroids=centroids[split.name])
         print(f"done ({time.time() - t0:.2f} sec)")
 
         clusterids_per_split[split.name] = clusterids

@@ -70,7 +70,7 @@ def main(in_file, out_file):
     with open(in_file, 'r') as f:
         reader = csv.reader(f)
         names_to_scrape = [line[1] for line in tqdm(reader)]
-    num_players = len(names_to_scrape)
+    nplayers = len(names_to_scrape)
 
     # Check which usernames have been processed already.
     if os.path.isfile(out_file):
@@ -84,9 +84,9 @@ def main(in_file, out_file):
     if not names_to_scrape:
         return True
 
-    print(f"{len(names_to_scrape)}/{num_players} users left to process")
+    print(f"{len(names_to_scrape)}/{nplayers} users left to process")
 
-    with tqdm(total=num_players, initial=num_players - len(names_to_scrape)) as pbar:
+    with tqdm(total=nplayers, initial=nplayers - len(names_to_scrape)) as pbar:
         loop = asyncio.get_event_loop()
         loop.run_until_complete(
             run_workers(names_to_scrape, out_file, pbar)

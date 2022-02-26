@@ -4,23 +4,22 @@
     Full grid search over 3 splits, 16 parameter sets takes 10 mins.
 """
 
-import json
-import pathlib
 import pickle
 import time
 import sys
 
-from src import load_centroid_data, load_skill_splits, load_umap_params
-from src.models import umap_reduce
+from src.common import skill_splits, load_centroid_data
+from src.models import umap_params, umap_reduce
 
 
 def main(in_file, out_file):
-    splits = load_skill_splits()
-    params = load_umap_params()
     centroids = load_centroid_data(in_file)
 
     print("computing 3d embeddings...")
-    num_jobs = len(splits) * len(params['n_neighbors']) * len(params['min_dist'])
+    splits = skill_splits()
+    params = umap_params()
+    njobs = len(splits) * len(params['n_neighbors']) * len(params['min_dist'])
+
     xyz = {}
     job_i = 0
     for split in splits:
@@ -28,7 +27,7 @@ def main(in_file, out_file):
         for n_neighbors in params['n_neighbors']:
             xyz[split.name][n_neighbors] = {}
             for min_dist in params['min_dist']:
-                progress = f"{job_i + 1}/{num_jobs}".ljust(8)
+                progress = f"{job_i + 1}/{njobs}".ljust(8)
                 print(f"{progress} running split '{split.name}' "
                       f"(n_neighbors = {n_neighbors}, min_dist = {min_dist:.2f})... ", end='', flush=True)
 

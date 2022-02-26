@@ -29,8 +29,8 @@ def main(clusters_file, stats_file):
     collection = db['players']
     print("ok")
 
-    num_players = line_count(stats_file) - 1
-    if collection.count_documents({}) == num_players:
+    Pathplayers = line_count(stats_file) - 1
+    if collection.count_documents({}) == Pathplayers:
         print("database already populated, nothing to do")
         return
 
