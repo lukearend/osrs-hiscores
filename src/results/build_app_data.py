@@ -7,7 +7,7 @@ import sys
 import numpy as np
 
 from src.common import skill_splits, load_centroid_data
-from src.results import AppData, SplitResults, ClusterData
+from src.results import AppData, SplitData, ClusterData
 
 
 def compute_minmax(xyz):
@@ -44,16 +44,16 @@ def main(centroids_file, cluster_analytics_file, clusters_xyz_file, out_file):
                 xyz = cluster_xyz[split.name][n_neighbors][min_dist]
                 axlims[n_neighbors][min_dist] = compute_minmax(xyz)
 
-        split_results = SplitResults(
+        split_results = SplitData(
             skills=split.skills,
-            clusters=cluster_data,
+            clusterdata=cluster_data,
             axlims=axlims
         )
         results[split.name] = split_results
 
     app_data = AppData(
         splitnames=[s.name for s in splits],
-        results=results
+        splitdata=results
     )
 
     with open(out_file, 'wb') as f:

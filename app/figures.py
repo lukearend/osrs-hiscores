@@ -1,12 +1,18 @@
+from typing import Tuple, Dict
+
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
+
 from PIL import Image
+from numpy.typing import NDArray
+from pandas import DataFrame
 
 from app.data import load_boxplot_layout
 
 
-def get_scatterplot(df, colorlims, colorlabel, pointsize, axlims, crosshairs=None):
+def get_scatterplot(df: DataFrame, colorlims: Tuple[int], colorlabel: str,
+                    pointsize: int, axlims: Dict[NDArray], crosshairs: Tuple = None) -> go.Figure:
     # While go.Scatter3d (from graph objects module) would be preferred,
     # it doesn't allow color and hover data formatting using a dataframe.
     fig = px.scatter_3d(
@@ -81,12 +87,11 @@ def get_scatterplot(df, colorlims, colorlabel, pointsize, axlims, crosshairs=Non
             xanchor='right'
         )
     )
-
     return fig
 
 
-def get_boxplot(split):
-    tick_labels = load_boxplot_layout()[split]
+def get_empty_boxplot(split: str) -> go.Figure:
+    tick_labels, icon_x_offsets = load_boxplot_layout(split)
     nskills = len(tick_labels)
 
     nans = np.full(nskills, np.nan)
@@ -108,7 +113,6 @@ def get_boxplot(split):
         layout_yaxis_tickvals=[1, 20, 40, 60, 80, 99],
     )
 
-    icon_offset_x = {'all': 0.38, 'cb': 0.106, 'noncb': 0.26}[split]
     for i, skill in enumerate(tick_labels):
         icon = Image.open(f"/Users/lukearend/projects/osrs-hiscores/app/assets/icons/{skill}_icon.png")
         fig.add_layout_image(
@@ -116,7 +120,7 @@ def get_boxplot(split):
                 source=icon,
                 xref="x",
                 yref="y",
-                x=i - icon_offset_x,
+                x=i - icon_x_offsets,
                 y=-2,
                 sizex=1,
                 sizey=12,

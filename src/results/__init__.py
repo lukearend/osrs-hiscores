@@ -9,7 +9,7 @@ from src.common import DataSplit
 
 @dataclass
 class ClusterData:
-    xyz: NDArray
+    xyz: Dict  # TODO: becomes NDArray once umap params frozen
     sizes: NDArray
     centroids: NDArray
     quartiles: NDArray
@@ -17,16 +17,16 @@ class ClusterData:
 
 
 @dataclass
-class SplitResults:
+class SplitData:
     skills: List[str]
-    clusters: ClusterData
-    axlims: Dict
+    clusterdata: ClusterData
+    axlims: Dict  # TODO: becomes Dict[NDArray] once umap params frozen
 
 
 @dataclass
 class AppData:
     splitnames: List[DataSplit]
-    results: Dict[str, SplitResults]
+    splitdata: Dict[str, SplitData]
 
 
 def compute_cluster_sizes(clusterids: NDArray) -> NDArray:

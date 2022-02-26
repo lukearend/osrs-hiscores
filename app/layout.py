@@ -1,20 +1,20 @@
 import dash_bootstrap_components as dbc
-from dash import dcc
-from dash import html
+from dash import Dash, dcc, html
 
 from app import (
     format_skill, default_n_neighbors, default_min_dist,
     get_level_tick_marks, get_color_label, get_color_range, get_point_size
 )
 from app.data import compute_scatterplot_data, load_table_layout
-from app.figures import get_boxplot, get_scatterplot
+from app.figures import get_empty_boxplot, get_scatterplot
+from src.results import AppData
 
 
-def build_layout(app, app_data):
+def build_layout(app: Dash, appdata: AppData) -> Dash:
     init_split = 'all'
     init_skill = 'total'
-    init_level_range = [1, 2277]
     init_ptsize = 'small'
+    init_level_range = [1, 2277]
     init_n_neighbors = default_n_neighbors(init_split)
     init_min_dist = default_min_dist(init_split)
 
@@ -75,7 +75,7 @@ def build_layout(app, app_data):
                                     id='current-skill',
                                     options=[
                                         {'label': format_skill(init_skill), 'value': skill}
-                                        for skill in app_data['all']['skills']
+                                        for skill in appdata.splitdata["all"].skills
                                     ],
                                     value=init_skill,
                                     clearable=False
@@ -240,7 +240,7 @@ def build_layout(app, app_data):
                             dcc.Graph(
                                 id='box-plot',
                                 style={'height': '20vh'},
-                                figure=get_boxplot(init_split)
+                                figure=get_empty_boxplot(init_split)
                             )
                         ]),
                         align='center'
@@ -253,12 +253,12 @@ def build_layout(app, app_data):
                     id='scatter-plot',
                     clear_on_unhover=True,
                     figure=get_scatterplot(
-                        df=compute_scatterplot_data(app_data, init_split, init_skill, init_level_range,
+                        df=compute_scatterplot_data(appdata.splitdata[init_split], init_skill, init_level_range,
                                                     init_n_neighbors, init_min_dist),
                         colorlims=get_color_range(init_skill),
                         colorlabel=get_color_label(init_skill),
                         pointsize=get_point_size(init_ptsize),
-                        axlims=app_data[init_split]['axis_limits'][init_n_neighbors][init_min_dist]
+                        axlims=appdata.splitdata["all"].axlims[init_n_neighbors][init_min_dist]
                     ),
                 ),
                 width=7
@@ -272,7 +272,7 @@ def build_layout(app, app_data):
     return app
 
 
-def build_level_table(name, include_total=True):
+def build_level_table(name: str, include_total: bool = True) -> dbc.Col:
     skills_layout = load_table_layout()
 
     table_rows = []

@@ -55,7 +55,7 @@ def main(stats_file, out_file):
     centroids = {}
     splits = skill_splits()
     params = kmeans_params()
-    params = {"all": 40, "cb": 20, "noncb": 20}
+    params = {"all": 40, "cb": 20, "noncb": 20}  # TODO: temporary
     for split in splits:
         player_vectors = split_dataset(data, split)
 

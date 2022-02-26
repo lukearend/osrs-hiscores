@@ -7,13 +7,21 @@ from typing import Dict
 from numpy.typing import NDArray
 
 
-def kmeans_params() -> Dict[str, int]:
+def kmeans_params(file: str) -> Dict[str, int]:
+    """ Load parameters for running k-means.
+    :param file: load from this local file (optional, otherwise uses default location)
+    :return: mapping from split names to k values
+    """
     params_file = Path(__file__).resolve().parents[2] / 'reference/kmeans_params.json'
     with open(params_file, 'r') as f:
         return json.load(f)
 
 
-def umap_params() -> Dict[str, int]:
+def umap_params(file: str) -> Dict[str, Dict]:
+    """ Load parameters for running UMAP
+    :param file: load from this local file (optional, otherwise uses default location)
+    :return: mapping from split names to UMAP parameter sets
+    """
     params_file = Path(__file__).resolve().parents[2] / 'reference/umap_params.json'
     with open(params_file, 'r') as f:
         return json.load(f)
