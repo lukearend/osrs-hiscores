@@ -32,7 +32,7 @@ def main(stats_file, clusters_file, out_file):
     stats[stats < 0] = np.nan  # change missing values from -1 to nan
 
     cluster_quartiles = {}
-    nclusters = len(cluster_sizes)
+    nclusters = len(clusterids)
     for s, split in enumerate(splits):
         print(f"computing quartiles for split '{split.name}'...")
         quartiles = np.zeros((nclusters, 5, split.nskills))

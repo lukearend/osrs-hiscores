@@ -35,7 +35,7 @@ def compute_cluster_sizes(clusterids: NDArray) -> NDArray:
     :param cluster_ids: array of cluster IDs
     :return: array where value at index N is the size of cluster N
     """
-    ids, counts = np.unique(clusterids.astype('int'), return_index=True)
+    ids, counts = np.unique(clusterids.astype('int'), return_counts=True)
     sizes = np.zeros(max(ids) + 1)
     sizes[ids] = counts
     return sizes
@@ -71,7 +71,4 @@ def compute_skill_quartiles(player_vectors: NDArray) -> NDArray:
     :return: 2D array with five rows, giving percentile value in each
              skill for the 0, 25, 50, 75, and 100th percentiles
     """
-    quartiles = np.zeros((5, player_vectors.shape[1]))
-    for i, p in enumerate([0, 25, 50, 75, 100]):
-        # Use np.nanpercentile as player vectors may have missing data.
-        quartiles[i, :] = np.nanpercentile(player_vectors, axis=0, q=p)
+    return np.nanpercentile(player_vectors, axis=0, q=[0, 25, 50, 75, 100])

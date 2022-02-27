@@ -34,21 +34,25 @@ def compute_scatterplot_data(splitdata: SplitData, skill: str, levelrange: Tuple
 
     lmin, lmax = levelrange
     show_inds = np.where(np.logical_and(q1 >= lmin, q3 <= lmax))[0]
-    cluster_ids = show_inds + 1
+    clusterids = show_inds + 1
     xyz = splitdata.clusterdata.xyz[n_neighbors][min_dist][show_inds]
     nplayers = splitdata.clusterdata.sizes[show_inds]
     uniqueness = 100 * splitdata.clusterdata.uniqueness[show_inds]
     median_level = splitdata.clusterdata.quartiles[:, 2, skill_i][show_inds]
 
-    return pd.DataFrame({
+    print(f"LA: clusterids: {clusterids}")
+
+    result = pd.DataFrame({
         'x': xyz[:, 0],
         'y': xyz[:, 1],
         'z': xyz[:, 2],
-        'id': cluster_ids,
+        'id': clusterids,
         'size': nplayers,
         'uniqueness': uniqueness,
         'level': median_level
     })
+    print(f"LA: pd.DataFrame: {result}")
+    return result
 
 
 def compute_boxplot_data(splitdata: SplitData, boxplot_inds: List, clusterid=None) -> Dict[str, NDArray]:
