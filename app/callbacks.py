@@ -31,7 +31,7 @@ def add_callbacks(app: Dash, appdata: AppData, appdb: MongoClient) -> Dash:
     )
     def redraw_scatterplot(split: str, skill: str, level_range: List[int],
                            n_neighbors: int, min_dist: float, player_data: Dict, ptsize_name: str):
-        df = compute_scatterplot_data(split, skill, level_range, n_neighbors, min_dist)
+        df = compute_scatterplot_data(appdata.splitdata[split], skill, level_range, n_neighbors, min_dist)
         color_label = get_color_label(skill)
         color_range = get_color_range(skill)
         point_size = get_point_size(ptsize_name)
@@ -236,7 +236,7 @@ def add_callbacks(app: Dash, appdata: AppData, appdb: MongoClient) -> Dash:
     )
     def update_cluster_table(cluster, split):
         if cluster is None:
-            return "Cluster stats", *('' for _ in all_skills[1:])
+            return "Cluster stats", *('' for _ in all_skills)
 
         split_skills = appdata.splitdata[split].skills
         start_ind = all_skills.index(split_skills[0])  # find start and end of skills

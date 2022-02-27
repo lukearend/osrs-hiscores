@@ -39,8 +39,9 @@ Project organization
     ├── reference        <- Reference files used in data processing.
     │
     ├── src              <- Python source code for data analytics.
-    │   ├── app          <- Scripts for building application data.
-    │   ├── cluster      <- Scripts to run clustering and dimensionality reduction.
+    │   ├── common       <- Common utilities such as data loading.
+    │   ├── results      <- Scripts for building application data.
+    │   ├── models       <- Scripts to run clustering and dimensionality reduction.
     │   └── scrape       <- Scripts for scraping raw hiscores data.
     │
     ├── Makefile         <- Top-level Makefile for building and running project.
@@ -60,8 +61,8 @@ These stages are driven by a Makefile with top-level `make` targets for each dat
 
 1. `make init`: set up Python virtual environment. This installs all dependencies for the Python code used in the project.
 2. `make scrape`: scrape data from the official OSRS hiscores. The full scraping process takes about 18 hours.
-3. `make cluster`: cluster players into similar groups according to their stats. The clustering algorithm used is the [Boon Nano](https://docs.boonlogic.com/docs/NanoDocs/Overview.html), a distance-based segmentation which is comparable to [k-means](https://en.wikipedia.org/wiki/K-means_clustering) but several orders of magnitude faster for large datasets.
-4. `make dimreduce`: project cluster centroids from high-dimensional space to 3D for visualization purposes. This dimensionality reduction is done with [UMAP](https://umap-learn.readthedocs.io/en/latest/index.html#).
+3. `make cluster`: cluster players into similar groups according to their stats. The clustering algorithm used is the [faiss](https://github.com/facebookresearch/faiss) implementation of [k-means](https://en.wikipedia.org/wiki/K-means_clustering).
+4. `make dimreduce`: project cluster centroids from high-dimensional space to 3D for visualization purposes. This dimensionality reduction is done with the [UMAP](https://umap-learn.readthedocs.io/en/latest/index.html#) algorithm.
 5. `make app`: build application data and database from analytic results. Expects a MongoDB instance running at the URI specified by the environment variable `OSRS_MONGO_URI`.
 
 Steps 1-3 can be skipped by simply running `make download`, which fetches the final dataset from an S3 bucket.

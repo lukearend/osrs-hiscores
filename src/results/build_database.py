@@ -9,7 +9,7 @@ from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
 from tqdm import tqdm
 
-from src.common import line_count, load_cluster_data, load_stats_data
+from src.common import line_count, load_clusterids_data, load_stats_data
 
 
 def main(clusters_file, stats_file):
@@ -29,22 +29,24 @@ def main(clusters_file, stats_file):
     collection = db['players']
     print("ok")
 
-    Pathplayers = line_count(stats_file) - 1
-    if collection.count_documents({}) == Pathplayers:
+    nplayers = line_count(stats_file) - 1
+    ndocs = collection.count_documents({})
+    if ndocs == nplayers:
         print("database already populated, nothing to do")
         return
 
     usernames, skills, stats = load_stats_data(stats_file)
-    _, splits, cluster_ids = load_cluster_data(clusters_file)
+    _, splits, clusterids = load_clusterids_data(clusters_file)
 
     print("writing records...")
-    collection.drop()
+    if ndocs > 0:
+        collection.drop()
     batch_size = 4096
 
     batch = []
     for i, username in enumerate(tqdm(usernames)):
         player_stats = [int(v) for v in stats[i, :]]
-        player_clusters = {split: int(cluster_ids[i, j]) for j, split in enumerate(splits)}
+        player_clusters = {split: int(clusterids[i, j]) for j, split in enumerate(splits)}
 
         document = {
             '_id': username.lower(),

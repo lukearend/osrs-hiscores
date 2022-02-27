@@ -12,7 +12,7 @@ from app.data import load_boxplot_layout
 
 
 def get_scatterplot(df: DataFrame, colorlims: Tuple[int], colorlabel: str,
-                    pointsize: int, axlims: Dict[NDArray], crosshairs: Tuple = None) -> go.Figure:
+                    pointsize: int, axlims: Dict[str, NDArray], crosshairs: Tuple = None) -> go.Figure:
     # While go.Scatter3d (from graph objects module) would be preferred,
     # it doesn't allow color and hover data formatting using a dataframe.
     fig = px.scatter_3d(

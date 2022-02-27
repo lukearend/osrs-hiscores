@@ -12,7 +12,7 @@ from src.results import AppData
 
 def build_layout(app: Dash, appdata: AppData) -> Dash:
     init_split = 'all'
-    init_skill = 'total'
+    init_skill = 'hitpoints'
     init_ptsize = 'small'
     init_level_range = [1, 2277]
     init_n_neighbors = default_n_neighbors(init_split)

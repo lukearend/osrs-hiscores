@@ -115,15 +115,15 @@ app: $(DATA_FINAL)/app_data.pkl app-db ## Build data file and database for visua
 
 $(DATA_TMP)/cluster_analytics.pkl:
 	@source env/bin/activate && \
-	cd src/app && python3 postprocess_clusters.py $(DATA_FINAL)/stats.csv $(DATA_FINAL)/clusters.csv $@
+	cd src/results && python3 postprocess_clusters.py $(DATA_FINAL)/stats.csv $(DATA_FINAL)/clusters.csv $@
 
 $(DATA_FINAL)/app_data.pkl: $(DATA_FINAL)/centroids.csv $(DATA_TMP)/cluster_analytics.pkl $(DATA_TMP)/clusters_xyz.pkl
 	@source env/bin/activate && \
-	cd src/app && python3 build_app_data.py $^ $@
+	cd src/results && python3 build_app_data.py $^ $@
 
 app-db: $(DATA_FINAL)/clusters.csv $(DATA_FINAL)/stats.csv
 	@source env/bin/activate && \
-	cd src/app && python3 build_database.py $^
+	cd src/results && python3 build_database.py $^
 
 app-clean:
 	rm -f $(DATA_FINAL)/app_data.pkl

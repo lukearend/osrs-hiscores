@@ -86,9 +86,10 @@ def load_stats_data(file: str) -> Tuple[List[str], List[str], NDArray]:
     data that is missing due to a player being unranked in a skill.
 
     :param file: path to CSV file
-    :return: array of player usernames
-    :return: list of OSRS stat names
-    :return: 2D array of player stat vectors
+    :return:
+      - list of player usernames
+      - list of OSRS stat names
+      - 2D array of player stat vectors
     """
     print("loading player stats data...")
     with open(file, 'r') as f:
@@ -151,9 +152,10 @@ def load_clusterids_data(file: str) -> Tuple[List[str], List[str], NDArray]:
     when clustering is run on different subsets of account stats.
 
     :param file: path to CSV file
-    :return: array of player usernames
-    :return: list of split names
-    :return: 2D array where each row is the cluster IDs for a player
+    :return:
+      - list of player usernames
+      - list of split names
+      - 2D array where each row is the cluster IDs for a player
     """
     print("loading cluster IDs...")
     nplayers = line_count(file) - 1

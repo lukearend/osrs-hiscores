@@ -13,7 +13,8 @@ from numpy.typing import NDArray
 from src.results import AppData, SplitData
 
 
-def compute_scatterplot_data(splitdata: SplitData, skill: str, levelrange: Tuple, n_neighbors: int, min_dist: float):
+def compute_scatterplot_data(splitdata: SplitData, skill: str, levelrange: Tuple,
+                             n_neighbors: int, min_dist: float) -> pd.DataFrame:
     """
     Assemble the pandas.DataFrame scatterplot is based on.
 
@@ -90,13 +91,13 @@ def compute_boxplot_data(splitdata: SplitData, boxplot_inds: List, clusterid=Non
 
 
 # TODO: code smell, turn this into a more direct reordering of the skills -> ticklabels, and lru_cache it
-def get_boxplot_inds(appdata: AppData) -> Dict[List[int]]:
+def get_boxplot_inds(appdata: AppData) -> Dict[str, List[int]]:
     """ Build index for reordering skills to match tick labels along box plot x-axis. """
     skillinds_per_split = {}
     for splitname, split in appdata.splitdata.items():
-        boxplot_skills = load_boxplot_layout(split)
+        boxplot_skills = load_boxplot_layout(splitname)[0]
         reorder_inds = [split.skills.index(s) for s in boxplot_skills]
-        skillinds_per_split[split] = reorder_inds
+        skillinds_per_split[splitname] = reorder_inds
     return skillinds_per_split
 
 
@@ -105,8 +106,9 @@ def load_boxplot_layout(split: str) -> Tuple[Dict[str, List[str]], Dict[str, flo
     """
     Load layout information for boxplot for the given split.
     :split: name of the split being displayed
-    :return: dictionary mapping split names to the list of skills to use as tick labels
-    :return: dictionary mapping split names to x offsets for the icons used as tick labels
+    :return:
+      - dictionary mapping split names to the list of skills to use as tick labels
+      - dictionary mapping split names to x offsets for the icons used as tick labels
     """
     ticklabels_file = Path(__file__).resolve().parent / 'assets' / 'boxplot_ticklabels.json'
     with open(ticklabels_file, 'r') as f:
