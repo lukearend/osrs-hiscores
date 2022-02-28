@@ -6,9 +6,9 @@ from src.common import skill_splits, load_stats_data, load_centroid_data, split_
 from src.models import cluster_l2
 
 
-def main(stats_file, centroids_file, out_file):
+def main(stats_file: str, centroids_file: str, out_file: str):
     centroids = load_centroid_data(centroids_file)
-    usernames, _, data = load_stats_data(stats_file)
+    usernames, _, data = load_stats_data(stats_file, include_total=False)
 
     splits = skill_splits()
     clusterids_per_split = {}

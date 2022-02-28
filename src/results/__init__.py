@@ -1,3 +1,4 @@
+import pickle
 from dataclasses import dataclass
 from typing import List, Dict
 
@@ -27,6 +28,28 @@ class SplitData:
 class AppData:
     splitnames: List[DataSplit]
     splitdata: Dict[str, SplitData]
+
+
+@dataclass
+class ClusterAnalytics:
+    sizes: NDArray
+    quartiles: NDArray
+    uniqueness: NDArray
+
+
+def load_clusters_xyz(file: str) -> Dict[str, Dict]:  # TODO: becomes NDArray once umap params frozen
+    with open(file, 'rb') as f:
+        return pickle.load(f)
+
+
+def load_cluster_analytics(file: str) -> Dict[str, ClusterAnalytics]:
+    with open(file, 'rb') as f:
+        return pickle.load(f)
+
+
+def load_app_data(file: str) -> AppData:
+    with open(file, 'rb') as f:
+        return pickle.load(f)
 
 
 def compute_cluster_sizes(clusterids: NDArray) -> NDArray:

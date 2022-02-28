@@ -31,7 +31,7 @@ def umap_params(file: str = None) -> Dict[str, Dict]:
         return json.load(f)
 
 
-def fit_kmeans(X: NDArray, k: int, w: NDArray) -> NDArray:
+def fit_kmeans(X: NDArray, k: int, w: NDArray, verbose=True) -> NDArray:
     """
     Determine centroids for a set of k clusters such that when each
     vector in X is assigned to the nearest cluster, the sum of distances
@@ -40,11 +40,12 @@ def fit_kmeans(X: NDArray, k: int, w: NDArray) -> NDArray:
     :param X: 2D array of vectors to train on
     :param k: number of clusters
     :param w: 1D array of weights corresponding to vectors in X
+    :param verbose: whether to print info during training
     :return: 2D array of centroids, number of rows is k
     """
     npoints, ndims = X.shape
     kmeans = faiss.Kmeans(ndims, k, seed=0, niter=100, nredo=10,
-                          verbose=True, max_points_per_centroid=npoints)
+                          verbose=verbose, max_points_per_centroid=npoints)
     kmeans.train(X.astype('float32'), weights=w.astype('float32'))
     return kmeans.centroids
 
@@ -85,6 +86,6 @@ def umap_reduce(X: NDArray, d: int, n_neighbors: int, min_dist: float) -> NDArra
         min_dist=min_dist,
         n_components=d,
         metric='euclidean',
-        random_state = 0
+        random_state=0
     )
     return fit.fit_transform(X)

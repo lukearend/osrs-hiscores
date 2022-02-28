@@ -1,4 +1,4 @@
-from functools import lru_cache
+from functools import cache
 import json
 import pickle
 from io import BytesIO
@@ -94,7 +94,7 @@ def compute_boxplot_data(splitdata: SplitData, boxplot_inds: List, clusterid=Non
     return quartiles_dict
 
 
-# TODO: code smell, turn this into a more direct reordering of the skills -> ticklabels, and lru_cache it
+# TODO: code smell, turn this into a more direct reordering of the skills -> ticklabels, and cache it
 def get_boxplot_inds(appdata: AppData) -> Dict[str, List[int]]:
     """ Build index for reordering skills to match tick labels along box plot x-axis. """
     skillinds_per_split = {}
@@ -105,7 +105,7 @@ def get_boxplot_inds(appdata: AppData) -> Dict[str, List[int]]:
     return skillinds_per_split
 
 
-@lru_cache(maxsize=None)
+@cache
 def load_boxplot_layout(split: str) -> Tuple[Dict[str, List[str]], Dict[str, float]]:
     """
     Load layout information for boxplot for the given split.
@@ -125,7 +125,7 @@ def load_boxplot_layout(split: str) -> Tuple[Dict[str, List[str]], Dict[str, flo
     return ticklabels, x_offsets
 
 
-@lru_cache(maxsize=None)
+@cache
 def load_table_layout() -> List[List[str]]:
     """
     Load layout for the skills to be displayed in skill tables.

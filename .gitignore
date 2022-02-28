@@ -4,9 +4,12 @@ __pycache__
 *.egg-info
 
 /env
-/volume
-/data/processed/app_data.pkl
-/figures/scatterplots/player-clusters-*-*.pdf
+/tmp
+
+/test/data/app_data*.pkl
+/test/data/cluster_analytics*.pkl
+/test/data/clusters*.csv
+/test/data/clusters_xyz*.pkl
 
 .env
 .idea

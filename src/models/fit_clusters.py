@@ -9,19 +9,21 @@
     For k = {"all": 4000, "cb": 2000, "noncb": 2000}, this script
     runs in about 4 hours on a 2021 M1 Mac.
 """
-
+import os
 import sys
+from typing import List, Dict
 
 import numpy as np
+from numpy.typing import NDArray
 
-from src.common import skill_splits, load_stats_data, split_dataset
+from src.common import DataSplit, skill_splits, load_stats_data, split_dataset
 from src.models import kmeans_params, fit_kmeans
 
 
-def write_results(splits, skills, centroids, out_file):
+def write_results(splits: List[DataSplit], all_skills: List[str], centroids: Dict[str, NDArray], out_file: str):
     print("writing cluster centroids to CSV...", end=' ', flush=True)
     with open(out_file, 'w') as f:
-        f.write(f"split,clusterid,{','.join(s for s in skills)}\n")
+        f.write(f"split,clusterid,{','.join(s for s in all_skills)}\n")
 
         for split in splits:
             # Each split contains a different subset of skills. We need
@@ -29,7 +31,7 @@ def write_results(splits, skills, centroids, out_file):
             # split to their indexes in the original list of all stats.
             # Build a map to use for these lookups in the inner loop.
             ind_map = {}
-            for i, s in enumerate(skills):
+            for i, s in enumerate(split.skills):
                 try:
                     ind_map[i] = split.skills.index(s)
                 except ValueError:
@@ -37,7 +39,7 @@ def write_results(splits, skills, centroids, out_file):
 
             for clusterid, centroid in enumerate(centroids[split.name]):
                 line = []
-                for i in range(len(skills)):
+                for i in range(len(split.skills)):
                     stat_ind = ind_map.get(i, None)
                     stat_value = centroid[stat_ind] if stat_ind is not None else ''
                     line.append(stat_value)
@@ -49,13 +51,12 @@ def write_results(splits, skills, centroids, out_file):
     print("done")
 
 
-def main(stats_file, out_file):
-    _, statnames, data = load_stats_data(stats_file)
+def main(stats_file: str, out_file: str, params_file: str = None, verbose: bool = True):
+    _, statnames, data = load_stats_data(stats_file, include_total=False)
 
     centroids = {}
     splits = skill_splits()
-    params = kmeans_params()
-    params = {"all": 40, "cb": 20, "noncb": 20}  # TODO: temporary
+    params = kmeans_params(params_file)
     for split in splits:
         player_vectors = split_dataset(data, split)
 
@@ -68,10 +69,10 @@ def main(stats_file, out_file):
         player_vectors[player_vectors == -1] = 1
 
         k = params[split.name]
-        centroids[split.name] = fit_kmeans(player_vectors, k=k, w=weights)
+        centroids[split.name] = fit_kmeans(player_vectors, k=k, w=weights, verbose=verbose)
 
-    skills = statnames[1:]
-    write_results(splits, skills, centroids, out_file)
+    all_skills = [s.skills for s in splits if s.name == "all"][0]
+    write_results(splits, all_skills, centroids, out_file)
 
 
 if __name__ == '__main__':

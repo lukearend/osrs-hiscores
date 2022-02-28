@@ -21,7 +21,7 @@ if envmode in ['production', 'test']:
     appdata = load_appdata_s3(bucket, obj_key)
     debug = False
 else:
-    appdata = load_appdata_local('/Users/lukearend/projects/osrs-hiscores/data/processed/app_data-mini.pkl')
+    appdata = load_appdata_local(os.getenv("OSRS_APPDATA_LOCAL", None))
     debug = True
 
 mongo_url = get_env_variable("OSRS_MONGO_URI")

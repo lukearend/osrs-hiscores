@@ -2,6 +2,7 @@ import csv
 import json
 from collections import defaultdict
 from dataclasses import dataclass
+from functools import cache
 from pathlib import Path
 from subprocess import check_output
 from typing import List, Dict, Tuple
@@ -18,21 +19,26 @@ def line_count(file: str) -> int:
     return int(check_output(['wc', '-l', file]).split()[0])
 
 
-def osrs_statnames() -> List[str]:
+@cache
+def osrs_statnames(include_total: bool = True) -> List[str]:
     """
-    Load the list of OSRS stats in a canonical ordering. This includes
-    total level and the following 23 skills:
-        Attack, Strength, Defence, Ranged, Magic, Prayer, Hitpoints
-        Agility, Construction, Cooking, Crafting, Farming, Firemaking,
-        Fishing, Fletching, Herblore, Hunter, Mining, Runecraft,
-        Slayer, Smithing, Thieving, and Woodcutting
+    Load the list of OSRS skill names in the order to be used for
+    CSV columns. This includes total level and the following 23 skills:
 
+        Attack, Defence, Strength, Hitpoints, Ranged, Magic, Prayer
+        Cooking, Woodcutting, Fletching, Fishing, Firemaking, Crafting,
+        Smithing, Mining, Herblore, Agility, Thieving, Slayer, Farming,
+        Runecraft, Hunter, and Construction.
+
+    :include_total: if false, total level is not included
     :return: list of OSRS skill names
     """
-    splits_file = Path(__file__).resolve().parents[2] / "reference" / "osrs_skills.csv"
+    splits_file = Path(__file__).resolve().parents[2] / "reference" / "osrs_skills.json"
     with open(splits_file, 'r') as f:
-        reader = csv.reader(f)
-        return [line[0] for line in reader]
+        skills = json.load(f)
+    if not include_total:
+        del skills[skills.index("total")]
+    return skills
 
 
 @dataclass
@@ -43,6 +49,7 @@ class DataSplit:
     skill_inds: List[int]  # index of each skill in the canonical ordering
 
 
+@cache
 def skill_splits() -> List[DataSplit]:
     """
     Load metadata about the three splits of the dataset used throughout:
@@ -78,7 +85,7 @@ def split_dataset(data: NDArray, split: DataSplit) -> NDArray:
     return player_vectors.copy()  # copy to make C-contiguous array (needed by faiss)
 
 
-def load_stats_data(file: str) -> Tuple[List[str], List[str], NDArray]:
+def load_stats_data(file: str, include_total=True) -> Tuple[List[str], List[str], NDArray]:
     """
     Load dataset of player stats. Each row of the dataset is a vector of player
     stats and the columns correspond to total level and the 23 OSRS skills.
@@ -86,6 +93,7 @@ def load_stats_data(file: str) -> Tuple[List[str], List[str], NDArray]:
     data that is missing due to a player being unranked in a skill.
 
     :param file: path to CSV file
+    :param include_total: whether to include total level column
     :return:
       - list of player usernames
       - list of OSRS stat names
@@ -109,6 +117,11 @@ def load_stats_data(file: str) -> Tuple[List[str], List[str], NDArray]:
                 usernames.append(line[0])
                 stats[i, :] = [int(i) for i in line[2::3]]  # take levels, drop rank and xp columns
                 pbar.update(1)
+
+        if not include_total:
+            total_ind = statnames.index("total")
+            stats = np.delete(stats, total_ind, axis=1)
+            del statnames[total_ind]
 
     return usernames, statnames, stats
 

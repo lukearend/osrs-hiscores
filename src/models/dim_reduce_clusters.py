@@ -12,12 +12,12 @@ from src.common import skill_splits, load_centroid_data
 from src.models import umap_params, umap_reduce
 
 
-def main(in_file, out_file):
+def main(in_file: str, out_file: str, params_file: str = None):
     centroids = load_centroid_data(in_file)
 
     print("computing 3d embeddings...")
     splits = skill_splits()
-    params = umap_params()
+    params = umap_params(params_file)
     njobs = len(splits) * len(params['n_neighbors']) * len(params['min_dist'])
 
     xyz = {}

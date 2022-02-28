@@ -12,7 +12,7 @@ from tqdm import tqdm
 from src.common import line_count, load_clusterids_data, load_stats_data
 
 
-def main(clusters_file, stats_file):
+def main(stats_file: str, clusters_file: str):
     print("building database...")
     try:
         url = os.environ["OSRS_MONGO_URI"]

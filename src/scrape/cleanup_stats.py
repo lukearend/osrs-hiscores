@@ -4,22 +4,20 @@
     This script runs in ~3 min on M1 Mac. """
 
 import csv
-import pathlib
+from pathlib import Path
 import sys
 
 import numpy as np
 from tqdm import tqdm
 
+from src.common import osrs_statnames
+
 
 def main(in_file, out_file):
     print("cleaning up stats dataset...")
 
-    skills_file = pathlib.Path(__file__).resolve().parents[2] / 'reference/osrs_skills.csv'
-    with open(skills_file, 'r') as f:
-        skills = f.read().strip().split('\n')
-
     fields = ['username']
-    for skill in skills:
+    for skill in osrs_statnames():
         fields.append(f'{skill}_rank')
         fields.append(f'{skill}_level')
         fields.append(f'{skill}_xp')

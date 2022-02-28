@@ -16,8 +16,8 @@ S3_BUCKET:=osrshiscores
 .DEFAULT_GOAL := help
 
 all: init scrape cluster dimreduce app # Scrape data, process it and build final application.
-build: init download dimreduce app # Build final application from downloaded pre-scraped data.
-clean: env-clean scrape-clean cluster-clean dimreduce-clean app-clean
+build: init download test dimreduce app # Build final application from downloaded pre-scraped data.
+clean: env-clean scrape-clean cluster-clean dimreduce-clean app-clean # Remove all generated results.
 run:
 	@source env/bin/activate && python3 app
 
@@ -121,7 +121,7 @@ $(DATA_FINAL)/app_data.pkl: $(DATA_FINAL)/centroids.csv $(DATA_TMP)/cluster_anal
 	@source env/bin/activate && \
 	cd src/results && python3 build_app_data.py $^ $@
 
-app-db: $(DATA_FINAL)/clusters.csv $(DATA_FINAL)/stats.csv
+app-db: $(DATA_FINAL)/stats.csv $(DATA_FINAL)/clusters.csv
 	@source env/bin/activate && \
 	cd src/results && python3 build_database.py $^
 
@@ -173,10 +173,18 @@ notebook: nbextensions ## Start a local jupyter notebook server.
 lint: ## Run code style checker.
 	@source env/bin/activate && \
 	pycodestyle app src --ignore=E501,E302 && \
-	echo "ok"
+	echo "code check passed"
+
+test/data/stats-10000.csv: # small subsample of the full dataset for unit testing
+	@source env/bin/activate && \
+	cd test && python3 build_stats_10000.py
+
+test: lint test/data/stats-10000.csv ## Run unit tests for data pipeline.
+	@source env/bin/activate && \
+	pytest test -sv
 
 help: ## Show this help.
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(firstword $(MAKEFILE_LIST)) | \
 	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-.PHONY: vim-binding nbextensions notebook lint help
+.PHONY: vim-binding nbextensions notebook lint test help

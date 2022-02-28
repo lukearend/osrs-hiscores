@@ -7,7 +7,7 @@ import sys
 import numpy as np
 
 from src.common import skill_splits, load_centroid_data
-from src.results import AppData, SplitData, ClusterData
+from src.results import AppData, SplitData, ClusterData, load_cluster_analytics, load_clusters_xyz
 
 
 def compute_minmax(xyz):
@@ -18,12 +18,10 @@ def compute_minmax(xyz):
     }
 
 
-def main(centroids_file, cluster_analytics_file, clusters_xyz_file, out_file):
+def main(centroids_file: str, cluster_analytics_file: str, clusters_xyz_file: str, out_file: str):
     print("building app data...", end=' ', flush=True)
-    with open(cluster_analytics_file, 'rb') as f:
-        cluster_analytics = pickle.load(f)
-    with open(clusters_xyz_file, 'rb') as f:
-        cluster_xyz = pickle.load(f)
+    cluster_analytics = load_cluster_analytics(cluster_analytics_file)
+    cluster_xyz = load_clusters_xyz(clusters_xyz_file)
     centroids = load_centroid_data(centroids_file)
 
     splits = skill_splits()
@@ -31,16 +29,16 @@ def main(centroids_file, cluster_analytics_file, clusters_xyz_file, out_file):
     for split in splits:
         cluster_data = ClusterData(
             xyz=cluster_xyz[split.name],
-            sizes=cluster_analytics['sizes'][split.name],
+            sizes=cluster_analytics[split.name].sizes,
             centroids=centroids[split.name],
-            quartiles=cluster_analytics['quartiles'][split.name],
-            uniqueness=cluster_analytics['uniqueness'][split.name]
+            quartiles=cluster_analytics[split.name].quartiles,
+            uniqueness=cluster_analytics[split.name].uniqueness
         )
 
         axlims = {}
         for n_neighbors, nn_dict in cluster_xyz[split.name].items():
             axlims[n_neighbors] = {}
-            for min_dist, md_dict in nn_dict.items():
+            for min_dist in nn_dict.keys():
                 xyz = cluster_xyz[split.name][n_neighbors][min_dist]
                 axlims[n_neighbors][min_dist] = compute_minmax(xyz)
 
