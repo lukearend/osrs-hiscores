@@ -170,7 +170,10 @@ notebook: nbextensions ## Start a local jupyter notebook server.
 	@source env/bin/activate && \
 	jupyter notebook
 
-lint: ## Run code style checker.
+dev-instance: ## Connect to EC2 instance for development.
+	ssh -i ~/.aws/osrs-dev.pem ec2-user@$(OSRS_EC2_IP)
+
+lint$(OSRS_EC2_IP): ## Run code style$(OSRS_EC2_IP) checker.$(OSRS_EC2_IP)$(OSRS_EC2_IP)$(OSRS_EC2_IP)$(OSRS_EC2_IP)$(OSRS_EC2_IP)$(OSRS_EC2_IP)
 	@source env/bin/activate && \
 	pycodestyle app src --ignore=E501,E302 && \
 	echo "code check passed"

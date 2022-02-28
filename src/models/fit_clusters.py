@@ -9,7 +9,6 @@
     For k = {"all": 4000, "cb": 2000, "noncb": 2000}, this script
     runs in about 4 hours on a 2021 M1 Mac.
 """
-import os
 import sys
 from typing import List, Dict
 
