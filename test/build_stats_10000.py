@@ -9,10 +9,9 @@ from tqdm import tqdm
 from src.common import line_count
 
 
-def main():
+def main(in_file: str, out_file: str):
     print("building test dataset...")
-    print("reading...")
-    in_file = Path(__file__).resolve().parent.parent / "data" / "processed" / "stats.csv"
+    print("reading player stats...")
     nplayers = line_count(in_file) - 1
     nstats = 3 * 24  # total and 23 skills each with rank, level, xp
     usernames = []
@@ -25,7 +24,7 @@ def main():
             usernames.append(line[0])
             stats[i, :] = line[1:]
 
-    print("shuffling...")
+    print("subsampling...")
     nsamples = 10000
     rng = default_rng(0)
     randinds = rng.choice(nplayers, nsamples, replace=False)
@@ -33,7 +32,6 @@ def main():
     stats = stats[randinds, :]
 
     print("writing...")
-    out_file = Path(__file__).resolve().parent / "data" / "stats-10000.csv"
     out_rows = np.zeros((nsamples, 1 + nstats), dtype='object')
     out_rows[:, 0] = usernames
     out_rows[:, 1:] = stats
@@ -46,4 +44,4 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    main(*sys.argv[1:])

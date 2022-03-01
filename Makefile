@@ -10,8 +10,7 @@ ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 DATA_RAW:=$(ROOT_DIR)/data/raw
 DATA_TMP:=$(ROOT_DIR)/data/interim
 DATA_FINAL:=$(ROOT_DIR)/data/processed
-GDRIVE_DIR:=***REMOVED***
-S3_BUCKET:=osrshiscores
+TEST_DIR:=$(ROOT_DIR)/test
 
 .DEFAULT_GOAL := help
 
@@ -40,7 +39,7 @@ env-clean:
 .PHONY: init env env-clean
 
 # Data scraping -----------------------------------------------------------------------------------
-scrape: $(DATA_FINAL)/stats.csv ## Run data scrape of OSRS hiscores.
+scrape: $(DATA_FINAL)/player-stats.csv ## Run data scrape of OSRS hiscores.
 
 $(DATA_RAW)/usernames-raw.csv:
 	@source env/bin/activate && \
@@ -64,37 +63,37 @@ $(DATA_RAW)/stats-raw.csv: $(DATA_TMP)/usernames.csv
 		expresso connect --change $$loc; \
 	done
 
-$(DATA_FINAL)/stats.csv: $(DATA_RAW)/stats-raw.csv
+$(DATA_FINAL)/player-stats.csv: $(DATA_RAW)/stats-raw.csv
 	@source env/bin/activate && \
 	cd src/scrape && python3 cleanup_stats.py $(DATA_RAW)/stats-raw.csv $@
 
 scrape-clean: # Keep raw dump files.
 	rm -f $(DATA_TMP)/usernames.csv
-	rm -f $(DATA_FINAL)/stats.csv
+	rm -f $(DATA_FINAL)/player-stats.csv
 
 scrape-clobber: # Delete all files from scraping process.
 	rm -f $(DATA_RAW)/usernames-raw.csv
 	rm -f $(DATA_TMP)/usernames.csv
 	rm -f $(DATA_RAW)/stats-raw.csv
-	rm -f $(DATA_FINAL)/stats.csv
+	rm -f $(DATA_FINAL)/player-stats.csv
 
 .PHONY: scrape scrape-clean scrape-clobber
 .PRECIOUS: $(DATA_RAW)/usernames-raw.csv $(DATA_RAW)/stats-raw.csv
 
 # Clustering --------------------------------------------------------------------------------------
-cluster: $(DATA_FINAL)/clusters.csv ## Cluster players according to scraped stats.
+cluster: $(DATA_FINAL)/player-clusters.csv ## Cluster players according to scraped stats.
 
-$(DATA_FINAL)/centroids.csv:
+$(DATA_FINAL)/cluster-centroids.csv:
 	@source env/bin/activate && \
-	cd src/models && python3 fit_clusters.py $(DATA_FINAL)/stats.csv $@
+	cd src/models && python3 fit_clusters.py $(DATA_FINAL)/player-stats.csv $@
 
-$(DATA_FINAL)/clusters.csv: $(DATA_FINAL)/centroids.csv
+$(DATA_FINAL)/player-clusters.csv: $(DATA_FINAL)/cluster-centroids.csv
 	@source env/bin/activate && \
-	cd src/models && python3 cluster_players.py $(DATA_FINAL)/stats.csv $< $@
+	cd src/models && python3 cluster_players.py $(DATA_FINAL)/player-stats.csv $< $@
 
 cluster-clean:
-	rm -f $(DATA_FINAL)/centroids.csv
-	rm -f $(DATA_FINAL)/clusters.csv
+	rm -f $(DATA_FINAL)/cluster-centroids.csv
+	rm -f $(DATA_FINAL)/player-clusters.csv
 
 .PHONY: cluster cluster-clean
 
@@ -103,7 +102,7 @@ dimreduce: $(DATA_TMP)/dim_reduced.pkl ## Reduce cluster dimensionality for visu
 
 $(DATA_TMP)/dim_reduced.pkl:
 	@source env/bin/activate && \
-	cd src/models && python3 dim_reduce_clusters.py $(DATA_FINAL)/centroids.csv $@
+	cd src/models && python3 dim_reduce_clusters.py $(DATA_FINAL)/cluster-centroids.csv $@
 
 dimreduce-clean:
 	rm -f $(DATA_TMP)/clusters_xyz.pkl
@@ -115,13 +114,13 @@ app: $(DATA_FINAL)/app_data.pkl app-db ## Build data file and database for visua
 
 $(DATA_TMP)/cluster_analytics.pkl:
 	@source env/bin/activate && \
-	cd src/results && python3 postprocess_clusters.py $(DATA_FINAL)/stats.csv $(DATA_FINAL)/clusters.csv $@
+	cd src/results && python3 postprocess_clusters.py $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/player-clusters.csv $@
 
-$(DATA_FINAL)/app_data.pkl: $(DATA_FINAL)/centroids.csv $(DATA_TMP)/cluster_analytics.pkl $(DATA_TMP)/clusters_xyz.pkl
+$(DATA_FINAL)/app_data.pkl: $(DATA_FINAL)/cluster-centroids.csv $(DATA_TMP)/cluster_analytics.pkl $(DATA_TMP)/clusters_xyz.pkl
 	@source env/bin/activate && \
 	cd src/results && python3 build_app_data.py $^ $@
 
-app-db: $(DATA_FINAL)/stats.csv $(DATA_FINAL)/clusters.csv
+app-db: $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/player-clusters.csv
 	@source env/bin/activate && \
 	cd src/results && python3 build_database.py $^
 
@@ -133,21 +132,26 @@ app-clean:
 # Upload/download ---------------------------------------------------------------------------------
 
 upload-appdata: $(DATA_FINAL)/app_data.pkl
-	aws s3 cp $< s3://$(S3_BUCKET)/$(OSRS_APPDATA_S3KEY)
+	aws s3 cp $< s3://$(OSRS_S3_BUCKET)/$(OSRS_APPDATA_S3KEY)
 
-upload-dataset: $(DATA_FINAL)/stats.csv $(DATA_FINAL)/clusters.csv
-	aws s3 cp $(word 2,$^) s3://$(S3_BUCKET)/dataset/player-clusters.csv
-	aws s3 cp $< s3://$(S3_BUCKET)/dataset/player-stats.csv
-	gdrive upload --parent $(GDRIVE_DIR) --name player-clusters.csv data/processed/clusters.csv
-	gdrive upload --parent $(GDRIVE_DIR) --name player-stats.csv data/processed/stats.csv
+upload-dataset: $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/cluster-centroids.csv $(DATA_FINAL)/player-clusters.csv
+	aws s3 cp $(word 2,$^) s3://$(OSRS_S3_BUCKET)/dataset/cluster-centroids.csv
+	aws s3 cp $(word 3,$^) s3://$(OSRS_S3_BUCKET)/dataset/player-clusters.csv
+	aws s3 cp $< s3://$(OSRS_S3_BUCKET)/dataset/player-stats.csv
+	gdrive upload --parent $(OSRS_GDRIVE_DIR) --name cluster-centroids.csv data/processed/cluster-centroids.csv
+	gdrive upload --parent $(OSRS_GDRIVE_DIR) --name player-clusters.csv data/processed/player-clusters.csv
+	gdrive upload --parent $(OSRS_GDRIVE_DIR) --name player-stats.csv data/processed/player-stats.csv
 
 download: ## Download processed dataset from S3.
 	@source env/bin/activate && \
-	[ -f $(DATA_FINAL)/clusters.csv ] || python -c "from src import download_from_s3; \
-	download_from_s3('$(S3_BUCKET)', 'dataset/player-clusters.csv', '$(DATA_FINAL)/clusters.csv'); \
+	[ -f $(DATA_FINAL)/player-clusters.csv ] || python -c "from src import download_from_s3; \
+	download_from_s3('$(OSRS_S3_BUCKET)', 'dataset/player-clusters.csv', '$(DATA_FINAL)/player-clusters.csv'); \
 	print()" && \
-	[ -f $(DATA_FINAL)/stats.csv ] || python -c "from src import download_from_s3; \
-	download_from_s3('$(S3_BUCKET)', 'dataset/player-stats.csv', '$(DATA_FINAL)/stats.csv'); \
+	[ -f $(DATA_FINAL)/cluster-centroids.csv ] || python -c "from src import download_from_s3; \
+	download_from_s3('$(OSRS_S3_BUCKET)', 'dataset/cluster-centroids.csv', '$(DATA_FINAL)/cluster-centroids.csv'); \
+	print()"
+	[ -f $(DATA_FINAL)/player-stats.csv ] || python -c "from src import download_from_s3; \
+	download_from_s3('$(OSRS_S3_BUCKET)', 'dataset/player-stats.csv', '$(DATA_FINAL)/player-stats.csv'); \
 	print()"
 
 .PHONY: upload-appdata upload-dataset download
@@ -178,11 +182,11 @@ lint$(OSRS_EC2_IP): ## Run code style$(OSRS_EC2_IP) checker.$(OSRS_EC2_IP)$(OSRS
 	pycodestyle app src --ignore=E501,E302 && \
 	echo "code check passed"
 
-test/data/stats-10000.csv: # small subsample of the full dataset for unit testing
+$(TEST_DIR)/data/player-stats-10000.csv: # small subsample of the full dataset for unit testing
 	@source env/bin/activate && \
-	cd test && python3 build_stats_10000.py
+	cd test && python3 build_stats_10000.py $(DATA_FINAL)/player-stats.csv $<
 
-test: lint test/data/stats-10000.csv ## Run unit tests for data pipeline.
+test: lint $(TEST_DIR)/data/player-stats-10000.csv ## Run unit tests for data pipeline.
 	@source env/bin/activate && \
 	pytest test -sv
 

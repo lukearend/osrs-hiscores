@@ -12,6 +12,7 @@ These files are **not included in the repo** due to file size restraints, and mu
 
 * Google Drive: <https://drive.google.com/drive/folders/***REMOVED***?usp=sharing>
 * S3 bucket:
+  * <a id="centroids-url" href="s3://osrshiscores/datasets/cluster-centroids.csv">Cluster centroids</a>
   * [s3://osrshiscores/datasets/player-stats.csv]()
   * [s3://osrshiscores/datasets/player-clusters.csv]()
 

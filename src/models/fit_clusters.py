@@ -53,7 +53,7 @@ def write_results(splits: List[DataSplit], all_skills: List[str], centroids: Dic
 def main(stats_file: str, out_file: str, params_file: str = None, verbose: bool = True):
     _, statnames, data = load_stats_data(stats_file, include_total=False)
 
-    centroids = {}
+    centroids_per_split = {}
     splits = skill_splits()
     params = kmeans_params(params_file)
     for split in splits:
@@ -68,10 +68,18 @@ def main(stats_file: str, out_file: str, params_file: str = None, verbose: bool 
         player_vectors[player_vectors == -1] = 1
 
         k = params[split.name]
-        centroids[split.name] = fit_kmeans(player_vectors, k=k, w=weights, verbose=verbose)
+        centroids = fit_kmeans(player_vectors, k=k, w=weights, verbose=verbose)
+
+        # Sort clusters by total level descending.
+        total_levels = np.sum(centroids, axis=1)
+        sort_inds = np.argsort(total_levels)[::-1]
+        centroids = centroids[sort_inds]
+
+        centroids_per_split[split.name] = centroids
+
 
     all_skills = [s.skills for s in splits if s.name == "all"][0]
-    write_results(splits, all_skills, centroids, out_file)
+    write_results(splits, all_skills, centroids_per_split, out_file)
 
 
 if __name__ == '__main__':
