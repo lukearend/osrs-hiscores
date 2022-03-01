@@ -17,7 +17,7 @@ def main(stats_file: str, clusters_file: str, collection_name: str = 'players', 
     :param stats_file: load player stats from this file
     :param clusters_file: load player clusters from this file
     :param collection_name: name of collection to populate
-    :param force: if true, will overwrite whatever is in the collection (default false)
+    :param force: if truthy, will overwrite whatever is in the collection (default false)
     """
     print("building database...")
     try:
@@ -42,8 +42,8 @@ def main(stats_file: str, clusters_file: str, collection_name: str = 'players', 
             print("database already populated, nothing to do")
             return
 
-    usernames, skills, stats = load_stats_data(stats_file)
     _, splits, clusterids = load_clusterids_data(clusters_file)
+    usernames, skills, stats = load_stats_data(stats_file)
 
     print("writing records...")
     if ndocs > 0:

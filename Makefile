@@ -98,9 +98,9 @@ cluster-clean:
 .PHONY: cluster cluster-clean
 
 # Dimensionality reduction ------------------------------------------------------------------------
-dimreduce: $(DATA_TMP)/dim_reduced.pkl ## Reduce cluster dimensionality for visualization.
+dimreduce: $(DATA_TMP)/clusters_xyz.pkl ## Reduce cluster dimensionality for visualization.
 
-$(DATA_TMP)/dim_reduced.pkl:
+$(DATA_TMP)/clusters_xyz.pkl:
 	@source env/bin/activate && \
 	cd src/models && python3 dim_reduce_clusters.py $(DATA_FINAL)/cluster-centroids.csv $@
 
@@ -122,12 +122,16 @@ $(DATA_FINAL)/app_data.pkl: $(DATA_FINAL)/cluster-centroids.csv $(DATA_TMP)/clus
 
 app-db: $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/player-clusters.csv
 	@source env/bin/activate && \
-	cd src/results && python3 build_database.py $^
+	cd src/results && python3 build_database.py $^ players
+
+app-db-force: $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/player-clusters.csv
+	@source env/bin/activate && \
+	cd src/results && python3 build_database.py $^ players -f
 
 app-clean:
 	rm -f $(DATA_FINAL)/app_data.pkl
 
-.PHONY: app app-db app-clean
+.PHONY: app app-db app-db-force app-clean
 
 # Upload/download ---------------------------------------------------------------------------------
 

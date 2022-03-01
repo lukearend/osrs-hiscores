@@ -20,21 +20,19 @@ def build_layout(app: Dash, appdata: AppData) -> Dash:
 
     app.layout = dbc.Container([
         dbc.Row(
-            dbc.Col(
-                [
-                    html.Br(),
-                    html.H1(children=html.Strong('OSRS player clusters')),
-                    html.Div(children='''
-                        Each point represents a cluster of OSRS players with similar stats.
-                        The closer two clusters are, the more similar the accounts are in
-                        each of those two clusters. Some clusters contain only a single
-                        (highly) unique player; others comprise thousands or tens of thousands
-                        of similar accounts. The size of each point corresponds to the number
-                        of players in that cluster. Axes have no meaningful interpretation.
-                    '''),
-                    html.Br(),
-                ]
-            )
+            dbc.Col([
+                html.Br(),
+                html.H1(children=html.Strong('OSRS player clusters')),
+                html.Div(children='''
+                    Each point represents a cluster of OSRS players with similar stats.
+                    The closer two clusters are, the more similar the accounts are in
+                    each of those two clusters. Some clusters contain only a single
+                    (highly) unique player; others comprise thousands or tens of thousands
+                    of similar accounts. The size of each point corresponds to the number
+                    of players in that cluster. Axes have no meaningful interpretation.
+                '''),
+                html.Br(),
+            ])
         ),
 
         dbc.Row(
