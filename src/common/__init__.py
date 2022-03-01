@@ -65,7 +65,7 @@ def skill_splits() -> List[DataSplit]:
 
     split_names: List[str] = split_config["names"]
     skills_per_split: Dict[str, List] = split_config["skills"]
-    all_skills = osrs_statnames()[1:]  # drop total level
+    all_skills = osrs_statnames(include_total=False)
 
     splits = []
     for split_name in split_names:

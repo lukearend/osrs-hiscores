@@ -40,9 +40,7 @@ def compute_scatterplot_data(splitdata: SplitData, skill: str, levelrange: Tuple
     uniqueness = 100 * splitdata.clusterdata.uniqueness[show_inds]
     median_level = splitdata.clusterdata.quartiles[:, 2, skill_i][show_inds]
 
-    print(f"LA: clusterids: {clusterids}")
-
-    result = pd.DataFrame({
+    return pd.DataFrame({
         'x': xyz[:, 0],
         'y': xyz[:, 1],
         'z': xyz[:, 2],
@@ -51,8 +49,6 @@ def compute_scatterplot_data(splitdata: SplitData, skill: str, levelrange: Tuple
         'uniqueness': uniqueness,
         'level': median_level
     })
-    print(f"LA: pd.DataFrame: {result}")
-    return result
 
 
 def compute_boxplot_data(splitdata: SplitData, boxplot_inds: List, clusterid=None) -> Dict[str, NDArray]:
@@ -74,7 +70,6 @@ def compute_boxplot_data(splitdata: SplitData, boxplot_inds: List, clusterid=Non
         return plot_data
 
     quartiles = splitdata.clusterdata.quartiles[clusterid - 1]
-    quartiles = quartiles[:, 1:]  # drop total level
 
     q0, q1, q2, q3, q4 = quartiles
     iqr = q3 - q1
