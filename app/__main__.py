@@ -31,7 +31,8 @@ try:
     db.command('ping')
 except ServerSelectionTimeoutError:
     raise ValueError("could not connect to mongodb")
-playerdb = db['players']
+coll_name = os.getenv("OSRS_MONGO_COLLECTION", 'players')
+playerdb = db[coll_name]
 
 app = Dash(__name__,
            title="OSRS player clusters",

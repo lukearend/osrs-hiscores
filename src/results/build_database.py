@@ -12,7 +12,7 @@ from tqdm import tqdm
 from src.common import line_count, load_clusterids_data, load_stats_data
 
 
-def main(stats_file: str, clusters_file: str):
+def main(stats_file: str, clusters_file: str, collection_name: str = 'players'):
     print("building database...")
     try:
         url = os.environ["OSRS_MONGO_URI"]
@@ -26,7 +26,7 @@ def main(stats_file: str, clusters_file: str):
         db.command('ping')
     except ServerSelectionTimeoutError:
         raise ValueError("could not connect to mongodb")
-    collection = db['players']
+    collection = db[collection_name]
     print("ok")
 
     nplayers = line_count(stats_file) - 1
