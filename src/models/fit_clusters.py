@@ -51,6 +51,13 @@ def write_results(splits: List[DataSplit], all_skills: List[str], centroids: Dic
 
 
 def main(stats_file: str, out_file: str, params_file: str = None, verbose: bool = True):
+    """
+    :param stats_file: load player stats from this file
+    :param out_file: write cluster centroids to this file
+    :param params_file: load k-means parameters from this file
+                        (if not provided, uses default location)
+    :param verbose: whether to output info during training
+    """
     _, statnames, data = load_stats_data(stats_file, include_total=False)
 
     centroids_per_split = {}

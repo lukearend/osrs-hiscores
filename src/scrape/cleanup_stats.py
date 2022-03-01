@@ -14,6 +14,10 @@ from src.common import osrs_statnames
 
 
 def main(in_file, out_file):
+    """
+    :param in_file: read raw scraped stats data from this CSV file
+    :param out_file: output cleaned stats data to this CSV file
+    """
     print("cleaning up stats dataset...")
 
     fields = ['username']

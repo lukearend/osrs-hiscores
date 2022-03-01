@@ -10,6 +10,10 @@ from tqdm import tqdm
 
 
 def main(in_file, out_file):
+    """
+    :param in_file: read raw scraped usernames from this CSV file
+    :param out_file: output cleaned username dataset to this CSV file
+    """
     print("cleaning up usernames...")
 
     print("reading raw username data...")

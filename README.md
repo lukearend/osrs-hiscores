@@ -41,8 +41,8 @@ Project organization
     │
     ├── src              <- Python source code for data analytics.
     │   ├── common       <- Common utilities such as data loading.
-    │   ├── results      <- Scripts for building application data.
     │   ├── models       <- Scripts to run clustering and dimensionality reduction.
+    │   ├── results      <- Scripts for building application data.
     │   └── scrape       <- Scripts for scraping raw hiscores data.
     │
     ├── Makefile         <- Top-level Makefile for building and running project.

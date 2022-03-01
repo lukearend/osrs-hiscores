@@ -15,7 +15,12 @@ from src.common import skill_splits, split_dataset, load_clusterids_data, load_s
 from src.results import ClusterAnalytics, compute_cluster_sizes, compute_cluster_uniqueness, compute_skill_quartiles
 
 
-def main(stats_file: str, clusters_file: str, out_file: str) -> Dict[str, ClusterAnalytics]:
+def main(stats_file: str, clusters_file: str, out_file: str):
+    """
+    :param stats_file: load player stats from this file
+    :param clusters_file: load player clusters from this file
+    :param out_file: serialize results to this file
+    """
     _, splits, clusterids = load_clusterids_data(clusters_file)
     print("computing cluster sizes...")
     cluster_sizes = {}

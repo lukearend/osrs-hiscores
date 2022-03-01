@@ -40,7 +40,7 @@ def fit_kmeans(X: NDArray, k: int, w: NDArray, verbose=True) -> NDArray:
     :param X: 2D array of vectors to train on
     :param k: number of clusters
     :param w: 1D array of weights corresponding to vectors in X
-    :param verbose: whether to print info during training
+    :param verbose: whether to print info after each training iteration
     :return: 2D array of centroids, number of rows is k
     """
     npoints, ndims = X.shape

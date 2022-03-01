@@ -7,6 +7,11 @@ from src.models import cluster_l2
 
 
 def main(stats_file: str, centroids_file: str, out_file: str):
+    """
+    :param stats_file: load player stats from this file
+    :param centroids_file: load cluster centroids from this file
+    :param out_file: write results to this CSV file
+    """
     centroids = load_centroid_data(centroids_file)
     usernames, _, data = load_stats_data(stats_file, include_total=False)
 

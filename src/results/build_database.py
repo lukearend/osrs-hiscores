@@ -12,7 +12,13 @@ from tqdm import tqdm
 from src.common import line_count, load_clusterids_data, load_stats_data
 
 
-def main(stats_file: str, clusters_file: str, collection_name: str = 'players'):
+def main(stats_file: str, clusters_file: str, collection_name: str = 'players', force: bool = False):
+    """
+    :param stats_file: load player stats from this file
+    :param clusters_file: load player clusters from this file
+    :param collection_name: name of collection to populate
+    :param force: if true, will overwrite whatever is in the collection (default false)
+    """
     print("building database...")
     try:
         url = os.environ["OSRS_MONGO_URI"]
@@ -31,9 +37,10 @@ def main(stats_file: str, clusters_file: str, collection_name: str = 'players'):
 
     nplayers = line_count(stats_file) - 1
     ndocs = collection.count_documents({})
-    if ndocs == nplayers:
-        print("database already populated, nothing to do")
-        return
+    if not force:
+        if ndocs == nplayers:
+            print("database already populated, nothing to do")
+            return
 
     usernames, skills, stats = load_stats_data(stats_file)
     _, splits, clusterids = load_clusterids_data(clusters_file)

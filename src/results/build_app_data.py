@@ -19,6 +19,12 @@ def compute_minmax(xyz):
 
 
 def main(centroids_file: str, cluster_analytics_file: str, clusters_xyz_file: str, out_file: str):
+    """
+    :param centroids_file: load cluster centroids from this file
+    :param cluster_analytics_file: load cluster analytics from this file
+    :param clusters_xyz_file: load cluster dimensionality reduction output from this file
+    :param out_file: serialize app data to this file
+    """
     print("building app data...", end=' ', flush=True)
     cluster_analytics = load_cluster_analytics(cluster_analytics_file)
     cluster_xyz = load_clusters_xyz(clusters_xyz_file)

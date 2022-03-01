@@ -13,6 +13,12 @@ from src.models import umap_params, umap_reduce
 
 
 def main(in_file: str, out_file: str, params_file: str = None):
+    """
+    :param in_file: load cluster centroids from this file
+    :param out_file: serialize results to this file
+    :param params_file: load UMAP parameters from this file
+                        (if not provided, uses default location)
+    """
     centroids = load_centroid_data(in_file)
 
     print("computing 3d embeddings...")

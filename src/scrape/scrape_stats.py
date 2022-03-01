@@ -63,6 +63,10 @@ async def run_workers(names_to_scrape, out_file, pbar):
 
 
 def main(in_file, out_file):
+    """
+    :param in_file: read usernames to scrape from this CSV file
+    :param out_file: output scraped player data to this CSV file
+    """
     print("scraping player stats...")
 
     # Read user rankings file to see which usernames need to be processed.

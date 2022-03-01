@@ -56,6 +56,9 @@ async def run_workers(pages_to_scrape, out_file, pbar):
 
 
 def main(out_file):
+    """
+    :param out_file: output scraped usernames to this CSV file
+    """
     print("scraping usernames...")
 
     # There are 80,000 pages, giving rankings 1-25, 26-50, ..., etc. up to 2 million.
