@@ -125,23 +125,23 @@ app-clean:
 	rm -rf volume
 	rm -f $(DATA_FINAL)/app_data.pkl
 
-.PHONY: app app-db app-clean
+.PHONY: app app-clean
 
 # Data import/export ------------------------------------------------------------------------------
 
-upload-appdata: $(DATA_FINAL)/app_data.pkl
+upload-appdata:
 	cd bin && ./upload_appdata
 
-upload-dataset: $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/cluster-centroids.csv $(DATA_FINAL)/player-clusters.csv
+upload-dataset:
 	cd bin && ./upload_dataset
 
 download: ## Download processed dataset from S3.
 	@source env/bin/activate && \
 	cd bin && ./download_dataset
 
-build-db: $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/player-clusters.csv
+build-db:
 	@source env/bin/activate && \
-	cd bin && ./build_database $^ players
+	cd bin && ./build_database $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/player-clusters.csv players
 
 mongo: ## Launch a Mongo instance at localhost:27017 using Docker.
 	@docker pull mongo
