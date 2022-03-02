@@ -137,6 +137,10 @@ download: ## Download processed dataset from S3.
 	@source env/bin/activate && \
 	cd bin && ./download_dataset
 
+build-db: $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/player-clusters.csv
+	@source env/bin/activate && \
+	cd bin && ./build_database $^ players
+
 mongo: ## Launch a Mongo instance at localhost:27017 using Docker.
 	@docker pull mongo
 	@mkdir -p mongo && \
@@ -144,12 +148,6 @@ mongo: ## Launch a Mongo instance at localhost:27017 using Docker.
 	docker run --rm -d --name osrs-hiscores \
 	-v volume:/data/db -p 27017:27017 mongo
 	@echo -n "starting... " && sleep 2 && echo -e "done\n"
-
-db-start: ## Start database container.
-
-build-db: $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/player-clusters.csv
-	@source env/bin/activate && \
-	cd bin && ./build_database $^ players
 
 .PHONY: upload-appdata upload-dataset download mongo build-db
 
