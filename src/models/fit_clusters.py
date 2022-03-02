@@ -84,7 +84,6 @@ def main(stats_file: str, out_file: str, params_file: str = None, verbose: bool 
 
         centroids_per_split[split.name] = centroids
 
-
     all_skills = [s.skills for s in splits if s.name == "all"][0]
     write_results(splits, all_skills, centroids_per_split, out_file)
 
