@@ -12,21 +12,20 @@ from tqdm import tqdm
 from src.common import line_count, load_clusterids_data, load_stats_data
 
 
-def main(stats_file: str, clusters_file: str, collection_name: str = 'players', force: bool = False):
+def main(stats_file: str, clusters_file: str, collection_name: str = 'players'):
     """
     :param stats_file: load player stats from this file
     :param clusters_file: load player clusters from this file
     :param collection_name: name of collection to populate
-    :param force: if truthy, will overwrite whatever is in the collection (default false)
     """
     print("building database...")
     try:
-        url = os.environ["OSRS_MONGO_URI"]
+        url = os.environ["OSRS_MONGO_URI_ADMIN"]
     except KeyError as e:
         raise ValueError(f"{e} is not set in environment")
 
     print("connecting...", end=' ', flush=True)
-    client = MongoClient(url, serverSelectionTimeoutMS=10000)
+    client = MongoClient(url, serverSelectionTimeoutMS=5000)
     db = client['osrs-hiscores']
     try:
         db.command('ping')
@@ -37,10 +36,9 @@ def main(stats_file: str, clusters_file: str, collection_name: str = 'players', 
 
     nplayers = line_count(stats_file) - 1
     ndocs = collection.count_documents({})
-    if not force:
-        if ndocs == nplayers:
-            print("database already populated, nothing to do")
-            return
+    if ndocs == nplayers:
+        print("database already populated, nothing to do")
+        return
 
     _, splits, clusterids = load_clusterids_data(clusters_file)
     usernames, skills, stats = load_stats_data(stats_file)

@@ -25,7 +25,7 @@ else:
     debug = True
 
 mongo_url = get_env_variable("OSRS_MONGO_URI")
-mongo = MongoClient(mongo_url, serverSelectionTimeoutMS=10000)
+mongo = MongoClient(mongo_url, serverSelectionTimeoutMS=5000)
 db = mongo['osrs-hiscores']
 try:
     db.command('ping')

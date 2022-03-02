@@ -6,7 +6,6 @@
 
 import pickle
 import sys
-from typing import Dict
 
 import numpy as np
 from tqdm import tqdm

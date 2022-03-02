@@ -18,7 +18,7 @@ all: init scrape cluster dimreduce app # Scrape data, process it and build final
 build: init download test dimreduce app # Build final application from downloaded pre-scraped data.
 clean: env-clean scrape-clean cluster-clean dimreduce-clean app-clean # Remove all generated results.
 run:
-	@source env/bin/activate && python3 app
+	@source env/bin/activate && python app
 
 .PHONY: all build clean run
 
@@ -27,7 +27,7 @@ init: env nbextensions ## Setup project dependencies.
 
 env:
 	@echo "building virtual environment..."
-	@python3 -m venv env && \
+	@python -m venv env && \
 	source env/bin/activate && \
 	pip3 install --upgrade pip && \
 	pip3 install -r requirements.txt && \
@@ -44,7 +44,7 @@ scrape: $(DATA_FINAL)/player-stats.csv ## Run data scrape of OSRS hiscores.
 $(DATA_RAW)/usernames-raw.csv:
 	@source env/bin/activate && \
 	cd src/scrape && \
-	until python3 scrape_usernames.py $@ ; do \
+	until python scrape_usernames.py $@ ; do \
 		echo "resetting vpn connection..." ; \
 		loc=`expresso locations | grep -- '- USA - ' | sed 's/^.*(//;s/)$$//' | shuf -n 1` && \
 		expresso connect --change $$loc ; \
@@ -52,12 +52,12 @@ $(DATA_RAW)/usernames-raw.csv:
 
 $(DATA_TMP)/usernames.csv: $(DATA_RAW)/usernames-raw.csv
 	@source env/bin/activate && \
-	cd src/scrape && python3 cleanup_usernames.py $< $@
+	cd src/scrape && python cleanup_usernames.py $< $@
 
 $(DATA_RAW)/stats-raw.csv: $(DATA_TMP)/usernames.csv
 	@source env/bin/activate && \
 	cd src/scrape && \
-	until python3 scrape_stats.py $< $@; do \
+	until python scrape_stats.py $< $@; do \
 		echo "resetting vpn connection..."; \
 		loc=`expresso locations | grep -- '- USA - ' | sed 's/^.*(//;s/)$$//' | shuf -n 1` && \
 		expresso connect --change $$loc; \
@@ -65,7 +65,7 @@ $(DATA_RAW)/stats-raw.csv: $(DATA_TMP)/usernames.csv
 
 $(DATA_FINAL)/player-stats.csv: $(DATA_RAW)/stats-raw.csv
 	@source env/bin/activate && \
-	cd src/scrape && python3 cleanup_stats.py $(DATA_RAW)/stats-raw.csv $@
+	cd src/scrape && python cleanup_stats.py $(DATA_RAW)/stats-raw.csv $@
 
 scrape-clean: # Keep raw dump files.
 	rm -f $(DATA_TMP)/usernames.csv
@@ -85,11 +85,11 @@ cluster: $(DATA_FINAL)/player-clusters.csv ## Cluster players according to scrap
 
 $(DATA_FINAL)/cluster-centroids.csv:
 	@source env/bin/activate && \
-	cd src/models && python3 fit_clusters.py $(DATA_FINAL)/player-stats.csv $@
+	cd src/models && python fit_clusters.py $(DATA_FINAL)/player-stats.csv $@
 
 $(DATA_FINAL)/player-clusters.csv: $(DATA_FINAL)/cluster-centroids.csv
 	@source env/bin/activate && \
-	cd src/models && python3 cluster_players.py $(DATA_FINAL)/player-stats.csv $< $@
+	cd src/models && python cluster_players.py $(DATA_FINAL)/player-stats.csv $< $@
 
 cluster-clean:
 	rm -f $(DATA_FINAL)/cluster-centroids.csv
@@ -102,7 +102,7 @@ dimreduce: $(DATA_TMP)/clusters_xyz.pkl ## Reduce cluster dimensionality for vis
 
 $(DATA_TMP)/clusters_xyz.pkl:
 	@source env/bin/activate && \
-	cd src/models && python3 dim_reduce_clusters.py $(DATA_FINAL)/cluster-centroids.csv $@
+	cd src/models && python dim_reduce_clusters.py $(DATA_FINAL)/cluster-centroids.csv $@
 
 dimreduce-clean:
 	rm -f $(DATA_TMP)/clusters_xyz.pkl
@@ -114,24 +114,24 @@ app: $(DATA_FINAL)/app_data.pkl app-db ## Build data file and database for visua
 
 $(DATA_TMP)/cluster_analytics.pkl:
 	@source env/bin/activate && \
-	cd src/results && python3 postprocess_clusters.py $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/player-clusters.csv $@
+	cd src/results && python postprocess_clusters.py $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/player-clusters.csv $@
 
 $(DATA_FINAL)/app_data.pkl: $(DATA_FINAL)/cluster-centroids.csv $(DATA_TMP)/cluster_analytics.pkl $(DATA_TMP)/clusters_xyz.pkl
 	@source env/bin/activate && \
-	cd src/results && python3 build_app_data.py $^ $@
+	cd src/results && python build_app_data.py $^ $@
 
 app-db: $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/player-clusters.csv
 	@source env/bin/activate && \
-	cd src/results && python3 build_database.py $^ players
-
-app-db-force: $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/player-clusters.csv
-	@source env/bin/activate && \
-	cd src/results && python3 build_database.py $^ players -f
+	cd src/results && python build_database.py $^ players
 
 app-clean:
 	rm -f $(DATA_FINAL)/app_data.pkl
 
-.PHONY: app app-db app-db-force app-clean
+db-clean:
+	@source env/bin/activate && \
+	cd bin && ./drop_collection players
+
+.PHONY: app app-db app-clean db-clean
 
 # Upload/download ---------------------------------------------------------------------------------
 
@@ -188,7 +188,7 @@ lint$(OSRS_EC2_IP): ## Run code style$(OSRS_EC2_IP) checker.$(OSRS_EC2_IP)$(OSRS
 
 $(TEST_DIR)/data/player-stats-10000.csv: # small subsample of the full dataset for unit testing
 	@source env/bin/activate && \
-	cd test && python3 build_stats_10000.py $(DATA_FINAL)/player-stats.csv $<
+	cd test && python build_stats_10000.py $(DATA_FINAL)/player-stats.csv $<
 
 test: lint $(TEST_DIR)/data/player-stats-10000.csv ## Run unit tests for data pipeline.
 	@source env/bin/activate && \
