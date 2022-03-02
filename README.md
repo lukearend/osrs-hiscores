@@ -64,7 +64,7 @@ These stages are driven by a Makefile with top-level `make` targets for each dat
 2. `make scrape`: scrape data from the official OSRS hiscores. The full scraping process takes about 18 hours.
 3. `make cluster`: cluster players into similar groups according to their stats. The clustering algorithm used is the [faiss](https://github.com/facebookresearch/faiss) implementation of [k-means](https://en.wikipedia.org/wiki/K-means_clustering).
 4. `make dimreduce`: project cluster centroids from high-dimensional space to 3D for visualization purposes. This dimensionality reduction is done with the [UMAP](https://umap-learn.readthedocs.io/en/latest/index.html#) algorithm.
-5. `make app`: build application data and database from analytic results. Expects a MongoDB instance running at the URI specified by the environment variable `OSRS_MONGO_URI`.
+5. `make app`: build application data and database from analytic results. Expects a [MongoDB](TODO) instance running at the URI specified by the environment variable `OSRS_MONGO_URI`. A Mongo instance can be started at `localhost:27017` using the target `make mongo` (requires [Docker](TODO)).
 
 Steps 1-3 can be skipped by simply running `make download`, which fetches the final dataset from an S3 bucket.
 

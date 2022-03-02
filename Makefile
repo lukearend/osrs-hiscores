@@ -15,9 +15,7 @@ TEST_DIR:=$(ROOT_DIR)/test
 .DEFAULT_GOAL := help
 
 all: init scrape cluster dimreduce app # Scrape data, process it and build final application.
-data: cluster dimreduce app upload-appdata upload-dataset
 build: init download test dimreduce app # Build final application from downloaded pre-scraped data.
-clean: env-clean scrape-clean cluster-clean dimreduce-clean app-clean # Remove all generated results.
 run:
 	@source env/bin/activate && python app
 
@@ -36,6 +34,8 @@ env:
 
 env-clean:
 	rm -rf env
+
+clean: env-clean scrape-clean cluster-clean dimreduce-clean app-clean # Remove all generated results.
 
 .PHONY: init env env-clean
 
@@ -111,7 +111,7 @@ dimreduce-clean:
 .PHONY: dimreduce dimreduce-clean
 
 # Application -------------------------------------------------------------------------------------
-app: $(DATA_FINAL)/app_data.pkl mongo build-db ## Build data file and database for visualization app.
+app: $(DATA_FINAL)/app_data.pkl build-db ## Build data file and database for visualization app.
 
 $(DATA_TMP)/cluster_analytics.pkl:
 	@source env/bin/activate && \
@@ -122,6 +122,7 @@ $(DATA_FINAL)/app_data.pkl: $(DATA_FINAL)/cluster-centroids.csv $(DATA_TMP)/clus
 	cd src/results && python build_app_data.py $^ $@
 
 app-clean:
+	rm -rf volume
 	rm -f $(DATA_FINAL)/app_data.pkl
 
 .PHONY: app app-db app-clean
@@ -148,7 +149,7 @@ mongo: ## Launch a Mongo instance at localhost:27017 using Docker.
 	docker stop osrs-hiscores > /dev/null 2>&1 ; \
 	docker run --rm -d --name osrs-hiscores \
 	-v volume:/data/db -p 27017:27017 mongo
-	@echo -n "starting... " && sleep 2 && echo -e "done\n"
+	@echo -n "starting... " && sleep 2 && echo -e "done"
 
 .PHONY: upload-appdata upload-dataset download mongo build-db
 
