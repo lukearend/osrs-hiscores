@@ -1,5 +1,4 @@
 aiohttp
-boonnano
 boto3
 botocore
 dash
@@ -17,8 +16,6 @@ pymongo[srv]
 pytest
 python-dotenv
 requests
-seaborn
-scipy
 tqdm
 umap-learn
 -e .  # install src package in editable mode

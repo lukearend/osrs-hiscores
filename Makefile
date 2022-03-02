@@ -15,6 +15,7 @@ TEST_DIR:=$(ROOT_DIR)/test
 .DEFAULT_GOAL := help
 
 all: init scrape cluster dimreduce app # Scrape data, process it and build final application.
+data: cluster dimreduce app upload-appdata upload-dataset
 build: init download test dimreduce app # Build final application from downloaded pre-scraped data.
 clean: env-clean scrape-clean cluster-clean dimreduce-clean app-clean # Remove all generated results.
 run:
@@ -27,7 +28,7 @@ init: env nbextensions ## Setup project dependencies.
 
 env:
 	@echo "building virtual environment..."
-	@python -m venv env && \
+	@python3 -m venv env && \
 	source env/bin/activate && \
 	pip3 install --upgrade pip && \
 	pip3 install -r requirements.txt && \
