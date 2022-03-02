@@ -2,13 +2,6 @@ import os
 import string
 
 
-def get_env_variable(env_var):
-    try:
-        return os.environ[env_var]
-    except KeyError as e:
-        raise ValueError(f"{e} is not set in environment")
-
-
 _username_chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + ' -_'
 def validate_username(username):
     if len(username) > 12:

@@ -9,23 +9,23 @@ from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
 from dash_bootstrap_components import themes
 
-from app import get_env_variable
+from src.common import env_var
 from app.data import load_appdata_local, load_appdata_s3
 from app.layout import build_layout
 from app.callbacks import add_callbacks
 
 envmode = os.getenv("OSRS_APP_ENV", 'development')
 if envmode in ['production', 'test']:
-    bucket = get_env_variable("OSRS_APPDATA_S3BUCKET")
-    obj_key = get_env_variable("OSRS_APPDATA_S3KEY")
+    bucket = env_var("OSRS_APPDATA_S3BUCKET")
+    obj_key = env_var("OSRS_APPDATA_S3KEY")
     appdata = load_appdata_s3(bucket, obj_key)
     debug = False
 else:
     appdata = load_appdata_local(os.getenv("OSRS_APPDATA_LOCAL", None))
     debug = True
 
-mongo_url = get_env_variable("OSRS_MONGO_URI")
-mongo = MongoClient(mongo_url, serverSelectionTimeoutMS=5000)
+mongo_url = env_var("OSRS_MONGO_URI")
+mongo = MongoClient(mongo_url)
 db = mongo['osrs-hiscores']
 try:
     db.command('ping')

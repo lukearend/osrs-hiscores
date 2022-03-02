@@ -110,7 +110,7 @@ dimreduce-clean:
 .PHONY: dimreduce dimreduce-clean
 
 # Application -------------------------------------------------------------------------------------
-app: $(DATA_FINAL)/app_data.pkl app-db ## Build data file and database for visualization app.
+app: $(DATA_FINAL)/app_data.pkl mongo build-db ## Build data file and database for visualization app.
 
 $(DATA_TMP)/cluster_analytics.pkl:
 	@source env/bin/activate && \
@@ -120,55 +120,48 @@ $(DATA_FINAL)/app_data.pkl: $(DATA_FINAL)/cluster-centroids.csv $(DATA_TMP)/clus
 	@source env/bin/activate && \
 	cd src/results && python build_app_data.py $^ $@
 
-app-db: $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/player-clusters.csv
-	@source env/bin/activate && \
-	cd src/results && python build_database.py $^ players
-
 app-clean:
 	rm -f $(DATA_FINAL)/app_data.pkl
 
-db-clean:
-	@source env/bin/activate && \
-	cd bin && ./drop_collection players
+.PHONY: app app-db app-clean
 
-.PHONY: app app-db app-clean db-clean
-
-# Upload/download ---------------------------------------------------------------------------------
+# Data import/export ------------------------------------------------------------------------------
 
 upload-appdata: $(DATA_FINAL)/app_data.pkl
-	aws s3 cp $< s3://$(OSRS_S3_BUCKET)/$(OSRS_APPDATA_S3KEY)
+	cd bin && ./upload_appdata
 
 upload-dataset: $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/cluster-centroids.csv $(DATA_FINAL)/player-clusters.csv
-	aws s3 cp $(word 2,$^) s3://$(OSRS_S3_BUCKET)/dataset/cluster-centroids.csv
-	aws s3 cp $(word 3,$^) s3://$(OSRS_S3_BUCKET)/dataset/player-clusters.csv
-	aws s3 cp $< s3://$(OSRS_S3_BUCKET)/dataset/player-stats.csv
-	gdrive upload --parent $(OSRS_GDRIVE_DIR) --name cluster-centroids.csv data/processed/cluster-centroids.csv
-	gdrive upload --parent $(OSRS_GDRIVE_DIR) --name player-clusters.csv data/processed/player-clusters.csv
-	gdrive upload --parent $(OSRS_GDRIVE_DIR) --name player-stats.csv data/processed/player-stats.csv
+	cd bin && ./upload_dataset
 
 download: ## Download processed dataset from S3.
 	@source env/bin/activate && \
-	[ -f $(DATA_FINAL)/player-clusters.csv ] || python -c "from src import download_from_s3; \
-	download_from_s3('$(OSRS_S3_BUCKET)', 'dataset/player-clusters.csv', '$(DATA_FINAL)/player-clusters.csv'); \
-	print()" && \
-	[ -f $(DATA_FINAL)/cluster-centroids.csv ] || python -c "from src import download_from_s3; \
-	download_from_s3('$(OSRS_S3_BUCKET)', 'dataset/cluster-centroids.csv', '$(DATA_FINAL)/cluster-centroids.csv'); \
-	print()"
-	[ -f $(DATA_FINAL)/player-stats.csv ] || python -c "from src import download_from_s3; \
-	download_from_s3('$(OSRS_S3_BUCKET)', 'dataset/player-stats.csv', '$(DATA_FINAL)/player-stats.csv'); \
-	print()"
+	cd bin && ./download_dataset
 
-.PHONY: upload-appdata upload-dataset download
+mongo: ## Launch a Mongo instance at localhost:27017 using Docker.
+	@docker pull mongo
+	@mkdir -p mongo && \
+	docker stop osrs-hiscores > /dev/null 2>&1 ; \
+	docker run --rm -d --name osrs-hiscores \
+	-v volume:/data/db -p 27017:27017 mongo
+	@echo -n "starting... " && sleep 2 && echo -e "done\n"
+
+db-start: ## Start database container.
+
+build-db: $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/player-clusters.csv
+	@source env/bin/activate && \
+	cd bin && ./build_database $^ players
+
+.PHONY: upload-appdata upload-dataset download mongo build-db
 
 # Other -------------------------------------------------------------------------------------------
-vim-binding:
+vim-binding: # install vim keybindings for notebooks
 	@source env/bin/activate && \
 	jupyter contrib nbextensions install && \
 	cd $(shell jupyter --data-dir)/nbextensions && \
 	git clone https://github.com/lambdalisue/jupyter-vim-binding vim_binding || \
 	cd vim_binding && git pull
 
-nbextensions: vim-binding
+nbextensions: vim-binding # a few nice notebook extensions
 	jupyter nbextension enable vim_binding/vim_binding
 	jupyter nbextension enable rubberband/main
 	jupyter nbextension enable toggle_all_line_numbers/main
@@ -188,7 +181,7 @@ lint$(OSRS_EC2_IP): ## Run code style$(OSRS_EC2_IP) checker.$(OSRS_EC2_IP)$(OSRS
 
 $(TEST_DIR)/data/player-stats-10000.csv: # small subsample of the full dataset for unit testing
 	@source env/bin/activate && \
-	cd test && python build_stats_10000.py $(DATA_FINAL)/player-stats.csv $<
+	cd test && python build_stats_small.py $(DATA_FINAL)/player-stats.csv $<
 
 test: lint $(TEST_DIR)/data/player-stats-10000.csv ## Run unit tests for data pipeline.
 	@source env/bin/activate && \

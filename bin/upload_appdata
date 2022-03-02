@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
+DATA_FINAL="$SCRIPT_DIR/../data/processed"
+aws s3 cp "$DATA_FINAL/app_data.pkl" "s3://$OSRS_S3_BUCKET/$OSRS_APPDATA_S3KEY"

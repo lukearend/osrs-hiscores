@@ -1,11 +1,12 @@
 import csv
 import json
+import os
 from collections import defaultdict
 from dataclasses import dataclass
 from functools import cache
 from pathlib import Path
 from subprocess import check_output
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Any
 
 import boto3
 import numpy as np
@@ -13,6 +14,13 @@ import progressbar as progressbar
 from botocore.exceptions import NoCredentialsError
 from numpy.typing import NDArray
 from tqdm import tqdm
+
+
+def env_var(var_name: str) -> str:
+    try:
+        return os.environ[var_name]
+    except KeyError as e:
+        raise ValueError(f"{e} is not set in environment")
 
 
 def line_count(file: str) -> int:
@@ -111,7 +119,6 @@ def load_stats_data(file: str, include_total=True) -> Tuple[List[str], List[str]
         nplayers = line_count(file) - 1
         usernames = []
         stats = np.zeros((nplayers, len(statnames)), dtype='int')
-
         with tqdm(total=nplayers) as pbar:
             for i, line in enumerate(reader):
                 usernames.append(line[0])
@@ -211,3 +218,27 @@ def download_from_s3(bucket: str, s3_file: str, local_file: str):
         print("file not found")
     except NoCredentialsError:
         print("credentials not available")
+
+
+@dataclass
+class PlayerData:
+    username: str
+    clusterids: Dict[str, int]
+    stats: List[int]
+
+
+def playerdata_to_mongodoc(player: PlayerData) -> Dict[str, Any]:
+    return {
+        '_id': player.username.lower(),
+        'username': player.username,
+        'clusterids': player.clusterids,
+        'stats': player.stats
+    }
+
+
+def mongodoc_to_playerdata(doc: Dict[str, Any]) -> PlayerData:
+    return PlayerData(
+        username=doc['username'],
+        clusterids=doc['clusterids'],
+        stats=doc['stats']
+    )
