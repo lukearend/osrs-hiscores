@@ -44,20 +44,22 @@ print("ok")
 
 nplayers = line_count(args.stats_file) - 1
 ndocs = collection.count_documents({})
-if ndocs == nplayers:
-    print("database already populated, nothing to do")
-    sys.exit(0)
-if not args.drop and ndocs > 0:
-    yesno = input("database partially populated. overwrite? [y/n] ")
-    if yesno.lower() != 'y':
-        print("database not modified, exiting")
+if not args.drop:
+    if ndocs == nplayers:
+        print("database already populated, nothing to do")
         sys.exit(0)
+    if ndocs > 0:
+        yesno = input("database partially populated. overwrite? [y/n] ")
+        if yesno.lower() != 'y':
+            print("database not modified, exiting")
+            sys.exit(0)
 
 _, splits, clusterids = load_clusterids_data(args.clusters_file)
 usernames, skills, stats = load_stats_data(args.stats_file, include_total=True)
 
-collection.drop()
-print("dropped existing collection")
+if ndocs > 0:
+    collection.drop()
+    print("dropped existing collection")
 
 print("writing records...")
 batch_size = 4096
