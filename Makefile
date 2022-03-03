@@ -42,7 +42,7 @@ clean: env-clean scrape-clean cluster-clean dimreduce-clean app-clean # Remove a
 # Data scraping -----------------------------------------------------------------------------------
 scrape: $(DATA_FINAL)/player-stats.csv ## Run data scrape of OSRS hiscores.
 
-$(DATA_RAW)/usernames-raw.csv:
+$(DATA_RAW)/usernames-raw.csv: # note: depends on ExpressVPN and expresso (CLI to ExpressVPN)
 	@source env/bin/activate && \
 	cd src/scrape && \
 	until python scrape_usernames.py $@ ; do \

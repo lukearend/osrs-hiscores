@@ -1,6 +1,7 @@
 aiohttp
 boto3
 botocore
+codetiming
 dash
 dash-bootstrap-components
 beautifulsoup4

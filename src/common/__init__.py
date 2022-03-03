@@ -41,7 +41,7 @@ def osrs_statnames(include_total: bool = True) -> List[str]:
     :include_total: if false, total level is not included
     :return: list of OSRS skill names
     """
-    splits_file = Path(__file__).resolve().parents[2] / "reference" / "osrs_skills.json"
+    splits_file = Path(__file__).resolve().parents[2] / "ref" / "osrs_skills.json"
     with open(splits_file, 'r') as f:
         skills = json.load(f)
     if not include_total:
@@ -67,7 +67,7 @@ def skill_splits() -> List[DataSplit]:
 
     :return: list of objects representing metadata about each split
     """
-    splits_file = Path(__file__).resolve().parents[2] / "reference" / "data_splits.json"
+    splits_file = Path(__file__).resolve().parents[2] / "ref" / "data_splits.json"
     with open(splits_file, 'r') as f:
         split_config = json.load(f)
 
@@ -95,12 +95,12 @@ def split_dataset(data: NDArray, split: DataSplit) -> NDArray:
 
 def load_stats_data(file: str, include_total=True) -> Tuple[List[str], List[str], NDArray]:
     """
-    Load dataset of player stats. Each row of the dataset is a vector of player
-    skill levels with the columns corresponding to total level and the 23 OSRS skills.
-    Skill level values are integers between 1 and 99, with values of -1 indicating
-    data that is missing due to a player being unranked in a skill.
+    Load dataset of player skills. Each row of the dataset is a vector of
+    player skill levels with the columns corresponding to total level and
+    the 23 OSRS skills. Level values are integers between 1 and 99, with -1
+    indicating data that is missing due to a player being unranked in a skill.
 
-    :param file: path to CSV file
+    :param file: load data from this CSV file
     :param include_total: whether to include total level column
     :return:
       - list of player usernames
@@ -139,7 +139,7 @@ def load_centroid_data(file: str) -> Dict[str, NDArray]:
     each split of the data. Each centroid is a vector is "OSRS skill" space
     representing the center of a cluster of similar accounts.
 
-    :param file: path to CSV file
+    :param file: load centroids from this CSV file
     :return: 2D array where row N is the centroid for cluster N
     """
     with open(file, 'r') as f:
@@ -171,7 +171,7 @@ def load_clusterids_data(file: str) -> Tuple[List[str], List[str], NDArray]:
     cluster ID for each data split; ie, cluster IDs differ for a player
     when clustering is run on different subsets of account stats.
 
-    :param file: path to CSV file
+    :param file: load player cluster IDs from this file
     :return:
       - list of player usernames
       - list of split names

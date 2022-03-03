@@ -13,7 +13,7 @@ from src.common import line_count, load_clusterids_data, load_stats_data
 
 desc = """Build a database of mappings from usernames to cluster ID. The
        database is called 'osrs-hiscores' and is built in the Mongo instance
-       at the URL specified by environment variable OSRS_MONGO_URI_ADMIN."""
+       at the URL specified by environment variable OSRS_MONGO_URI."""
 
 parser = argparse.ArgumentParser(description=desc)
 parser.add_argument('stats_file', metavar='statsfile', type=str,
@@ -28,7 +28,7 @@ parser.add_argument('-d', '--drop', dest='drop', action='store_true',
 args = parser.parse_args()
 load_dotenv(find_dotenv())
 try:
-    url = os.environ["OSRS_MONGO_URI_ADMIN"]
+    url = os.environ["OSRS_MONGO_URI"]
 except KeyError as e:
     raise ValueError(f"{e} is not set in environment")
 

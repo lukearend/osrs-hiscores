@@ -12,10 +12,9 @@ import csv
 import os
 import sys
 
-import aiohttp
 from tqdm import tqdm
 
-from src.scrape import request_stats, HiscoresApiError
+from src.scrape import UserNotFound, HiscoresApiError, request_stats, run_scrape_workers
 
 
 async def process_stats(session, job_queue, out_file, file_lock, pbar):
@@ -28,7 +27,7 @@ async def process_stats(session, job_queue, out_file, file_lock, pbar):
 
             try:
                 stats_csv = await request_stats(session, username)
-            except KeyError as e:
+            except UserNotFound as e:
                 # Make a row representing the missing data.
                 print(f"user '{e}' not found")
                 await file_lock.acquire()
@@ -43,23 +42,6 @@ async def process_stats(session, job_queue, out_file, file_lock, pbar):
             f.write(stats_csv + '\n')
             pbar.update(1)
             file_lock.release()
-
-
-async def run_workers(names_to_scrape, out_file, pbar):
-    file_lock = asyncio.Lock()
-    job_queue = asyncio.Queue()
-    for username in names_to_scrape:
-        job_queue.put_nowait(username)
-
-    async with aiohttp.ClientSession() as session:
-        workers = []
-        for i in range(36):
-            workers.append(asyncio.create_task(
-                process_stats(session, job_queue, out_file, file_lock, pbar)
-            ))
-            await asyncio.sleep(0.1)
-
-        await asyncio.gather(*workers)
 
 
 def main(in_file, out_file):
@@ -93,7 +75,7 @@ def main(in_file, out_file):
     with tqdm(total=nplayers, initial=nplayers - len(names_to_scrape)) as pbar:
         loop = asyncio.get_event_loop()
         loop.run_until_complete(
-            run_workers(names_to_scrape, out_file, pbar)
+            run_scrape_workers(process_stats, names_to_scrape, out_file, pbar, nworkers=36)
         )
         return False
 

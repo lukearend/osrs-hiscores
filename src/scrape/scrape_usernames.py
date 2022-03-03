@@ -14,10 +14,9 @@ import os
 import sys
 from collections import defaultdict
 
-import aiohttp
 from tqdm import tqdm
 
-from src.scrape import request_page, parse_page
+from src.scrape import request_page, parse_page, run_scrape_workers
 
 
 async def process_pages(session, job_queue, out_file, file_lock, pbar):
@@ -36,23 +35,6 @@ async def process_pages(session, job_queue, out_file, file_lock, pbar):
                 f.write(f"{rank},{page_number},{player['username']},{player['total_level']}\n")
             pbar.update(1)
             file_lock.release()
-
-
-async def run_workers(pages_to_scrape, out_file, pbar):
-    file_lock = asyncio.Lock()
-    job_queue = asyncio.Queue()
-    for page in pages_to_scrape:
-        job_queue.put_nowait(page)
-
-    async with aiohttp.ClientSession() as session:
-        workers = []
-        for i in range(24):
-            workers.append(asyncio.create_task(
-                process_pages(session, job_queue, out_file, file_lock, pbar)
-            ))
-            await asyncio.sleep(0.1)
-
-        await asyncio.gather(*workers)
 
 
 def main(out_file):
@@ -95,7 +77,7 @@ def main(out_file):
     with tqdm(total=total_pages, initial=total_pages - len(pages_to_scrape)) as pbar:
         loop = asyncio.get_event_loop()
         loop.run_until_complete(
-            run_workers(pages_to_scrape, out_file, pbar)
+            run_scrape_workers(process_pages, pages_to_scrape, out_file, pbar, nworkers=24)
         )
         return False
 

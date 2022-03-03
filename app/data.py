@@ -138,7 +138,7 @@ def load_appdata_local(file: str = None) -> AppData:
     :return: application data object built by project source code
     """
     if not file:
-        file = Path(__file__).resolve().parent.parent / 'data' / 'processed' / 'app_data.pkl'
+        file = Path(__file__).resolve().parents[1] / 'data' / 'processed' / 'app_data.pkl'
     with open(file, 'rb') as f:
         app_data: AppData = pickle.load(f)
         return app_data

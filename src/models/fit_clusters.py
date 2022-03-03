@@ -13,6 +13,7 @@ import sys
 from typing import List, Dict
 
 import numpy as np
+from codetiming import Timer
 from numpy.typing import NDArray
 
 from src.common import DataSplit, skill_splits, load_stats_data, split_dataset
@@ -20,7 +21,7 @@ from src.models import kmeans_params, fit_kmeans
 
 
 def write_results(splits: List[DataSplit], all_skills: List[str], centroids: Dict[str, NDArray], out_file: str):
-    print("writing cluster centroids to CSV...", end=' ', flush=True)
+    print("writing cluster centroids to CSV...")
     with open(out_file, 'w') as f:
         f.write(f"split,clusterid,{','.join(s for s in all_skills)}\n")
 
@@ -47,9 +48,8 @@ def write_results(splits: List[DataSplit], all_skills: List[str], centroids: Dic
                 line = f"{split.name},{clusterid},{centroid_csv}\n"
                 f.write(line)
 
-    print("done")
 
-
+@Timer(text="done fitting clusters (total time {:.2f} sec)")
 def main(stats_file: str, out_file: str, params_file: str = None, verbose: bool = True):
     """
     :param stats_file: load player stats from this file

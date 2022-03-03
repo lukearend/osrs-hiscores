@@ -8,10 +8,13 @@ import pickle
 import time
 import sys
 
+from codetiming import Timer
+
 from src.common import skill_splits, load_centroid_data
 from src.models import umap_params, umap_reduce
 
 
+@Timer(text="finished dimensionality reduction (total time {:.2f} sec)")
 def main(in_file: str, out_file: str, params_file: str = None):
     """
     :param in_file: load cluster centroids from this file

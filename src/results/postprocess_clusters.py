@@ -8,12 +8,14 @@ import pickle
 import sys
 
 import numpy as np
+from codetiming import Timer
 from tqdm import tqdm
 
 from src.common import skill_splits, split_dataset, load_clusterids_data, load_stats_data
 from src.results import ClusterAnalytics, compute_cluster_sizes, compute_cluster_uniqueness, compute_skill_quartiles
 
 
+@Timer(text="done postprocessing clusters ({:.2f} sec)")
 def main(stats_file: str, clusters_file: str, out_file: str):
     """
     :param stats_file: load player stats from this file
@@ -60,8 +62,6 @@ def main(stats_file: str, clusters_file: str, out_file: str):
 
     with open(out_file, 'wb') as f:
         pickle.dump(analytics_per_split, f)
-
-    print("done")
 
 
 if __name__ == '__main__':

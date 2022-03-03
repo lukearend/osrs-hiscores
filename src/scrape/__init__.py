@@ -1,4 +1,9 @@
+import asyncio
+from typing import Callable, Iterable, Any
+
+import aiohttp
 from bs4 import BeautifulSoup
+from tqdm import tqdm
 
 
 class PageParseError(Exception):
@@ -6,6 +11,10 @@ class PageParseError(Exception):
 
 
 class HiscoresApiError(Exception):
+    pass
+
+
+class UserNotFound(Exception):
     pass
 
 
@@ -76,7 +85,7 @@ async def request_stats(session, username, max_attempts=5):
             }
         ) as response:
             if response.status == 404:
-                raise KeyError(username)
+                raise UserNotFound(username)
             elif response.status != 200:
                 continue
 
@@ -88,3 +97,28 @@ async def request_stats(session, username, max_attempts=5):
     else:
         error = await response.text()
         raise HiscoresApiError(f"could not get page after {max_attempts} tries: {error}")
+
+
+async def run_scrape_workers(workerfn: Callable, jobs: Iterable[Any], out_file: str, pbar: tqdm, nworkers: int):
+    """
+    Launch a set of workers to perform data scraping.
+    :param workerfn: Each worker invokes this function to process jobs.
+    :param jobs: An iterable of jobs to be processed by workers.
+    :param out_file: CSV file to which results are appended.
+    :param pbar: tqdm object representing total progress (is updated by workers)
+    :param nworkers: number of workers to run
+    """
+    file_lock = asyncio.Lock()
+    job_queue = asyncio.Queue()
+    for job in jobs:
+        job_queue.put_nowait(job)
+
+    async with aiohttp.ClientSession() as session:
+        workers = []
+        for i in range(nworkers):
+            workers.append(asyncio.create_task(
+                workerfn(session, job_queue, out_file, file_lock, pbar)
+            ))
+            await asyncio.sleep(0.1)
+
+        await asyncio.gather(*workers)

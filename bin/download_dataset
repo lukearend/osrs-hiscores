@@ -3,9 +3,9 @@ from pathlib import Path
 from src.common import env_var, download_from_s3
 from dotenv import find_dotenv, load_dotenv
 
-centroids_file = Path(__name__).resolve().parent.parent / "data" / "processed" / "cluster-centroids.csv"
-clusters_file = Path(__name__).resolve().parent.parent / "data" / "processed" / "player-clusters.csv"
-stats_file = Path(__name__).resolve().parent.parent / "data" / "processed" / "player-stats.csv"
+centroids_file = Path(__name__).resolve().parents[1] / "data" / "processed" / "cluster-centroids.csv"
+clusters_file = Path(__name__).resolve().parents[1] / "data" / "processed" / "player-clusters.csv"
+stats_file = Path(__name__).resolve().parents[1] / "data" / "processed" / "player-stats.csv"
 
 load_dotenv(find_dotenv())
 bucket = env_var("OSRS_S3_BUCKET")

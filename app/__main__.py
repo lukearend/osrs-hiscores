@@ -24,7 +24,7 @@ else:
     appdata = load_appdata_local(os.getenv("OSRS_APPDATA_LOCAL", None))
     debug = True
 
-mongo_url = env_var("OSRS_MONGO_URI")
+mongo_url = env_var("OSRS_MONGO_URI_APP")
 mongo = MongoClient(mongo_url)
 db = mongo['osrs-hiscores']
 try:

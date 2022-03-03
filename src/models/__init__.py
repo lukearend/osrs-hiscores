@@ -1,4 +1,6 @@
 import json
+import os
+
 import faiss
 import numpy as np
 import umap
@@ -6,13 +8,15 @@ from pathlib import Path
 from typing import Dict
 from numpy.typing import NDArray
 
+os.environ["KMP_WARNINGS"] = 'off'  # suppress OMP deprecation warning from UMAP (github.com/numba/numba/issues/5275)
+
 
 def kmeans_params(file: str = None) -> Dict[str, int]:
     """ Load parameters for running k-means.
     :param file: load from this local file (optional, otherwise uses default location)
     :return: mapping from split names to k values
     """
-    params_file = Path(__file__).resolve().parents[2] / 'reference/kmeans_params.json'
+    params_file = Path(__file__).resolve().parents[2] / "ref" / "kmeans_params.json"
     if file:
         params_file = file
     with open(params_file, 'r') as f:
@@ -24,7 +28,7 @@ def umap_params(file: str = None) -> Dict[str, Dict]:
     :param file: load from this local file (optional, otherwise uses default location)
     :return: mapping from split names to UMAP parameter sets
     """
-    params_file = Path(__file__).resolve().parents[2] / 'reference/umap_params.json'
+    params_file = Path(__file__).resolve().parents[2] / "ref" / "umap_params.json"
     if file:
         params_file = file
     with open(params_file, 'r') as f:

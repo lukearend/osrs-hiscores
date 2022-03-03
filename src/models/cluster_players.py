@@ -2,10 +2,13 @@ import csv
 import time
 import sys
 
+from codetiming import Timer
+
 from src.common import skill_splits, load_stats_data, load_centroid_data, split_dataset
 from src.models import cluster_l2
 
 
+@Timer(text="done clustering players (total time {:.2f} sec)")
 def main(stats_file: str, centroids_file: str, out_file: str):
     """
     :param stats_file: load player stats from this file
