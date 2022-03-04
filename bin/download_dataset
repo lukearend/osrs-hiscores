@@ -8,11 +8,14 @@ centroids_file = Path(__name__).resolve().parents[1] / "data" / "processed" / "c
 clusters_file = Path(__name__).resolve().parents[1] / "data" / "processed" / "player-clusters.csv"
 stats_file = Path(__name__).resolve().parents[1] / "data" / "processed" / "player-stats.csv"
 
+def lazy_download(bucket, key, file):
+    if os.path.exists(file):
+        print(f"{file} already exists")
+    else:
+        download_from_s3(bucket, key, str(file))
+
 load_dotenv(find_dotenv())
 bucket = env_var("OSRS_DATASET_S3BUCKET")
-if not os.path.exists(centroids_file):
-    download_from_s3(bucket, "cluster-centroids.csv", str(centroids_file))
-if not os.path.exists(clusters_file):
-    download_from_s3(bucket, "player-clusters.csv", str(clusters_file))
-if not os.path.exists(stats_file):
-    download_from_s3(bucket, "player-stats.csv", str(stats_file))
+lazy_download(bucket, "cluster-centroids.csv", str(centroids_file))
+lazy_download(bucket, "player-clusters.csv", str(clusters_file))
+lazy_download(bucket, "player-stats.csv", str(stats_file))
