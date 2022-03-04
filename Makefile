@@ -22,7 +22,7 @@ run:
 .PHONY: all build clean run
 
 # Setup -------------------------------------------------------------------------------------------
-init: env nbextensions ## Setup project dependencies.
+init: env ## Setup project dependencies.
 
 env:
 	@echo "building virtual environment..."
@@ -171,7 +171,7 @@ notebook: nbextensions ## Start a local jupyter notebook server.
 	@source env/bin/activate && \
 	jupyter notebook
 
-dev-instance: ## Connect to EC2 instance for development.
+instance: ## Connect to EC2 instance for development.
 	ssh -i ~/.aws/osrs-dev.pem ec2-user@$(OSRS_EC2_IP)
 
 lint: ## Run code style checker.

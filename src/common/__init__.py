@@ -95,10 +95,10 @@ def split_dataset(data: NDArray, split: DataSplit) -> NDArray:
 
 def load_stats_data(file: str, include_total=True) -> Tuple[List[str], List[str], NDArray]:
     """
-    Load dataset of player skills. Each row of the dataset is a vector of
-    player skill levels with the columns corresponding to total level and
+    Load dataset of player skill levels. Each row of the dataset is a vector of
+    skill levels for a player with the columns corresponding to total level and
     the 23 OSRS skills. Level values are integers between 1 and 99, with -1
-    indicating data that is missing due to a player being unranked in a skill.
+    indicating data that is missing due to the player being unranked in a skill.
 
     :param file: load data from this CSV file
     :param include_total: whether to include total level column
