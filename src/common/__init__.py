@@ -3,7 +3,7 @@ import json
 import os
 from collections import defaultdict
 from dataclasses import dataclass
-from functools import cache
+from functools import lru_cache
 from pathlib import Path
 from subprocess import check_output
 from typing import List, Dict, Tuple, Any
@@ -27,7 +27,7 @@ def line_count(file: str) -> int:
     return int(check_output(['wc', '-l', file]).split()[0])
 
 
-@cache
+@lru_cache()
 def osrs_statnames(include_total: bool = True) -> List[str]:
     """
     Load the list of OSRS skill names in the order to be used for
@@ -57,7 +57,7 @@ class DataSplit:
     skill_inds: List[int]  # index of each skill in the canonical ordering
 
 
-@cache
+@lru_cache()
 def skill_splits() -> List[DataSplit]:
     """
     Load metadata about the three splits of the dataset used throughout:

@@ -1,4 +1,4 @@
-from functools import cache
+from functools import lru_cache
 import json
 import pickle
 from io import BytesIO
@@ -100,7 +100,7 @@ def get_boxplot_inds(appdata: AppData) -> Dict[str, List[int]]:
     return skillinds_per_split
 
 
-@cache
+@lru_cache()
 def load_boxplot_layout(split: str) -> Tuple[Dict[str, List[str]], Dict[str, float]]:
     """
     Load layout information for boxplot for the given split.
@@ -120,7 +120,7 @@ def load_boxplot_layout(split: str) -> Tuple[Dict[str, List[str]], Dict[str, flo
     return ticklabels, x_offsets
 
 
-@cache
+@lru_cache()
 def load_table_layout() -> List[List[str]]:
     """
     Load layout for the skills to be displayed in skill tables.
