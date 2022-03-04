@@ -1,6 +1,5 @@
-import sys
+import argparse
 import csv
-from pathlib import Path
 
 import numpy as np
 from numpy.random import default_rng
@@ -44,4 +43,10 @@ def main(in_file: str, out_file: str):
 
 
 if __name__ == '__main__':
-    main(*sys.argv[1:])
+    parser = argparse.ArgumentParser(description="Build a small dataset for testing.""")
+    parser.add_argument('infile', metavar='infile', type=str,
+                        help="load all player stats from this CSV file")
+    parser.add_argument('outfile', metavar='outfile', type=str,
+                        help="write subsample of dataset to this CSV file")
+    args = parser.parse_args()
+    main(args.infile, args.outfile)
