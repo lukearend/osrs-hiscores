@@ -141,7 +141,8 @@ download: ## Download processed dataset from S3.
 
 build-db:
 	@source env/bin/activate && \
-	cd bin && ./build_database $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/player-clusters.csv players
+	cd bin && OSRS_MONGO_URI=localhost:27017 \
+	./build_database $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/player-clusters.csv players
 
 mongo: ## Launch a Mongo instance at localhost:27017 using Docker.
 	@docker pull mongo
@@ -152,6 +153,26 @@ mongo: ## Launch a Mongo instance at localhost:27017 using Docker.
 	@echo -n "starting... " && sleep 2 && echo -e "done"
 
 .PHONY: upload-appdata upload-dataset download mongo build-db
+
+# EC2 build ---------------------------------------------------------------------------------------
+
+instance: ## Connect to EC2 instance for development.
+	ssh -i ~/.aws/osrs-dev.pem ec2-user@$(OSRS_EC2_IP)
+
+instance-start:
+	aws ec2 start-instances --instance-ids $(OSRS_EC2_ID)
+
+instance-stop:
+	aws ec2 stop-instances --instance-ids $(OSRS_EC2_ID)
+
+instance-deps: # global dependencies
+	sudo yum upgrade -y
+	sudo yum install git -y
+	sudo yum install docker -y
+
+instance-docker: # run this once to set up Docker permissions correctly
+	sudo groupadd docker
+	sudo usermod -aG docker
 
 # Other -------------------------------------------------------------------------------------------
 vim-binding: # install vim keybindings for notebooks
@@ -170,9 +191,6 @@ nbextensions: vim-binding # a few nice notebook extensions
 notebook: nbextensions ## Start a local jupyter notebook server.
 	@source env/bin/activate && \
 	jupyter notebook
-
-instance: ## Connect to EC2 instance for development.
-	ssh -i ~/.aws/osrs-dev.pem ec2-user@$(OSRS_EC2_IP)
 
 lint: ## Run code style checker.
 	@source env/bin/activate && \
