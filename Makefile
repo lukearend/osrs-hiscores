@@ -181,7 +181,7 @@ lint: ## Run code style checker.
 
 $(TEST_DIR)/data/player-stats-10000.csv: # small subsample of the full dataset for unit testing
 	@source env/bin/activate && \
-	cd test && python build_stats_small.py $(DATA_FINAL)/player-stats.csv $<
+	cd test && python build_stats_small.py $(DATA_FINAL)/player-stats.csv $@
 
 test: lint $(TEST_DIR)/data/player-stats-10000.csv ## Run unit tests for data pipeline.
 	@source env/bin/activate && \

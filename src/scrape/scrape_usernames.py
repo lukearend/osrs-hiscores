@@ -84,7 +84,6 @@ def main(out_file):
 
 if __name__ == '__main__':
     done = main(*sys.argv[1:])
-
     if done:
         print("done")
         sys.exit(0)
