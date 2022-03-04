@@ -7,7 +7,7 @@
     this script against it will do nothing and return with exit code 0.
     Running the full scrape takes about 90 mins.
 """
-
+import argparse
 import asyncio
 import csv
 import os
@@ -37,10 +37,7 @@ async def process_pages(session, job_queue, out_file, file_lock, pbar):
             file_lock.release()
 
 
-def main(out_file):
-    """
-    :param out_file: output scraped usernames to this CSV file
-    """
+def main(out_file: str):
     print("scraping usernames...")
 
     # There are 80,000 pages, giving rankings 1-25, 26-50, ..., etc. up to 2 million.
@@ -83,7 +80,10 @@ def main(out_file):
 
 
 if __name__ == '__main__':
-    done = main(*sys.argv[1:])
+    parser = argparse.ArgumentParser(description="Scrape the top 2 million usernames from the OSRS hiscores.""")
+    parser.add_argument('outfile', type=str, help="output scraped usernames to this CSV file")
+    args = parser.parse_args()
+    done = main(args.outfile)
     if done:
         print("done")
         sys.exit(0)

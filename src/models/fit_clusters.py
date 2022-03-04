@@ -9,7 +9,7 @@
     For k = {"all": 4000, "cb": 2000, "noncb": 2000}, this script
     runs in about 4 hours on a 2021 M1 Mac.
 """
-import sys
+import argparse
 from typing import List, Dict
 
 import numpy as np
@@ -51,13 +51,6 @@ def write_results(splits: List[DataSplit], all_skills: List[str], centroids: Dic
 
 @Timer(text="done fitting clusters (total time {:.2f} sec)")
 def main(stats_file: str, out_file: str, params_file: str = None, verbose: bool = True):
-    """
-    :param stats_file: load player stats from this file
-    :param out_file: write cluster centroids to this file
-    :param params_file: load k-means parameters from this file
-                        (if not provided, uses default location)
-    :param verbose: whether to output info during training
-    """
     _, statnames, data = load_stats_data(stats_file, include_total=False)
 
     centroids_per_split = {}
@@ -89,4 +82,12 @@ def main(stats_file: str, out_file: str, params_file: str = None, verbose: bool 
 
 
 if __name__ == '__main__':
-    main(*sys.argv[1:])
+    parser = argparse.ArgumentParser(description="Fit cluster centroids on player stats data.""")
+    parser.add_argument('statsfile', type=str, help="load player stats from this CSV file")
+    parser.add_argument('outfile', type=str, help="write cluster centroids to this file")
+    parser.add_argument('paramsfile', type=str, required=False,
+                        help="load k-means parameters from this file (if not provided, uses default location)")
+    parser.add_argument('-v', '--verbose', type=str, action='store_true',
+                        help="whether to output progress during training")
+    args = parser.parse_args()
+    main(args.statsfile, args.outfile, args.paramsfile, args.verbose)

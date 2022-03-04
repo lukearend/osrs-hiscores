@@ -3,7 +3,7 @@
 """ Compute size, quartiles and uniqueness for each cluster.
     This script runs in about ~5 mins on an M1 Mac.
 """
-
+import argparse
 import pickle
 import sys
 
@@ -17,11 +17,6 @@ from src.results import ClusterAnalytics, compute_cluster_sizes, compute_cluster
 
 @Timer(text="done postprocessing clusters ({:.2f} sec)")
 def main(stats_file: str, clusters_file: str, out_file: str):
-    """
-    :param stats_file: load player stats from this file
-    :param clusters_file: load player clusters from this file
-    :param out_file: serialize results to this file
-    """
     _, splits, clusterids = load_clusterids_data(clusters_file)
     print("computing cluster sizes...")
     cluster_sizes = {}
@@ -65,4 +60,9 @@ def main(stats_file: str, clusters_file: str, out_file: str):
 
 
 if __name__ == '__main__':
-    main(*sys.argv[1:])
+    parser = argparse.ArgumentParser(description="""Compute cluster sizes, quartiles and uniqueness.""")
+    parser.add_argument('statsfile', type=str, help="load player stats from this CSV file")
+    parser.add_argument('clustersfile', type=str, help="load player clusters from this CSV file")
+    parser.add_argument('outfile', type=str, help="serialize results to this .pkl file")
+    args = parser.parse_args()
+    main(args.statsfile, args.centroidsfile, args.paramsfile)

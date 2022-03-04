@@ -6,7 +6,7 @@
     file contains a complete results set. Running the full scrape
     takes about 18 hours.
 """
-
+import argparse
 import asyncio
 import csv
 import os
@@ -44,11 +44,7 @@ async def process_stats(session, job_queue, out_file, file_lock, pbar):
             file_lock.release()
 
 
-def main(in_file, out_file):
-    """
-    :param in_file: read usernames to scrape from this CSV file
-    :param out_file: output scraped player data to this CSV file
-    """
+def main(in_file: str, out_file: str):
     print("scraping player stats...")
 
     # Read user rankings file to see which usernames need to be processed.
@@ -81,8 +77,11 @@ def main(in_file, out_file):
 
 
 if __name__ == '__main__':
-    done = main(*sys.argv[1:])
-
+    parser = argparse.ArgumentParser(description="Scrape stats for the top 2 million OSRS players.""")
+    parser.add_argument('infile', type=str, help="read usernames to scrape from this CSV file")
+    parser.add_argument('outfile', type=str, help="output scraped usernames to this CSV file")
+    args = parser.parse_args()
+    done = main(args.infile, args.outfile)
     if done:
         print("done")
         sys.exit(0)

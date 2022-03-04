@@ -1,6 +1,6 @@
+import argparse
 import csv
 import time
-import sys
 
 from codetiming import Timer
 
@@ -10,11 +10,6 @@ from src.models import cluster_l2
 
 @Timer(text="done clustering players (total time {:.2f} sec)")
 def main(stats_file: str, centroids_file: str, out_file: str):
-    """
-    :param stats_file: load player stats from this file
-    :param centroids_file: load cluster centroids from this file
-    :param out_file: write results to this CSV file
-    """
     centroids = load_centroid_data(centroids_file)
     usernames, _, data = load_stats_data(stats_file, include_total=False)
 
@@ -46,4 +41,9 @@ def main(stats_file: str, centroids_file: str, out_file: str):
 
 
 if __name__ == "__main__":
-    main(*sys.argv[1:])
+    parser = argparse.ArgumentParser(description="Fit cluster centroids on player stats data.""")
+    parser.add_argument('statsfile', type=str, help="load player stats from this CSV file")
+    parser.add_argument('centroidsfile', type=str, help="load cluster centroids from this CSV file")
+    parser.add_argument('outfile', type=str, help="write cluster IDs to this file")
+    args = parser.parse_args()
+    main(args.statsfile, args.centroidsfile, args.outfile)

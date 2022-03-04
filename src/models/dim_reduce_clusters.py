@@ -3,7 +3,7 @@
 """ Reduce dimensionality of cluster centroids to 3d using UMAP.
     Full grid search over 3 splits, 16 parameter sets takes 10 mins.
 """
-
+import argparse
 import pickle
 import time
 import sys
@@ -16,12 +16,6 @@ from src.models import umap_params, umap_reduce
 
 @Timer(text="finished dimensionality reduction (total time {:.2f} sec)")
 def main(in_file: str, out_file: str, params_file: str = None):
-    """
-    :param in_file: load cluster centroids from this file
-    :param out_file: serialize results to this file
-    :param params_file: load UMAP parameters from this file
-                        (if not provided, uses default location)
-    """
     centroids = load_centroid_data(in_file)
 
     print("computing 3d embeddings...")
@@ -55,4 +49,10 @@ def main(in_file: str, out_file: str, params_file: str = None):
 
 
 if __name__ == '__main__':
-    main(*sys.argv[1:])
+    parser = argparse.ArgumentParser(description="""Reduce dimensionality of cluster centroids to 3D.""")
+    parser.add_argument('infile', type=str, help="load clusters centroids from this CSV file")
+    parser.add_argument('outfile', type=str, help="serialize results to this .pkl file")
+    parser.add_argument('paramsfile', type=str,
+                        help="load UMAP parameters from this file (if not provided, uses default location")
+    args = parser.parse_args()
+    main(args.statsfile, args.centroidsfile, args.paramsfile)

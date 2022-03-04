@@ -2,24 +2,23 @@
 
 """ Cleanup stats data scraped from hiscores and write to CSV.
     This script runs in ~3 min on M1 Mac. """
-
+import argparse
 import csv
-from pathlib import Path
-import sys
 
 import numpy as np
+from codetiming import Timer
 from tqdm import tqdm
 
 from src.common import osrs_statnames
 
 
-def main(in_file, out_file):
+@Timer(text="done cleaning stats dataset ({:.2f} sec)")
+def main(in_file: str, out_file: str):
     """
     :param in_file: read raw scraped stats data from this CSV file
     :param out_file: output cleaned stats data to this CSV file
     """
     print("cleaning up stats dataset...")
-
     fields = ['username']
     for skill in osrs_statnames():
         fields.append(f'{skill}_rank')
@@ -73,8 +72,10 @@ def main(in_file, out_file):
             line = dict(zip(fields, line))
             writer.writerow(line)
 
-    print("done")
-
 
 if __name__ == '__main__':
-    main(*sys.argv[1:])
+    parser = argparse.ArgumentParser(description="Scrape stats for the top 2 million OSRS players.""")
+    parser.add_argument('infile', type=str, help="read raw scraped stats data from this CSV file")
+    parser.add_argument('outfile', type=str, help="output cleaned stats data to this CSV file")
+    args = parser.parse_args()
+    main(args.infile, args.outfile)

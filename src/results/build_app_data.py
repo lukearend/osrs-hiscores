@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 """ Preprocess and build a single file for the data to be used in Dash app. """
+import argparse
 import pickle
 import sys
 
@@ -19,12 +20,6 @@ def compute_minmax(xyz):
 
 
 def main(centroids_file: str, cluster_analytics_file: str, clusters_xyz_file: str, out_file: str):
-    """
-    :param centroids_file: load cluster centroids from this file
-    :param cluster_analytics_file: load cluster analytics from this file
-    :param clusters_xyz_file: load cluster dimensionality reduction output from this file
-    :param out_file: serialize app data to this file
-    """
     print("building app data...", end=' ', flush=True)
     cluster_analytics = load_cluster_analytics(cluster_analytics_file)
     cluster_xyz = load_clusters_xyz(clusters_xyz_file)
@@ -67,4 +62,10 @@ def main(centroids_file: str, cluster_analytics_file: str, clusters_xyz_file: st
 
 
 if __name__ == '__main__':
-    main(*sys.argv[1:])
+    parser = argparse.ArgumentParser(description="""Build serialized data file to be used by main application.""")
+    parser.add_argument('centroidsfile', type=str, help="load cluster centroids from this CSV file")
+    parser.add_argument('clustersfile', type=str, help="load cluster analytics from this .pkl file")
+    parser.add_argument('xyzfile', type=str, help="load cluster dimensionality reduction results from this .pkl file")
+    parser.add_argument('outfile', type=str, help="serialize app data to this .pkl file")
+    args = parser.parse_args()
+    main(args.centroidsfile, args.clustersfile, args.xyzfile, args.outfile)

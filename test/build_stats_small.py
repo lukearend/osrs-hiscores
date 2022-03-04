@@ -44,9 +44,7 @@ def main(in_file: str, out_file: str):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Build a small dataset for testing.""")
-    parser.add_argument('infile', metavar='infile', type=str,
-                        help="load all player stats from this CSV file")
-    parser.add_argument('outfile', metavar='outfile', type=str,
-                        help="write subsample of dataset to this CSV file")
+    parser.add_argument('infile', type=str, help="load all player stats from this CSV file")
+    parser.add_argument('outfile', type=str, help="write subsample of dataset to this CSV file")
     args = parser.parse_args()
     main(args.infile, args.outfile)

@@ -171,7 +171,7 @@ def load_clusterids_data(file: str) -> Tuple[List[str], List[str], NDArray]:
     cluster ID for each data split; ie, cluster IDs differ for a player
     when clustering is run on different subsets of account stats.
 
-    :param file: load player cluster IDs from this file
+    :param file: load player cluster IDs from this CSV file
     :return:
       - list of player usernames
       - list of split names
