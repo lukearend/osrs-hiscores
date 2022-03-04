@@ -15,12 +15,12 @@ then
 elif [ "$arg" == 'status' ] # check instance status
 then
 	aws ec2 describe-instance-status --instance-ids "$OSRS_EC2_ID"
-elif [ "$arg" == 'deps' ] # run on instance to install dependencies
+elif [ "$arg" == 'install-deps' ] # run to install dependencies
 then
 	sudo yum upgrade -y
 	sudo yum install git -y
 	sudo yum install docker -y
-elif [ "$arg" == 'docker' ] # run once on instance to set up Docker permissions
+elif [ "$arg" == 'setup-docker' ] # run once to set up Docker permissions
 then
 	sudo groupadd docker
 	sudo usermod -aG docker

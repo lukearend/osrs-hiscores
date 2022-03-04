@@ -17,17 +17,22 @@ TEST_DIR:=$(ROOT_DIR)/test
 all: init scrape cluster dimreduce app # Scrape data, process it and build final application.
 build: init download test dimreduce app # Build final application from downloaded pre-scraped data.
 run:
-	@source env/bin/activate && OSRS_APP_ENV=development python app
+	@source $(ENV_NAME)/bin/activate && OSRS_APP_ENV=development python app
 
 .PHONY: all build clean run
 
 # Setup -------------------------------------------------------------------------------------------
-init: env ## Setup project dependencies.
+init: env-init env-build ## Setup project dependencies.
 
-env:
+ENV_NAME:=env-py37
+PYTHON_EXEC:=/Library/Frameworks/Python.framework/Versions/3.7/bin/python3.7
+
+env-init:
+	@python3 -m venv $(ENV_NAME) -p $(PYTHON_EXEC)
+
+env-build:
 	@echo "building virtual environment..."
-	@python3 -m venv env && \
-	source env/bin/activate && \
+	@source $(ENV_NAME)/bin/activate && \
 	pip3 install --upgrade pip && \
 	pip3 install -r requirements.txt && \
 	rm -rf *.egg-info
@@ -111,7 +116,7 @@ dimreduce-clean:
 .PHONY: dimreduce dimreduce-clean
 
 # Application -------------------------------------------------------------------------------------
-app: $(DATA_FINAL)/app_data.pkl build-db ## Build data file and database for visualization app.
+app: $(DATA_FINAL)/app_data.pkl mongo build-db ## Build data file and database for visualization app.
 
 $(DATA_TMP)/cluster_analytics.pkl:
 	@source env/bin/activate && \
@@ -154,6 +159,26 @@ mongo: ## Launch a Mongo instance at localhost:27017 using Docker.
 
 .PHONY: upload-appdata upload-dataset download mongo build-db
 
+# Testing -----------------------------------------------------------------------------------------
+
+lint: ## Run code style checker.
+	@source env/bin/activate && \
+	pycodestyle app src --ignore=E501,E302 && \
+	echo "code check passed"
+
+$(TEST_DIR)/data/player-stats-10000.csv: # small subsample of the full dataset for unit testing
+	@source env/bin/activate && \
+	cd test && python build_stats_small.py $(DATA_FINAL)/player-stats.csv $@
+
+test: lint $(TEST_DIR)/data/player-stats-10000.csv ## Run unit tests for data pipeline.
+	@source env/bin/activate && \
+	pytest test -sv
+
+ec2-%: ## EC2 instance: status, start, stop, connect, install-deps, setup-docker
+	@cd bin && ./ec2_instance $*
+
+.PHONY: lint test ec2-%
+
 # Other -------------------------------------------------------------------------------------------
 vim-binding: # install vim keybindings for notebooks
 	@source env/bin/activate && \
@@ -172,24 +197,8 @@ notebook: nbextensions ## Start a local jupyter notebook server.
 	@source env/bin/activate && \
 	jupyter notebook
 
-ec2-%: # EC2 instance: connect, start, stop, status, deps, docker
-	cd bin && ./ec2_instance $*
-
-lint: ## Run code style checker.
-	@source env/bin/activate && \
-	pycodestyle app src --ignore=E501,E302 && \
-	echo "code check passed"
-
-$(TEST_DIR)/data/player-stats-10000.csv: # small subsample of the full dataset for unit testing
-	@source env/bin/activate && \
-	cd test && python build_stats_small.py $(DATA_FINAL)/player-stats.csv $@
-
-test: lint $(TEST_DIR)/data/player-stats-10000.csv ## Run unit tests for data pipeline.
-	@source env/bin/activate && \
-	pytest test -sv
-
 help: ## Show this help.
-	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(firstword $(MAKEFILE_LIST)) | \
+	@grep -E '^[0-9a-zA-Z%_-]+:.*?## .*$$' $(firstword $(MAKEFILE_LIST)) | \
 	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-.PHONY: vim-binding nbextensions notebook lint test help
+.PHONY: vim-binding nbextensions notebook help
