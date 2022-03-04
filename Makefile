@@ -154,26 +154,6 @@ mongo: ## Launch a Mongo instance at localhost:27017 using Docker.
 
 .PHONY: upload-appdata upload-dataset download mongo build-db
 
-# EC2 build ---------------------------------------------------------------------------------------
-
-instance: ## Connect to EC2 instance for development.
-	ssh -i ~/.aws/osrs-dev.pem ec2-user@$(OSRS_EC2_IP)
-
-instance-start:
-	aws ec2 start-instances --instance-ids $(OSRS_EC2_ID)
-
-instance-stop:
-	aws ec2 stop-instances --instance-ids $(OSRS_EC2_ID)
-
-instance-deps: # global dependencies
-	sudo yum upgrade -y
-	sudo yum install git -y
-	sudo yum install docker -y
-
-instance-docker: # run this once to set up Docker permissions correctly
-	sudo groupadd docker
-	sudo usermod -aG docker
-
 # Other -------------------------------------------------------------------------------------------
 vim-binding: # install vim keybindings for notebooks
 	@source env/bin/activate && \
@@ -191,6 +171,9 @@ nbextensions: vim-binding # a few nice notebook extensions
 notebook: nbextensions ## Start a local jupyter notebook server.
 	@source env/bin/activate && \
 	jupyter notebook
+
+ec2-%: # EC2 instance: connect, start, stop, status, deps, docker
+	cd bin && ./ec2_instance $*
 
 lint: ## Run code style checker.
 	@source env/bin/activate && \

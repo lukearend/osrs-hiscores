@@ -1,0 +1,29 @@
+#!/usr/bin/env bash
+
+source ../.env
+arg=$1
+
+if [ "$arg" == 'connect' ] # connect to instance through SSH
+then
+	ssh -i ~/.aws/osrs-dev.pem "ec2-user@$OSRS_EC2_IP"
+elif [ "$arg" == 'start' ] # start instance
+then
+	aws ec2 start-instances --instance-ids "$OSRS_EC2_ID"
+elif [ "$arg" == 'stop' ] # stop instance
+then
+	aws ec2 stop-instances --instance-ids "$OSRS_EC2_ID"
+elif [ "$arg" == 'status' ] # check instance status
+then
+	aws ec2 describe-instance-status --instance-ids "$OSRS_EC2_ID"
+elif [ "$arg" == 'deps' ] # run on instance to install dependencies
+then
+	sudo yum upgrade -y
+	sudo yum install git -y
+	sudo yum install docker -y
+elif [ "$arg" == 'docker' ] # run once on instance to set up Docker permissions
+then
+	sudo groupadd docker
+	sudo usermod -aG docker
+else
+  echo "unrecognized argument '$arg'"
+fi
