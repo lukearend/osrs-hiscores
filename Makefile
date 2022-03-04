@@ -137,7 +137,7 @@ upload-dataset:
 
 download: ## Download processed dataset from S3.
 	@source env/bin/activate && \
-	cd bin && ./download_dataset
+	cd bin && OSRS_DATASET_S3BUCKET=osrshiscores ./download_dataset
 
 build-db:
 	@source env/bin/activate && \

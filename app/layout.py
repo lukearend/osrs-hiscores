@@ -176,7 +176,8 @@ def build_layout(app: Dash, appdata: AppData) -> Dash:
                                     id='username-text',
                                     type='text',
                                     placeholder="input username",
-                                    maxLength=12
+                                    maxLength=12,
+                                    debounce=True
                                 ),
                                 width='auto'
                             ),

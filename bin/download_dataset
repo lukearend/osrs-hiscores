@@ -8,8 +8,7 @@ clusters_file = Path(__name__).resolve().parents[1] / "data" / "processed" / "pl
 stats_file = Path(__name__).resolve().parents[1] / "data" / "processed" / "player-stats.csv"
 
 load_dotenv(find_dotenv())
-bucket = env_var("OSRS_S3_BUCKET")
-
-download_from_s3(bucket, "dataset/cluster-centroids.csv", str(centroids_file))
-download_from_s3(bucket, "dataset/player-clusters.csv", str(clusters_file))
-download_from_s3(bucket, "dataset/player-stats.csv", str(stats_file))
+bucket = env_var("OSRS_DATASET_S3BUCKET")
+download_from_s3(bucket, "cluster-centroids.csv", str(centroids_file))
+download_from_s3(bucket, "player-clusters.csv", str(clusters_file))
+download_from_s3(bucket, "player-stats.csv", str(stats_file))
