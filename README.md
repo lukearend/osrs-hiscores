@@ -78,3 +78,5 @@ Steps 2 and 3 can be skipped by simply running `make download`, which fetches th
 All steps can be run in one shot via `make build` (which uses the S3 download) or `make all` (which actually scrapes and clusters the data from scratch).
 
 To launch the application, run `make run` and visit the URL `localhost:8050` in a web browser. The application expects the environment variable `OSRS_MONGO_URI_APP` to point to the database populated during `make app`.
+
+This project expects Python version 3.7 or greater.

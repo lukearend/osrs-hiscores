@@ -17,22 +17,19 @@ TEST_DIR:=$(ROOT_DIR)/test
 all: init scrape cluster dimreduce app # Scrape data, process it and build final application.
 build: init download test dimreduce app # Build final application from downloaded pre-scraped data.
 run:
-	@source $(ENV_NAME)/bin/activate && OSRS_APP_ENV=development python app
+	@source env/bin/activate && OSRS_APP_ENV=development python app
 
 .PHONY: all build clean run
 
 # Setup -------------------------------------------------------------------------------------------
 init: env-init env-build ## Setup project dependencies.
 
-ENV_NAME:=env-py37
-PYTHON_EXEC:=/Library/Frameworks/Python.framework/Versions/3.7/bin/python3.7
-
 env-init:
-	@python3 -m venv $(ENV_NAME) -p $(PYTHON_EXEC)
+	@python3 -m venv env
 
 env-build:
 	@echo "building virtual environment..."
-	@source $(ENV_NAME)/bin/activate && \
+	@source env/bin/activate && \
 	pip3 install --upgrade pip && \
 	pip3 install -r requirements.txt && \
 	rm -rf *.egg-info
