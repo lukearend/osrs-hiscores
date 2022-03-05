@@ -15,15 +15,16 @@ then
 elif [ "$arg" == 'status' ] # check instance status
 then
 	aws ec2 describe-instance-status --instance-ids "$OSRS_EC2_ID"
-elif [ "$arg" == 'install-deps' ] # run to install dependencies
+elif [ "$arg" == 'setup' ] # run once to install dependencies and setup Docker
 then
 	sudo yum upgrade -y
 	sudo yum install git -y
 	sudo yum install docker -y
-elif [ "$arg" == 'setup-docker' ] # run once to set up Docker permissions
-then
 	sudo groupadd docker
 	sudo usermod -aG docker
+elif [ "$arg" == 'docker-start' ] # run to start Docker daemon
+then
+  sudo service docker start
 else
   echo "unrecognized argument '$arg'"
 fi

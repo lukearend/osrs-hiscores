@@ -171,7 +171,7 @@ test: lint $(TEST_DIR)/data/player-stats-10000.csv ## Run unit tests for data pi
 	@source env/bin/activate && \
 	pytest test -sv
 
-ec2-%: ## EC2 instance: status, start, stop, connect, install-deps, setup-docker
+ec2-%: ## EC2 instance: status, start, stop, connect, setup, docker-start
 	@cd bin && ./ec2_instance $*
 
 .PHONY: lint test ec2-%
