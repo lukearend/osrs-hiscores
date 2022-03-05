@@ -223,6 +223,11 @@ def download_from_s3(bucket: str, s3_file: str, local_file: str):
         print("credentials not available")
 
 
+@lru_cache()
+def asset_dir():
+    return Path(__file__).resolve().parents[2] / "app" / "assets"
+
+
 @dataclass
 class PlayerData:
     username: str

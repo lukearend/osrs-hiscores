@@ -1,3 +1,4 @@
+import os
 from typing import Tuple, Dict
 
 import numpy as np
@@ -9,6 +10,7 @@ from numpy.typing import NDArray
 from pandas import DataFrame
 
 from app.data import load_boxplot_layout
+from src.common import asset_dir
 
 
 def get_scatterplot(df: DataFrame, colorlims: Tuple[int], colorlabel: str,
@@ -114,7 +116,8 @@ def get_empty_boxplot(split: str) -> go.Figure:
     )
 
     for i, skill in enumerate(tick_labels):
-        icon = Image.open(f"/Users/lukearend/projects/osrs-hiscores/app/assets/icons/{skill}_icon.png")
+        icon_path = os.path.join(asset_dir(), "icons", f"{skill}_icon.png")
+        icon = Image.open(icon_path)
         fig.add_layout_image(
             dict(
                 source=icon,
