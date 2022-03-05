@@ -223,10 +223,10 @@ def add_callbacks(app: Dash, appdata: AppData, appdb: MongoClient) -> Dash:
     )
     def update_player_table(player_data):
         if player_data is None:  # e.g. search box cleared
-            return "Player stats", *('' for _ in range(24))
+            return ("Player stats", *('' for _ in range(24)))
 
         tablevals = [str(v) for v in player_data['stats']]
-        return f"Player '{player_data['username']}'", *tablevals
+        return (f"Player '{player_data['username']}'", *tablevals)
 
     @app.callback(
         Output('cluster-table-title', 'children'),
@@ -236,7 +236,7 @@ def add_callbacks(app: Dash, appdata: AppData, appdb: MongoClient) -> Dash:
     )
     def update_cluster_table(cluster, split):
         if cluster is None:
-            return "Cluster stats", *('' for _ in all_skills)
+            return ("Cluster stats", *('' for _ in all_skills))
 
         split_skills = appdata.splitdata[split].skills
         start_ind = all_skills.index(split_skills[0])  # find start and end of skills
@@ -248,7 +248,7 @@ def add_callbacks(app: Dash, appdata: AppData, appdb: MongoClient) -> Dash:
         tablevals[:start_ind] = '-'
         tablevals[end_ind:] = '-'
 
-        return f"Cluster {cluster['id']}", *tablevals
+        return (f"Cluster {cluster['id']}", *tablevals)
 
     @app.callback(
         Output('box-plot', 'figure'),
