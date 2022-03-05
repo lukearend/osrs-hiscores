@@ -9,7 +9,7 @@ arg=$1
 
 if [ "$arg" == 'connect' ] # connect to instance through SSH
 then
-	ssh -i ~/.aws/osrs-dev.pem "ec2-user@$OSRS_EC2_IP"
+	ssh -i ~/.aws/$OSRS_EC2_PEM "ec2-user@$OSRS_EC2_IP"
 elif [ "$arg" == 'start' ] # start instance
 then
 	aws ec2 start-instances --instance-ids "$OSRS_EC2_ID"
