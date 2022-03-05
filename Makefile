@@ -14,15 +14,15 @@ TEST_DIR:=$(ROOT_DIR)/test
 
 .DEFAULT_GOAL := help
 
-all: init scrape cluster dimreduce app # Scrape data, process it and build final application.
-build: init download test dimreduce app # Build final application from downloaded pre-scraped data.
+all: env scrape cluster dimreduce app # Scrape data, process it and build final application.
+build: env download test dimreduce app # Build final application from downloaded pre-scraped data.
 run:
 	@source env/bin/activate && OSRS_APP_ENV=development python app
 
 .PHONY: all build clean run
 
 # Setup -------------------------------------------------------------------------------------------
-init: env-init env-build ## Setup project dependencies.
+env: env-init env-build ## Setup project dependencies.
 
 env-init:
 	@python3 -m venv env
