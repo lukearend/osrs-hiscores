@@ -93,7 +93,8 @@ def get_scatterplot(df: DataFrame, colorlims: Tuple[int], colorlabel: str,
 
 
 def get_empty_boxplot(split: str) -> go.Figure:
-    tick_labels, icon_x_offsets = load_boxplot_layout(split)
+    layout_info = load_boxplot_layout(split)
+    tick_labels = layout_info.ticklabels
     nskills = len(tick_labels)
 
     nans = np.full(nskills, np.nan)
@@ -115,6 +116,7 @@ def get_empty_boxplot(split: str) -> go.Figure:
         layout_yaxis_tickvals=[1, 20, 40, 60, 80, 99],
     )
 
+    icon_x_offset = layout_info.tickxoffset
     for i, skill in enumerate(tick_labels):
         icon_path = os.path.join(asset_dir(), "icons", f"{skill}_icon.png")
         icon = Image.open(icon_path)
@@ -123,7 +125,7 @@ def get_empty_boxplot(split: str) -> go.Figure:
                 source=icon,
                 xref="x",
                 yref="y",
-                x=i - icon_x_offsets,
+                x=i - icon_x_offset,
                 y=-2,
                 sizex=1,
                 sizey=12,

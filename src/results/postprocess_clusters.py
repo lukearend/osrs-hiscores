@@ -5,14 +5,13 @@
 """
 import argparse
 import pickle
-import sys
 
 import numpy as np
 from codetiming import Timer
 from tqdm import tqdm
 
 from src.common import skill_splits, split_dataset, load_clusterids_data, load_stats_data
-from src.results import ClusterAnalytics, compute_cluster_sizes, compute_cluster_uniqueness, compute_skill_quartiles
+from src.results import ClusterAnalytics, compute_cluster_sizes, compute_cluster_uniqueness, compute_stat_quartiles
 
 
 @Timer(text="done postprocessing clusters ({:.2f} sec)")
@@ -29,21 +28,25 @@ def main(stats_file: str, clusters_file: str, out_file: str):
         cluster_uniqueness[split] = compute_cluster_uniqueness(cluster_sizes[split])
 
     splits = skill_splits()
-    _, skills, stats = load_stats_data(stats_file)
-    stats = stats.astype('float')
-    stats[stats < 0] = np.nan  # change missing values from -1 to nan
+    _, skills, stats = load_stats_data(stats_file, include_total=True)
+    stats = stats.astype('float')  # cast to float so we can use nan
+    stats[stats < 0] = np.nan      # change missing values from -1 to nan
+    total_levels, stats = stats[:, 0], stats[:, 1:]
 
     cluster_quartiles = {}
     for s, split in enumerate(splits):
-        nclusters = len(cluster_sizes[split.name])
         print(f"computing quartiles for split '{split.name}'...")
-        quartiles = np.zeros((nclusters, 5, split.nskills))
+        nclusters = len(cluster_sizes[split.name])
+        quartiles = np.zeros((nclusters, 5, 1 + split.nskills))
         player_vectors = split_dataset(stats, split)
 
         for cid in tqdm(range(nclusters)):
-            id_locs = clusterids[:, s] == cid
-            vectors_in_cluster = player_vectors[id_locs]
-            quartiles[cid, :, :] = compute_skill_quartiles(vectors_in_cluster)
+            id_locs = clusterids[:, s] == cid  # inds for players with this cluster ID
+            pvectors = player_vectors[id_locs, :]
+            totlevels = np.expand_dims(total_levels[id_locs], 1)
+            cluster_data = np.concatenate([totlevels, pvectors], axis=1)
+            quartiles[cid, :, :] = compute_stat_quartiles(cluster_data)
+
         cluster_quartiles[split.name] = quartiles
 
     analytics_per_split = {}
@@ -65,4 +68,4 @@ if __name__ == '__main__':
     parser.add_argument('clustersfile', type=str, help="load player clusters from this CSV file")
     parser.add_argument('outfile', type=str, help="serialize results to this .pkl file")
     args = parser.parse_args()
-    main(args.statsfile, args.centroidsfile, args.paramsfile)
+    main(args.statsfile, args.clustersfile, args.outfile)

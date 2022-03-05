@@ -226,7 +226,7 @@ def build_layout(app: Dash, appdata: AppData) -> Dash:
                             ]),
                             dbc.Col([
                                 html.Strong(id='cluster-table-title'),
-                                build_level_table(name='cluster-table', include_total=False)
+                                build_level_table(name='cluster-table')
                             ]),
                         ],
                         align='center'
@@ -271,7 +271,7 @@ def build_layout(app: Dash, appdata: AppData) -> Dash:
     return app
 
 
-def build_level_table(name: str, include_total: bool = True) -> dbc.Col:
+def build_level_table(name: str) -> dbc.Col:
     skills_layout = load_table_layout()
 
     table_rows = []
@@ -279,12 +279,8 @@ def build_level_table(name: str, include_total: bool = True) -> dbc.Col:
 
         table_row = []
         for skill in skill_row:
-            if skill == 'total' and not include_total:
-                icon = html.Div(children='')
-                value = html.Div(children='')
-            else:
-                icon = html.Div(html.Img(src=f'/assets/icons/{skill}_icon.png'))
-                value = html.Div(id=f'{name}-{skill}')
+            icon = html.Div(html.Img(src=f'/assets/icons/{skill}_icon.png'))
+            value = html.Div(id=f'{name}-{skill}')
 
             table_elem = dbc.Row(
                 [

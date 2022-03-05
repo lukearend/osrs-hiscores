@@ -9,6 +9,7 @@ from subprocess import check_output
 from typing import List, Dict, Tuple, Any
 
 import boto3
+import certifi as certifi
 import numpy as np
 import progressbar as progressbar
 from botocore.exceptions import NoCredentialsError
@@ -36,13 +37,13 @@ def osrs_statnames(include_total: bool = True) -> List[str]:
     Load the list of OSRS skill names in the order to be used for
     CSV columns. This includes total level and the following 23 skills:
 
-        Attack, Defence, Strength, Hitpoints, Ranged, Magic, Prayer
+        Attack, Defence, Strength, Hitpoints, Ranged, Prayer, Magic,
         Cooking, Woodcutting, Fletching, Fishing, Firemaking, Crafting,
         Smithing, Mining, Herblore, Agility, Thieving, Slayer, Farming,
         Runecraft, Hunter, and Construction.
 
     :include_total: if false, total level is not included
-    :return: list of OSRS skill names
+    :return: list of OSRS skill names in an order matching CSV file columns
     """
     splits_file = Path(__file__).resolve().parents[2] / "ref" / "osrs_skills.json"
     with open(splits_file, 'r') as f:
@@ -54,10 +55,11 @@ def osrs_statnames(include_total: bool = True) -> List[str]:
 
 @dataclass
 class DataSplit:
+    """ Describes a dataset "split", or subset of skills used in analysis. """
     name: str
     nskills: int
     skills: List[str]
-    skill_inds: List[int]  # index of each skill in the canonical ordering
+    skill_inds: List[int]  # index of each skill in the CSV ordering
 
 
 @lru_cache()
@@ -230,8 +232,9 @@ def asset_dir():
 
 @dataclass
 class PlayerData:
+    """ Stats and clustering results for a player. """
     username: str
-    clusterids: Dict[str, int]
+    clusterids: Dict[str, int]  # resulting cluster ID for each split of the dataset
     stats: List[int]
 
 
@@ -254,10 +257,11 @@ def mongodoc_to_playerdata(doc: Dict[str, Any]) -> PlayerData:
 
 def connect_mongo(url: str) -> Database:
     """ Connect to MongoDB instance at the given URL.
+
     :param url: connect to instance running at this URL
     :return: database containing player collection
     """
-    mongo = MongoClient(url)
+    mongo = MongoClient(url, tlsCAFile=certifi.where())
     db = mongo['osrs-hiscores']
     try:
         db.command('ping')
