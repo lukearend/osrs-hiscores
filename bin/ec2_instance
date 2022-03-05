@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-source ../.env
+BIN_DIR="$(dirname "$(dirname "$(readlink -fm "$0")")")"
+source "$BIN_DIR/../.env"
 arg=$1
 
 if [ "$arg" == 'connect' ] # connect to instance through SSH
