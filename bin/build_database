@@ -4,9 +4,7 @@ import os
 import sys
 
 from dotenv import find_dotenv, load_dotenv
-from pymongo import MongoClient
-from pymongo.errors import ServerSelectionTimeoutError
-from src.common import PlayerData, playerdata_to_mongodoc
+from src.common import PlayerData, playerdata_to_mongodoc, connect_mongo
 from tqdm import tqdm
 
 from src.common import line_count, load_clusterids_data, load_stats_data
@@ -27,18 +25,10 @@ parser.add_argument('-d', '--drop', dest='drop', action='store_true',
 
 args = parser.parse_args()
 load_dotenv(find_dotenv())
-try:
-    url = os.environ["OSRS_MONGO_URI"]
-except KeyError as e:
-    raise ValueError(f"{e} is not set in environment")
+url = os.getenv("OSRS_MONGO_URI", "localhost:27017")
 
 print("connecting...", end=' ', flush=True)
-client = MongoClient(url)
-db = client['osrs-hiscores']
-try:
-    db.command('ping')
-except ServerSelectionTimeoutError:
-    raise ValueError("could not connect to mongodb")
+db = connect_mongo(url)
 collection = db[args.coll_name]
 print("ok")
 

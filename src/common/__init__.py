@@ -13,6 +13,9 @@ import numpy as np
 import progressbar as progressbar
 from botocore.exceptions import NoCredentialsError
 from numpy.typing import NDArray
+from pymongo import MongoClient
+from pymongo.database import Database
+from pymongo.errors import ServerSelectionTimeoutError
 from tqdm import tqdm
 
 
@@ -242,3 +245,17 @@ def mongodoc_to_playerdata(doc: Dict[str, Any]) -> PlayerData:
         clusterids=doc['clusterids'],
         stats=doc['stats']
     )
+
+
+def connect_mongo(url: str) -> Database:
+    """ Connect to MongoDB instance at the given URL.
+    :param url: connect to instance running at this URL
+    :return: database containing player collection
+    """
+    mongo = MongoClient(url)
+    db = mongo['osrs-hiscores']
+    try:
+        db.command('ping')
+    except ServerSelectionTimeoutError:
+        raise ValueError(f"could not connect to mongodb at {url}")
+    return db

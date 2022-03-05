@@ -290,6 +290,6 @@ def add_callbacks(app: Dash, appdata: AppData, appdb: MongoClient) -> Dash:
         if cluster is None:
             return "Cluster level ranges"
         return f"Cluster {cluster['id']} level ranges "\
-               f"({cluster['size']} {'player' if cluster['size'] == 1 else 'players'})"
+               f"({cluster['size']} {"player" if cluster['size'] == 1 else "players"})"
 
     return app

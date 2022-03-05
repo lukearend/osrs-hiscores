@@ -5,11 +5,9 @@
 import os
 
 from dash import Dash
-from pymongo import MongoClient
-from pymongo.errors import ServerSelectionTimeoutError
 from dash_bootstrap_components import themes
 
-from src.common import env_var
+from src.common import env_var, connect_mongo
 from app.data import load_appdata_local, load_appdata_s3
 from app.layout import build_layout
 from app.callbacks import add_callbacks
@@ -24,14 +22,9 @@ else:
     appdata = load_appdata_local(os.getenv("OSRS_APPDATA_LOCAL", None))
     debug = True
 
-mongo_url = env_var("OSRS_MONGO_URI_APP")
-mongo = MongoClient(mongo_url)
-db = mongo['osrs-hiscores']
-try:
-    db.command('ping')
-except ServerSelectionTimeoutError:
-    raise ValueError("could not connect to mongodb")
-coll_name = os.getenv("OSRS_MONGO_COLLECTION", 'players')
+mongo_url = os.getenv("OSRS_MONGO_URI", "localhost:27017")
+coll_name = os.getenv("OSRS_MONGO_COLLECTION", "players")
+db = connect_mongo(mongo_url)
 playerdb = db[coll_name]
 
 app = Dash(__name__,
