@@ -1,21 +1,16 @@
 #!/usr/bin/env python3
 import argparse
-import os
-from pymongo import MongoClient
-from dotenv import find_dotenv, load_dotenv
-load_dotenv(find_dotenv())
+from src.common import connect_mongo
 
 desc = """Drop a collection in the database 'osrs-hiscores' at the Mongo
           instance specified by environment variable OSRS_MONGO_URI."""
 parser = argparse.ArgumentParser(description=desc)
 parser.add_argument('coll_name', metavar='collection', type=str,
                     help="name of collection to drop")
+parser.add_argument('-u', '--url', dest='url', type=str,
+                    help="expects Mongo instance running at this URL (defaults to localhost:27017)")
 
 args = parser.parse_args()
-try:
-    url = os.environ["OSRS_MONGO_URI"]
-except KeyError as e:
-    raise ValueError(f"{e} is not set in environment")
-client = MongoClient(url, serverSelectionTimeoutMS=5000)
-client['osrs-hiscores'][args.coll_name].drop()
+db = connect_mongo(args.url if args.url else "localhost:27017")
+db[args.coll_name].drop()
 print(f"dropped collection '{args.coll_name}'")

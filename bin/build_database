@@ -19,7 +19,7 @@ parser.add_argument('clusters_file', metavar='clustersfile', type=str,
 parser.add_argument('coll_name', metavar='collection', type=str,
                     help="name of collection to populate")
 parser.add_argument('-u', '--url', dest='url', type=str,
-                    help="use Mongo instance running at this URL")
+                    help="use Mongo instance running at this URL (defaults to localhost:27107)")
 parser.add_argument('-d', '--drop', dest='drop', action='store_true',
                     help="if set, will drop collection before writing (default is unset)")
 args = parser.parse_args()

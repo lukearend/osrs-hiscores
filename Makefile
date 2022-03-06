@@ -17,9 +17,9 @@ REF_DIR:=$(ROOT_DIR)/ref
 
 # Top-level ---------------------------------------------------------------------------------------
 
-all: init download test dimreduce app # Build application data from downloaded, already-scraped data.
+all: init scrape cluster dimreduce app # Scrape data, process it and build final application data.
 
-everything: init scrape cluster dimreduce app # Scrape data, process it and build final application data.
+build: init download test dimreduce app # Build application data from downloaded, already-scraped data.
 
 run: # Run Dash application.
 	@source env/bin/activate && python app
@@ -29,7 +29,7 @@ clean: env-clean scrape-clean cluster-clean dimreduce-clean app-clean ## Remove 
 .PHONY: all everything run clean
 
 # Setup -------------------------------------------------------------------------------------------
-init: env mongo-pull ## Setup project dependencies.
+init: env mongo-pull mongo-start ## Setup project dependencies.
 
 env:
 	@echo "building virtual environment..."
@@ -79,7 +79,8 @@ cluster: $(DATA_FINAL)/player-clusters.csv ## Cluster players according to scrap
 
 $(DATA_FINAL)/cluster-centroids.csv:
 	@source env/bin/activate && cd src/models && \
-	python fit_clusters.py $(DATA_FINAL)/player-stats.csv $@ \ -p $(REF_DIR)/kmeans_params.json --verbose
+	python fit_clusters.py $(DATA_FINAL)/player-stats.csv $@ -p $(REF_DIR)/kmeans_params.json --verbose
+
 $(DATA_FINAL)/player-clusters.csv: $(DATA_FINAL)/cluster-centroids.csv
 	@source env/bin/activate && cd src/models && \
 	python cluster_players.py $(DATA_FINAL)/player-stats.csv $< $@
@@ -107,7 +108,7 @@ dimreduce-clean:
 .PHONY: dimreduce dimreduce-clean
 
 # Application -------------------------------------------------------------------------------------
-app: $(DATA_FINAL)/app_data.pkl mongo-start build-db ## Build data file and database for visualization app.
+app: $(DATA_FINAL)/app_data.pkl build-db ## Build data file and database for visualization app.
 
 $(DATA_FINAL)/app_data.pkl: $(DATA_FINAL)/cluster-centroids.csv $(DATA_TMP)/cluster_analytics.pkl $(DATA_TMP)/clusters_xyz.pkl
 	@source env/bin/activate && cd src/results && python build_app_data.py $^ $@
