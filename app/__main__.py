@@ -8,7 +8,7 @@ from dash import Dash
 from dash_bootstrap_components import themes
 
 from src.common import env_var, connect_mongo
-from app.data import load_appdata_local, load_appdata_s3
+from app import load_appdata_local, load_appdata_s3
 from app.layout import build_layout
 from app.callbacks import add_callbacks
 

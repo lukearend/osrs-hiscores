@@ -9,7 +9,7 @@ from PIL import Image
 from numpy.typing import NDArray
 from pandas import DataFrame
 
-from app.data import load_boxplot_layout
+from app import load_boxplot_layout
 from src.common import asset_dir
 
 

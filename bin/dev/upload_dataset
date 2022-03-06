@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
-DATA_FINAL="$SCRIPT_DIR/../data/processed"
+DATA_FINAL="$SCRIPT_DIR/../../data/processed"
 
 aws s3 cp "$DATA_FINAL/cluster-centroids.csv" "s3://$OSRS_S3_BUCKET/dataset/cluster-centroids.csv"
 aws s3 cp "$DATA_FINAL/player-clusters.csv" "s3://$OSRS_S3_BUCKET/dataset/player-clusters.csv"

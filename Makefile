@@ -144,20 +144,20 @@ $(test_data_file):
 
 # Other -------------------------------------------------------------------------------------------
 upload-appdata:
-	@cd bin && ./upload_appdata
+	@cd bin/dev && ./upload_appdata
 
 upload-dataset:
-	@cd bin && ./upload_dataset
+	@cd bin/dev && ./upload_dataset
 
 download: ## Download finalized dataset (player stats and clusters).
 	@source env/bin/activate && \
 	cd bin && ./download_dataset
 
-ec2-%: ## EC2 instance: status, start, stop, connect, setup, dockerd
-	@cd bin && ./ec2_instance $*
+ec2-%: ## EC2 instance: status, start, stop, connect, setup
+	@cd bin/dev && ./ec2_instance $*
 
-mongo-%: ## Mongo instance container: pull, status, start, stop
-	@cd bin && ./mongo_instance $*
+mongo-%: ## Local Mongo instance: pull, status, start, stop
+	@cd bin/dev && ./mongo_local $*
 
 .PHONY: upload-appdata upload-dataset download ec2-% mongo-%
 

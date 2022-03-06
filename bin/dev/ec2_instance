@@ -1,9 +1,7 @@
 #!/usr/bin/env bash
-
-if [ -f "../.env" ]
-then
-  source "../.env"
-fi
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)/../.."
+cd "$ROOT_DIR" || exit
+bin/util/load_dotenv
 
 arg=$1
 
@@ -21,17 +19,10 @@ then
 	ip_addr=$(aws ec2 describe-instances --instance-id "$OSRS_EC2_ID" \
 	          | jq -r '.Reservations[0].Instances[0].PublicIpAddress')
 	ssh -i "$HOME/.aws/$OSRS_EC2_PEM" "ec2-user@$ip_addr"
-elif [ "$arg" == 'setup' ] # run once to install dependencies and setup Docker
+elif [ "$arg" == 'setup' ] # setup script once logged into instance
 then
-	sudo yum upgrade -y
-	sudo yum install git -y
-	sudo yum install docker -y
-	sudo groupadd docker
-	sudo usermod -aG docker
-elif [ "$arg" == 'dockerd' ] # run to start Docker daemon
-then
-  sudo service docker start
+  bin/util/ec2_setup
 else
-  echo "usage: ./ec2_instance [status|start|stop|connect|setup|dockerd]"
+  echo "usage: ./ec2_instance [status|start|stop|connect|setup]"
   exit 1
 fi

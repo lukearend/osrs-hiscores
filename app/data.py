@@ -1,17 +1,12 @@
-from dataclasses import dataclass
 from functools import lru_cache
-import json
-import pickle
-from io import BytesIO
-from pathlib import Path
 from typing import Dict, List, Tuple
 
-import boto3
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-from src.results import AppData, SplitData
+from app import load_boxplot_layout
+from src.results import SplitData
 
 
 def compute_scatterplot_data(splitdata: SplitData, colorstat: str, levelrange: Tuple,
@@ -97,74 +92,3 @@ def ticklabel_skill_inds(splitname: str, skills_in_split: Tuple[str]) -> List[in
     tick_labels = load_boxplot_layout(splitname).ticklabels
     reorder_inds = [skills_in_split.index(s) for s in tick_labels]
     return reorder_inds
-
-
-@dataclass
-class BoxplotLayout:
-    """ Contains layout information for rendering boxplot for a specific split. """
-    ticklabels: List[str]
-    tickxoffset: float
-
-
-@lru_cache()
-def load_boxplot_layout(split: str) -> BoxplotLayout:
-    """
-    Load layout information for boxplot for the given split.
-    :split: name of the split being displayed
-    :return: split-specific object containing layout info for rendering boxplot
-      -
-      - x offset value for the icons used as tick labels
-    """
-    ticklabels_file = Path(__file__).resolve().parent / 'assets' / 'boxplot_ticklabels.json'
-    with open(ticklabels_file, 'r') as f:
-        tick_labels = json.load(f)[split]
-
-    offsets_file = Path(__file__).resolve().parent / 'assets' / 'boxplot_offsets.json'
-    with open(offsets_file, 'r') as f:
-        x_offset = json.load(f)[split]
-
-    return BoxplotLayout(
-        ticklabels=tick_labels,
-        tickxoffset=x_offset
-    )
-
-
-@lru_cache()
-def load_table_layout() -> List[List[str]]:
-    """
-    Load layout for the skills to be displayed in skill tables.
-    :return: list of lists where each inner list gives the skills in a table row
-    """
-    layout_file = Path(__file__).resolve().parent / 'assets' / 'table_layout.json'
-    with open(layout_file, 'r') as f:
-        return json.load(f)
-
-
-def load_appdata_local(file: str = None) -> AppData:
-    """
-    Load the object containing all data needed to drive this Dash application.
-    :param file: load from this local file (optional, otherwise uses default location)
-    :return: application data object built by project source code
-    """
-    if not file:
-        file = Path(__file__).resolve().parents[1] / 'data' / 'processed' / 'app_data.pkl'
-    with open(file, 'rb') as f:
-        app_data: AppData = pickle.load(f)
-        return app_data
-
-
-def load_appdata_s3(bucket: str, obj_key: str) -> AppData:
-    """
-    Load the object containing all data needed to drive this Dash application.
-    :bucket: AWS S3 bucket to download app data from
-    :obj_key: key to object to download within bucket
-    :return: application data object built by project source code
-    """
-    print("downloading app data...", end=' ', flush=True)
-    f = BytesIO()
-    s3 = boto3.client('s3')
-    s3.download_fileobj(bucket, obj_key, f)
-    print("done")
-    f.seek(0)
-    app_data: AppData = pickle.load(f)
-    return app_data
