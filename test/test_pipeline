@@ -23,5 +23,4 @@ python src/results/postprocess_clusters.py "$stats_file" "$clusters_file" "$clus
 python src/results/build_app_data.py "$centroids_file" "$clust_analytics_file" "$clust_xyz_file" "$appdata_file" && \
 bin/mongo_instance pull && \
 bin/mongo_instance start && \
-bin/build_database "$stats_file" "$clusters_file" 'players-test' --url localhost:27017 --drop && \
-bin/mongo_instance stop
+bin/build_database "$stats_file" "$clusters_file" 'players-test' --url localhost:27017 --drop

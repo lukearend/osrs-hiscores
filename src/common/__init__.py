@@ -261,7 +261,8 @@ def connect_mongo(url: str) -> Database:
     :param url: connect to instance running at this URL
     :return: database containing player collection
     """
-    mongo = MongoClient(url, tlsCAFile=certifi.where())
+    is_local = url.startswith("0.0.0.0") or url.startswith("localhost")
+    mongo = MongoClient(url, tlsCAFile=None if is_local else certifi.where())
     db = mongo['osrs-hiscores']
     try:
         db.command('ping')
