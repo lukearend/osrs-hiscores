@@ -35,7 +35,7 @@ def get_scatterplot(df: DataFrame, colorlims: Tuple[int], colorlabel: str,
     ])
     fig.update_traces(hovertemplate=hover_box)
 
-    point_sizes = pointsize * np.sqrt(df['size']) / 10
+    point_sizes = pointsize * np.sqrt(df['size']) * 0.15
     fig.update_traces(
         marker=dict(
             size=point_sizes,

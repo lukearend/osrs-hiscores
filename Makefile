@@ -125,9 +125,9 @@ app-clean:
 
 # Testing -----------------------------------------------------------------------------------------
 
-test: lint unit-test integration-test ## Run tests for processing pipeline.
+test: lint test-units test-pipeline ## Run tests for processing pipeline.
 
-$(TEST_DIR)/data/player-stats-10000.csv:
+$(TEST_DIR)/data/player-stats-1000.csv:
 	@source env/bin/activate && cd test && \
 	python build_stats_small.py $(DATA_FINAL)/player-stats.csv $@
 
@@ -136,14 +136,14 @@ lint: ## Run code style checker.
 	pycodestyle app src --ignore=E501,E302 && \
 	echo "code check passed"
 
-unit-test: $(TEST_DIR)/data/player-stats-10000.csv
+test-units: $(TEST_DIR)/data/player-stats-1000.csv
 	@source env/bin/activate && pytest test -sv
 
-integration-test: $(TEST_DIR)/data/player-stats-10000.csv
+test-pipeline: $(TEST_DIR)/data/player-stats-1000.csv
 	@cd test && ./test_pipeline
 
 
-.PHONY: test lint unit-test integration-test
+.PHONY: test lint test-units test-pipeline
 
 # Other -------------------------------------------------------------------------------------------
 

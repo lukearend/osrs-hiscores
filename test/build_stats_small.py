@@ -24,7 +24,7 @@ def main(in_file: str, out_file: str):
             stats[i, :] = line[1:]
 
     print("subsampling...")
-    nsamples = 10000
+    nsamples = 1000
     rng = default_rng(0)
     randinds = rng.choice(nplayers, nsamples, replace=False)
     usernames = [usernames[i] for i in randinds]

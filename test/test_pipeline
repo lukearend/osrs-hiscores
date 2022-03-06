@@ -2,7 +2,7 @@
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)/.."
 DATA_DIR="$ROOT_DIR/test/data"
 
-stats_file="$DATA_DIR/player-stats-10000.csv"
+stats_file="$DATA_DIR/player-stats-1000.csv"
 centroids_file="$DATA_DIR/cluster-centroids-k=20.csv"
 clusters_file="$DATA_DIR/player-clusters-k=20.csv"
 clust_analytics_file="$DATA_DIR/cluster_analytics-k=20.pkl"
