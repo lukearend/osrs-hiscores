@@ -23,7 +23,7 @@ else:
     debug = True
 
 mongo_url = os.getenv("OSRS_MONGO_URI", "localhost:27017")
-coll_name = os.getenv("OSRS_MONGO_COLLECTION", "players")
+coll_name = os.getenv("OSRS_MONGO_COLL", "players")
 playerdb = connect_mongo(mongo_url)[coll_name]
 
 app = Dash(__name__,

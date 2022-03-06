@@ -119,7 +119,7 @@ app-clean:
 
 build-db:
 	@source env/bin/activate && \
-	bin/build_database $(stats_file) $(clusterids_file) $(player_coll) $(OSRS_MONGO_URI)
+	bin/build_database $(stats_file) $(clusterids_file) $(player_coll) --url $(OSRS_MONGO_URI)
 
 .PHONY: app app-run app-clean build-db
 
