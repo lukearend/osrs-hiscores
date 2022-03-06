@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)/../.."
+cd "$ROOT_DIR" && if [ -f .env ]
+then
+  source .env
+fi
