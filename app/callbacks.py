@@ -52,7 +52,6 @@ def add_callbacks(app: Dash, app_data: AppData, player_coll: Collection) -> Dash
             crosshairs=highlight_xyz
         )
 
-
     @app.callback(
         Output('current-skill', 'options'),
         Output('current-skill', 'value'),
@@ -82,7 +81,6 @@ def add_callbacks(app: Dash, app_data: AppData, player_coll: Collection) -> Dash
 
         return options, new_skill, n_neighbors, min_dist
 
-
     @app.callback(
         Output('level-range', 'min'),
         Output('level-range', 'max'),
@@ -108,7 +106,6 @@ def add_callbacks(app: Dash, app_data: AppData, player_coll: Collection) -> Dash
             return 1, 2277, new_range, marks
 
         return 1, 99, new_range, marks
-
 
     @app.callback(
         Output('query-event', 'data'),
@@ -143,7 +140,6 @@ def add_callbacks(app: Dash, app_data: AppData, player_coll: Collection) -> Dash
             }
         }
 
-
     @app.callback(
         Output('player-query-text', 'children'),
         Input('query-event', 'data'),
@@ -164,7 +160,6 @@ def add_callbacks(app: Dash, app_data: AppData, player_coll: Collection) -> Dash
         cluster_size = app_data.splitdata[split].clusterdata.sizes[cid - 1]
         uniqueness = app_data.splitdata[split].clusterdata.uniqueness[cid - 1]
         return f"Cluster {cid} ({cluster_size} players, {uniqueness:.2%} unique)"
-
 
     @app.callback(
         Output('current-player', 'data'),
@@ -187,7 +182,6 @@ def add_callbacks(app: Dash, app_data: AppData, player_coll: Collection) -> Dash
             'clusterid': response['clusterids'],
             'stats': stats
         }
-
 
     @app.callback(
         Output('current-cluster', 'data'),
@@ -216,7 +210,6 @@ def add_callbacks(app: Dash, app_data: AppData, player_coll: Collection) -> Dash
             'centroid': [None if np.isnan(v) else round(v) for v in centroid]
         }
 
-
     @app.callback(
         Output('player-table-title', 'children'),
         *(Output(f'player-table-{s}', 'children') for s in all_stats),
@@ -228,7 +221,6 @@ def add_callbacks(app: Dash, app_data: AppData, player_coll: Collection) -> Dash
 
         tablevals = [str(v) for v in player_data['stats']]
         return (f"Player '{player_data['username']}'", *tablevals)
-
 
     @app.callback(
         Output('cluster-table-title', 'children'),
@@ -255,14 +247,12 @@ def add_callbacks(app: Dash, app_data: AppData, player_coll: Collection) -> Dash
 
         return (f"Cluster {cluster['id']}", *tablevals)
 
-
     @app.callback(
         Output('box-plot', 'figure'),
         Input('current-split', 'value')
     )
     def redraw_box_plot(split):
         return get_empty_boxplot(split)
-
 
     @app.callback(
         Output('box-plot', 'extendData'),
@@ -287,7 +277,6 @@ def add_callbacks(app: Dash, app_data: AppData, player_coll: Collection) -> Dash
             [0],
             len(plot_data['median'])
         ]
-
 
     @app.callback(
         Output('box-plot-text', 'children'),

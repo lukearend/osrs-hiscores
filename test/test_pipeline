@@ -11,11 +11,8 @@ kmeans_params="$ROOT_DIR/test/kmeans_params-k=20.json"
 umap_params="$ROOT_DIR/test/umap_params-small.json"
 appdata_file="$DATA_DIR/app_data-k=20.pkl"
 
-cd "$ROOT_DIR" && source env/bin/activate && \
-if [ ! -f "$stats_file" ]
-then
-  python test/build_stats_small.py "$ROOT_DIR/data/processed/player-stats.csv" "$stats_file"
-fi && \
+echo -e "testing pipeline...\n"
+if cd "$ROOT_DIR" && source env/bin/activate && \
 python src/models/fit_clusters.py "$stats_file" "$centroids_file" --params $kmeans_params && \
 python src/models/cluster_players.py "$stats_file" "$centroids_file" "$clusters_file" && \
 python src/models/dim_reduce_clusters.py "$centroids_file" "$clust_xyz_file" --params $umap_params && \
@@ -24,3 +21,8 @@ python src/results/build_app_data.py "$centroids_file" "$clust_analytics_file" "
 bin/mongo_instance pull && \
 bin/mongo_instance start && \
 bin/build_database "$stats_file" "$clusters_file" 'players-test' --url localhost:27017 --drop
+then
+  echo -e "\npipeline test passed"
+else
+  echo -e "\npipeline test failed"
+fi
