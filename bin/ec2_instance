@@ -18,7 +18,7 @@ then
 	aws ec2 stop-instances --instance-ids "$OSRS_EC2_ID"
 elif [ "$arg" == 'connect' ] # connect to instance through SSH
 then
-	ip_addr=$(aws ec2 describe-instances --instance-id i-09b786bb4b59c8181 \
+	ip_addr=$(aws ec2 describe-instances --instance-id "$OSRS_EC2_ID" \
 	          | jq -r '.Reservations[0].Instances[0].PublicIpAddress')
 	ssh -i "$HOME/.aws/$OSRS_EC2_PEM" "ec2-user@$ip_addr"
 elif [ "$arg" == 'setup' ] # run once to install dependencies and setup Docker
