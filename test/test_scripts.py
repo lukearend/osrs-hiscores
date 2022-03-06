@@ -7,7 +7,7 @@ fp = FilePaths()
 
 
 def test_build_test_data():
-    assert line_count(fp.stats) - 1 == 10000
+    assert line_count(fp.stats) - 1 == 1000
 
 
 def test_fit_clusters():
