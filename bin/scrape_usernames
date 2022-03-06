@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+if [ -z $1 ] || [ $1 == "help" ]
+then
+  echo "usage: ./scrape_usernames <output-csv-file>"
+  exit 1
+fi
+
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)/.."
+cd "$ROOT_DIR" && source env/bin/activate && \
+until python src/scrape/scrape_usernames.py $1
+do
+  bin/reset_vpn
+done

@@ -11,25 +11,30 @@ DATA_RAW:=$(ROOT_DIR)/data/raw
 DATA_TMP:=$(ROOT_DIR)/data/interim
 DATA_FINAL:=$(ROOT_DIR)/data/processed
 TEST_DIR:=$(ROOT_DIR)/test
+REF_DIR:=$(ROOT_DIR)/ref
 
 .DEFAULT_GOAL := help
 
-all: env scrape cluster dimreduce app # Scrape data, process it and build final application.
-build: env download test dimreduce app # Build final application from downloaded pre-scraped data.
-run:
-	@source env/bin/activate && OSRS_APP_ENV=development python app
+# Top-level ---------------------------------------------------------------------------------------
 
-.PHONY: all build clean run
+all: init download test dimreduce app # Build application data from downloaded, already-scraped data.
+
+everything: init scrape cluster dimreduce app # Scrape data, process it and build final application data.
+
+run: # Run Dash application.
+	@source env/bin/activate && python app
+
+clean: env-clean scrape-clean cluster-clean dimreduce-clean app-clean ## Remove all generated artifacts.
+
+.PHONY: all everything run clean
 
 # Setup -------------------------------------------------------------------------------------------
-env: env-init env-build ## Setup project dependencies.
+init: env mongo-pull ## Setup project dependencies.
 
-env-init:
-	@python3 -m venv env
-
-env-build:
+env:
 	@echo "building virtual environment..."
-	@source env/bin/activate && \
+	@python3 -m venv env && \
+	source env/bin/activate && \
 	pip3 install --upgrade pip && \
 	pip3 install -r requirements.txt && \
 	rm -rf *.egg-info
@@ -37,34 +42,20 @@ env-build:
 env-clean:
 	rm -rf env
 
-clean: env-clean scrape-clean cluster-clean dimreduce-clean app-clean # Remove all generated results.
-
-.PHONY: init env env-clean
+.PHONY: init env env-clean clean
 
 # Data scraping -----------------------------------------------------------------------------------
 scrape: $(DATA_FINAL)/player-stats.csv ## Run data scrape of OSRS hiscores.
 
-$(DATA_RAW)/usernames-raw.csv: # note: depends on ExpressVPN and expresso (CLI to ExpressVPN)
-	@source env/bin/activate && \
-	cd src/scrape && \
-	until python scrape_usernames.py $@ ; do \
-		echo "resetting vpn connection..." ; \
-		loc=`expresso locations | grep -- '- USA - ' | sed 's/^.*(//;s/)$$//' | shuf -n 1` && \
-		expresso connect --change $$loc ; \
-	done
+$(DATA_RAW)/usernames-raw.csv:
+	cd bin && ./scrape_usernames $@
 
 $(DATA_TMP)/usernames.csv: $(DATA_RAW)/usernames-raw.csv
 	@source env/bin/activate && \
 	cd src/scrape && python cleanup_usernames.py $< $@
 
 $(DATA_RAW)/stats-raw.csv: $(DATA_TMP)/usernames.csv
-	@source env/bin/activate && \
-	cd src/scrape && \
-	until python scrape_stats.py $< $@; do \
-		echo "resetting vpn connection..."; \
-		loc=`expresso locations | grep -- '- USA - ' | sed 's/^.*(//;s/)$$//' | shuf -n 1` && \
-		expresso connect --change $$loc; \
-	done
+	cd bin && ./scrape_stats $< $@
 
 $(DATA_FINAL)/player-stats.csv: $(DATA_RAW)/stats-raw.csv
 	@source env/bin/activate && \
@@ -87,12 +78,11 @@ scrape-clobber: # Delete all files from scraping process.
 cluster: $(DATA_FINAL)/player-clusters.csv ## Cluster players according to scraped stats.
 
 $(DATA_FINAL)/cluster-centroids.csv:
-	@source env/bin/activate && \
-	cd src/models && python fit_clusters.py $(DATA_FINAL)/player-stats.csv $@
-
+	@source env/bin/activate && cd src/models && \
+	python fit_clusters.py $(DATA_FINAL)/player-stats.csv $@ \ -p $(REF_DIR)/kmeans_params.json --verbose
 $(DATA_FINAL)/player-clusters.csv: $(DATA_FINAL)/cluster-centroids.csv
-	@source env/bin/activate && \
-	cd src/models && python cluster_players.py $(DATA_FINAL)/player-stats.csv $< $@
+	@source env/bin/activate && cd src/models && \
+	python cluster_players.py $(DATA_FINAL)/player-stats.csv $< $@
 
 cluster-clean:
 	rm -f $(DATA_FINAL)/cluster-centroids.csv
@@ -100,12 +90,16 @@ cluster-clean:
 
 .PHONY: cluster cluster-clean
 
-# Dimensionality reduction ------------------------------------------------------------------------
+# Cluster analytics -------------------------------------------------------------------------------
 dimreduce: $(DATA_TMP)/clusters_xyz.pkl ## Reduce cluster dimensionality for visualization.
 
 $(DATA_TMP)/clusters_xyz.pkl:
-	@source env/bin/activate && \
-	cd src/models && python dim_reduce_clusters.py $(DATA_FINAL)/cluster-centroids.csv $@
+	@source env/bin/activate && cd src/models && \
+	python dim_reduce_clusters.py $(DATA_FINAL)/cluster-centroids.csv $@ -p $(REF_DIR)/umap_params.json
+
+$(DATA_TMP)/cluster_analytics.pkl:
+	@source env/bin/activate && cd src/results && \
+	python postprocess_clusters.py $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/player-clusters.csv $@
 
 dimreduce-clean:
 	rm -f $(DATA_TMP)/clusters_xyz.pkl
@@ -113,86 +107,72 @@ dimreduce-clean:
 .PHONY: dimreduce dimreduce-clean
 
 # Application -------------------------------------------------------------------------------------
-app: $(DATA_FINAL)/app_data.pkl mongo build-db ## Build data file and database for visualization app.
-
-$(DATA_TMP)/cluster_analytics.pkl:
-	@source env/bin/activate && \
-	cd src/results && python postprocess_clusters.py $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/player-clusters.csv $@
+app: $(DATA_FINAL)/app_data.pkl mongo-start build-db ## Build data file and database for visualization app.
 
 $(DATA_FINAL)/app_data.pkl: $(DATA_FINAL)/cluster-centroids.csv $(DATA_TMP)/cluster_analytics.pkl $(DATA_TMP)/clusters_xyz.pkl
-	@source env/bin/activate && \
-	cd src/results && python build_app_data.py $^ $@
+	@source env/bin/activate && cd src/results && python build_app_data.py $^ $@
+
+build-db:
+	@source env/bin/activate && cd bin && \
+	./build_database $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/player-clusters.csv players -u $(OSRS_MONGO_URI)
 
 app-clean:
 	rm -rf volume
 	rm -f $(DATA_FINAL)/app_data.pkl
 
-.PHONY: app app-clean
-
-# Data import/export ------------------------------------------------------------------------------
-
-upload-appdata:
-	cd bin && ./upload_appdata
-
-upload-dataset:
-	cd bin && ./upload_dataset
-
-download: ## Download processed dataset from S3.
-	@source env/bin/activate && \
-	cd bin && OSRS_DATASET_S3BUCKET=osrshiscores ./download_dataset
-
-build-db:
-	@source env/bin/activate && \
-	cd bin && OSRS_MONGO_URI=localhost:27017 \
-	./build_database $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/player-clusters.csv players
-
-mongo: ## Launch a Mongo instance at localhost:27017 using Docker.
-	@docker pull mongo
-	@mkdir -p mongo && \
-	docker stop osrs-hiscores > /dev/null 2>&1 ; \
-	docker run --rm -d --name osrs-hiscores \
-	-v volume:/data/db -p 27017:27017 mongo
-	@echo -n "starting... " && sleep 2 && echo -e "done"
-
-.PHONY: upload-appdata upload-dataset download mongo build-db
+.PHONY: app build-db app-clean
 
 # Testing -----------------------------------------------------------------------------------------
+
+$(TEST_DIR)/data/player-stats-10000.csv:
+	@source env/bin/activate && cd test && \
+	python build_stats_small.py $(DATA_FINAL)/player-stats.csv $@
 
 lint: ## Run code style checker.
 	@source env/bin/activate && \
 	pycodestyle app src --ignore=E501,E302 && \
 	echo "code check passed"
 
-$(TEST_DIR)/data/player-stats-10000.csv: # small subsample of the full dataset for unit testing
-	@source env/bin/activate && \
-	cd test && python build_stats_small.py $(DATA_FINAL)/player-stats.csv $@
-
 test: lint $(TEST_DIR)/data/player-stats-10000.csv ## Run unit tests for data pipeline.
-	@source env/bin/activate && \
-	pytest test -sv
+	@source env/bin/activate && pytest test -sv
 
-ec2-%: ## EC2 instance: status, start, stop, connect, setup, docker-start
-	@cd bin && ./ec2_instance $*
-
-.PHONY: lint test ec2-%
+.PHONY: lint test
 
 # Other -------------------------------------------------------------------------------------------
-vim-binding: # install vim keybindings for notebooks
+
+upload-appdata:
+	@cd bin && ./upload_appdata
+
+upload-dataset:
+	@cd bin && ./upload_dataset
+
+download: ## Download processed dataset from S3.
+	@source env/bin/activate && \
+	cd bin && ./download_dataset
+
+ec2-%: ## EC2 instance: status, start, stop, connect, setup, dockerd
+	@cd bin && ./ec2_instance $*
+
+mongo-%: ## Mongo instance container: pull, status, start, stop
+	@cd bin && ./mongo_instance $*
+
+.PHONY: upload-appdata upload-dataset download ec2-% mongo-%
+
+vim-binding:
 	@source env/bin/activate && \
 	jupyter contrib nbextensions install && \
 	cd $(shell jupyter --data-dir)/nbextensions && \
 	git clone https://github.com/lambdalisue/jupyter-vim-binding vim_binding || \
 	cd vim_binding && git pull
 
-nbextensions: vim-binding # a few nice notebook extensions
+nbextensions: vim-binding
 	jupyter nbextension enable vim_binding/vim_binding
 	jupyter nbextension enable rubberband/main
 	jupyter nbextension enable toggle_all_line_numbers/main
 	jupyter nbextension enable varInspector/main
 
 notebook: nbextensions ## Start a local jupyter notebook server.
-	@source env/bin/activate && \
-	jupyter notebook
+	@source env/bin/activate && jupyter notebook
 
 help: ## Show this help.
 	@grep -E '^[0-9a-zA-Z%_-]+:.*?## .*$$' $(firstword $(MAKEFILE_LIST)) | \

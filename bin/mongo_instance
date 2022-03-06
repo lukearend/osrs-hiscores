@@ -1,0 +1,36 @@
+#!/usr/bin/env bash
+
+if [ -f "../.env" ]
+then
+  source "../.env"
+fi
+
+arg=$1
+
+if [ "$arg" == 'pull' ] # pull docker image for running instance
+then
+  docker pull mongo
+elif [ "$arg" == 'status' ] # check instance status
+then
+  if docker ps -f name=osrs-hiscores | grep osrs-hiscores
+  then
+    echo "instance is running"
+  else
+    echo "instance is not running"
+  fi
+elif [ "$arg" == 'start' ] # start instance
+then
+  if docker run --rm -d --name osrs-hiscores -v volume:/data/db -p 27017:27017 mongo
+  then
+	  echo -n "starting... " && sleep 2 && echo -e "done" # give instance a moment to rev up
+	else
+	  echo "instance is already running"
+	  exit 0
+	fi
+elif [ "$arg" == 'stop' ] # stop instance
+then
+	docker stop osrs-hiscores > /dev/null 2>&1
+else
+  echo "usage: ./mongo_instance [pull|status|start|stop]"
+  exit 1
+fi
