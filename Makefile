@@ -14,7 +14,9 @@ clust_analytics_file:="$(DATA_DIR)/interim/cluster_analytics.pkl"
 
 kmeans_params:="$(ROOT_DIR)/ref/kmeans_params.json"
 umap_params:="$(ROOT_DIR)/ref/umap_params.json"
+
 appdata_file:="$(DATA_DIR)/processed/app_data.pkl"
+player_coll:="players"
 
 # Top-level ---------------------------------------------------------------------------------------
 .DEFAULT_GOAL := help
@@ -111,7 +113,7 @@ app: $(appdata_file) build-db ## Build data file and database for application to
 
 build-db:
 	@source env/bin/activate && \
-	bin/build_database $(stats_file) $(clusterids_file) 'players' --url $(OSRS_MONGO_URI)
+	bin/build_database $(stats_file) $(clusterids_file) $(player_coll) $(OSRS_MONGO_URI)
 
 app-clean:
 	rm -rf volume
