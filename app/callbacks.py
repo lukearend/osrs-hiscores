@@ -3,7 +3,7 @@ from typing import List, Dict
 from dash import Dash, no_update
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
-from pymongo import MongoClient
+from pymongo.database import Collection
 import numpy as np
 
 from app import (
@@ -16,7 +16,7 @@ from src.common import osrs_statnames
 from src.results import AppData
 
 
-def add_callbacks(app: Dash, appdata: AppData, appdb: MongoClient) -> Dash:
+def add_callbacks(app: Dash, app_data: AppData, player_coll: Collection) -> Dash:
     all_stats = osrs_statnames()  # includes total level as first element
 
     @app.callback(
@@ -31,17 +31,17 @@ def add_callbacks(app: Dash, appdata: AppData, appdb: MongoClient) -> Dash:
     )
     def redraw_scatterplot(split: str, skill: str, level_range: List[int],
                            n_neighbors: int, min_dist: float, player_data: Dict, ptsize_name: str):
-        df = compute_scatterplot_data(appdata.splitdata[split], skill, level_range, n_neighbors, min_dist)
+        df = compute_scatterplot_data(app_data.splitdata[split], skill, level_range, n_neighbors, min_dist)
         color_label = get_color_label(skill)
         color_range = get_color_range(skill)
         point_size = get_point_size(ptsize_name)
 
-        axis_limits = appdata.splitdata[split].axlims[n_neighbors][min_dist]
+        axis_limits = app_data.splitdata[split].axlims[n_neighbors][min_dist]
         if player_data is None:
             highlight_xyz = None
         else:
             highlight_cluster = player_data['clusterid'][split]
-            highlight_xyz = appdata.splitdata[split].clusterdata.xyz[n_neighbors][min_dist][highlight_cluster - 1]
+            highlight_xyz = app_data.splitdata[split].clusterdata.xyz[n_neighbors][min_dist][highlight_cluster]
 
         return get_scatterplot(
             df,
@@ -65,7 +65,7 @@ def add_callbacks(app: Dash, appdata: AppData, appdb: MongoClient) -> Dash:
         if not split:
             raise PreventUpdate
 
-        split_skills = appdata.splitdata[split].skills
+        split_skills = app_data.splitdata[split].skills
         split_stats = ['total'] + [s for s in all_stats if s in split_skills]
 
         options = []
@@ -127,7 +127,8 @@ def add_callbacks(app: Dash, appdata: AppData, appdb: MongoClient) -> Dash:
                 'response': 400  # invalid
             }
 
-        response = appdb["players"].find_one({'_id': username.lower()})
+        response = player_coll.find_one({'_id': username.lower()})
+        print(response)
         if not response:
             return {
                 'query': username,
@@ -137,7 +138,7 @@ def add_callbacks(app: Dash, appdata: AppData, appdb: MongoClient) -> Dash:
             'query': username,
             'response': {
                 'username': response['username'],
-                'cluster_ids': response['cluster_ids'],
+                'clusterids': response['clusterids'],
                 'stats': response['stats']
             }
         }
@@ -155,13 +156,13 @@ def add_callbacks(app: Dash, appdata: AppData, appdb: MongoClient) -> Dash:
         if response is None:
             return ''
         elif response == 400:
-            return f"'{query_username[:12]}' is not a valid username"
+            return f"'{query_username}' is not a valid username"
         elif response == 404:
             return f"no player '{query_username}' in dataset"
 
-        cid = response['cluster_ids'][split]
-        cluster_size = appdata.splitdata[split].clusterdata.sizes[cid - 1]
-        uniqueness = appdata.splitdata[split].clusterdata.uniqueness[cid - 1]
+        cid = response['clusterids'][split]
+        cluster_size = app_data.splitdata[split].clusterdata.sizes[cid - 1]
+        uniqueness = app_data.splitdata[split].clusterdata.uniqueness[cid - 1]
         return f"Cluster {cid} ({cluster_size} players, {uniqueness:.2%} unique)"
 
 
@@ -183,7 +184,7 @@ def add_callbacks(app: Dash, appdata: AppData, appdb: MongoClient) -> Dash:
         stats = [None if n == -1 else n for n in response['stats']]
         return {
             'username': response['username'],
-            'clusterid': response['cluster_ids'],
+            'clusterid': response['clusterids'],
             'stats': stats
         }
 
@@ -205,9 +206,9 @@ def add_callbacks(app: Dash, appdata: AppData, appdb: MongoClient) -> Dash:
                 raise PreventUpdate
             clusterid = pt['customdata'][0]
 
-        cluster_size = appdata.splitdata[split].clusterdata.sizes[clusterid]
-        uniqueness = appdata.splitdata[split].clusterdata.uniqueness[clusterid]
-        centroid = appdata.splitdata[split].clusterdata.centroids[clusterid]
+        cluster_size = app_data.splitdata[split].clusterdata.sizes[clusterid]
+        uniqueness = app_data.splitdata[split].clusterdata.uniqueness[clusterid]
+        centroid = app_data.splitdata[split].clusterdata.quartiles[clusterid, 2, :]  # median
         return {
             'id': clusterid,
             'size': cluster_size,
@@ -242,7 +243,7 @@ def add_callbacks(app: Dash, appdata: AppData, appdb: MongoClient) -> Dash:
         tablevals = np.zeros(len(all_stats), dtype='object')
         total_level, *skill_levels = cluster['centroid']
 
-        split_skills = appdata.splitdata[split].skills
+        split_skills = app_data.splitdata[split].skills
         i_start = all_stats.index(split_skills[0])  # find start and end index of skills in
         i_end = i_start + len(split_skills)         # split within list of all stat names
 
@@ -270,7 +271,7 @@ def add_callbacks(app: Dash, appdata: AppData, appdb: MongoClient) -> Dash:
         Input('box-plot', 'figure')
     )
     def update_box_plot(cluster, split, _):
-        split_data = appdata.splitdata[split]
+        split_data = app_data.splitdata[split]
         if cluster is None:
             plot_data = compute_boxplot_data(split, split_data, clusterid=None)
         else:

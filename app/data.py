@@ -31,7 +31,7 @@ def compute_scatterplot_data(splitdata: SplitData, colorstat: str, levelrange: T
     # in the chosen skill is within the selected range.
     statnames = ['total'] + splitdata.skills
     statcol = statnames.index(colorstat)
-    stat_median = splitdata.clusterdata.quartiles[:, 1, statcol]  # median level in stat to color by
+    stat_median = splitdata.clusterdata.quartiles[:, 2, statcol]  # median level in stat to color by
 
     lmin, lmax = levelrange
     show_inds = np.where(np.logical_and(lmin <= stat_median, stat_median <= lmax))[0]

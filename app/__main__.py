@@ -24,8 +24,7 @@ else:
 
 mongo_url = os.getenv("OSRS_MONGO_URI", "localhost:27017")
 coll_name = os.getenv("OSRS_MONGO_COLLECTION", "players")
-db = connect_mongo(mongo_url)
-playerdb = db[coll_name]
+playerdb = connect_mongo(mongo_url)[coll_name]
 
 app = Dash(__name__,
            title="OSRS player clusters",

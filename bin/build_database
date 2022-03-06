@@ -1,9 +1,7 @@
 #!/usr/bin/env python3
 import argparse
-import os
 import sys
 
-from dotenv import find_dotenv, load_dotenv
 from src.common import PlayerData, playerdata_to_mongodoc, connect_mongo
 from tqdm import tqdm
 
@@ -20,15 +18,14 @@ parser.add_argument('clusters_file', metavar='clustersfile', type=str,
                     help="load player cluster IDs from this CSV file")
 parser.add_argument('coll_name', metavar='collection', type=str,
                     help="name of collection to populate")
+parser.add_argument('-u', '--url', dest='url', type=str,
+                    help="use Mongo instance running at this URL")
 parser.add_argument('-d', '--drop', dest='drop', action='store_true',
                     help="if set, will drop collection before writing (default is unset)")
-
 args = parser.parse_args()
-load_dotenv(find_dotenv())
-url = os.getenv("OSRS_MONGO_URI", "localhost:27017")
 
 print("connecting...", end=' ', flush=True)
-db = connect_mongo(url)
+db = connect_mongo(args.url if args.url else "localhost:27017")
 collection = db[args.coll_name]
 print("ok")
 
