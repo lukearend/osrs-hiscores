@@ -101,7 +101,7 @@ analytics-clean:
 
 $(clust_xyz_file):
 	@source env/bin/activate && \
-	python src/modelsdim_reduce_clusters.py $(centroids_file) $@ --params $(umap_params)
+	python src/models/dim_reduce_clusters.py $(centroids_file) $@ --params $(umap_params)
 
 $(clust_analytics_file):
 	@source env/bin/activate && \
