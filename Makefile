@@ -18,9 +18,9 @@ appdata_file:="$(DATA_DIR)/processed/app_data.pkl"
 
 # Top-level ---------------------------------------------------------------------------------------
 .DEFAULT_GOAL := help
-all: init scrape cluster analytics app # Scrape data, process it and build final application data.
-build: init download test analytics app # Build application data from downloaded, already-scraped data.
-run: app-run # Run main application.
+all: init scrape cluster analytics app  ## Scrape data, process it and build final application data.
+build: init download test analytics app ## Build application data from downloaded, already-scraped data.
+run: app-run                            ## Run main application.
 	@source env/bin/activate && python app
 clean: env-clean scrape-clean cluster-clean analytics-clean app-clean ## Remove all generated artifacts.
 .PHONY: all build run clean
@@ -91,7 +91,7 @@ $(clusterids_file): $(centroids_file)
 	@source env/bin/activate && python sr/models/cluster_players.py $(stats_file) $< $@
 
 # Cluster analytics -------------------------------------------------------------------------------
-analytics: clust_xyz_file clust_analytics_file ## Reduce dimensionality and run cluster analysis.
+analytics: clust_xyz_file clust_analytics_file ## Reduce dimensionality and analyze clusters.
 
 analytics-clean:
 	rm -f $(cluster_xyz_file)
@@ -125,11 +125,7 @@ $(appdata_file): $(centroids_file) $(clust_analytics_file) $(clust_xyz_file)
 # Testing -----------------------------------------------------------------------------------------
 test_data_file:=$(ROOT_DIR)/test/data/player-stats-tiny.csv
 
-test: $(test_data_file) lint test-units test-pipeline ## Run tests for processing pipeline.
-
-lint: ## Run code style checker.
-	@source env/bin/activate && pycodestyle app src --ignore=E501,E302 && \
-	echo "code check passed"
+test: $(test_data_file) lint test-units test-pipeline ## Run tests for data processing pipeline.
 
 test-units: $(test_data_file)
 	@source env/bin/activate && pytest test -sv
@@ -149,7 +145,7 @@ upload-appdata:
 upload-dataset:
 	@cd bin && ./upload_dataset
 
-download: ## Download finalized dataset from S3.
+download: ## Download finalized dataset (player stats and clusters).
 	@source env/bin/activate && \
 	cd bin && ./download_dataset
 
@@ -176,6 +172,10 @@ nbextensions: vim-binding
 
 notebook: nbextensions ## Start a local jupyter notebook server.
 	@source env/bin/activate && jupyter notebook
+
+lint: ## Run code style checker.
+	@source env/bin/activate && pycodestyle app src --ignore=E501,E302 && \
+	echo "code check passed"
 
 help: ## Show this help.
 	@grep -E '^[0-9a-zA-Z%_-]+:.*?## .*$$' $(firstword $(MAKEFILE_LIST)) | \
