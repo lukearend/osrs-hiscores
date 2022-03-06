@@ -52,7 +52,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="""Reduce dimensionality of cluster centroids to 3D.""")
     parser.add_argument('infile', type=str, help="load clusters centroids from this CSV file")
     parser.add_argument('outfile', type=str, help="serialize results to this .pkl file")
-    parser.add_argument('paramsfile', type=str,
+    parser.add_argument('-p', '--params', type=str, required=False,
                         help="load UMAP parameters from this file (if not provided, uses default location")
     args = parser.parse_args()
-    main(args.statsfile, args.centroidsfile, args.paramsfile)
+    main(args.infile, args.outfile, args.params)

@@ -24,7 +24,7 @@ def kmeans_params(file: str = None) -> Dict[str, int]:
 
 
 def umap_params(file: str = None) -> Dict[str, Dict]:
-    """ Load parameters for running UMAP
+    """ Load parameters for running UMAP.
     :param file: load from this local file (optional, otherwise uses default location)
     :return: mapping from split names to UMAP parameter sets
     """

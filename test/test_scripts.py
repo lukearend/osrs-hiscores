@@ -39,7 +39,7 @@ def test_postprocess_clusters():
         analytics = analytics_per_split[split.name]
         assert len(analytics.sizes) == nclusters
         assert len(analytics.uniqueness) == nclusters
-        assert analytics.quartiles.shape == (nclusters, 5, split.nskills)
+        assert analytics.quartiles.shape == (nclusters, 5, 1 + split.nskills)  # includes total as first skill col
 
 
 def test_build_app_data():
@@ -57,6 +57,6 @@ def test_build_app_data():
         cdata = splitdata.clusterdata
         assert len(cdata.sizes) == nclusters
         assert len(cdata.uniqueness) == nclusters
-        assert cdata.quartiles.shape == (nclusters, 5, split.nskills)
+        assert cdata.quartiles.shape == (nclusters, 5, 1 + split.nskills)
         assert cdata.centroids.shape == (nclusters, split.nskills)
         # assert cdata.xyz.shape == (nclusters, 3)  # TODO: uncomment when umap params frozen

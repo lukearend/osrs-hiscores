@@ -7,18 +7,18 @@ fi
 
 arg=$1
 
-if [ "$arg" == 'connect' ] # connect to instance through SSH
+if [ "$arg" == 'status' ] # check instance status
 then
-	ssh -i ~/.aws/$OSRS_EC2_PEM "ec2-user@$OSRS_EC2_IP"
+	aws ec2 describe-instance-status --instance-ids "$OSRS_EC2_ID"
 elif [ "$arg" == 'start' ] # start instance
 then
 	aws ec2 start-instances --instance-ids "$OSRS_EC2_ID"
 elif [ "$arg" == 'stop' ] # stop instance
 then
 	aws ec2 stop-instances --instance-ids "$OSRS_EC2_ID"
-elif [ "$arg" == 'status' ] # check instance status
+elif [ "$arg" == 'connect' ] # connect to instance through SSH
 then
-	aws ec2 describe-instance-status --instance-ids "$OSRS_EC2_ID"
+	ssh -i ~/.aws/$OSRS_EC2_PEM "ec2-user@$OSRS_EC2_IP"
 elif [ "$arg" == 'setup' ] # run once to install dependencies and setup Docker
 then
 	sudo yum upgrade -y
@@ -26,9 +26,10 @@ then
 	sudo yum install docker -y
 	sudo groupadd docker
 	sudo usermod -aG docker
-elif [ "$arg" == 'docker-start' ] # run to start Docker daemon
+elif [ "$arg" == 'dockerd' ] # run to start Docker daemon
 then
   sudo service docker start
 else
-  echo "unrecognized argument '$arg'"
+  echo "usage: ./ec2_instance [status|start|stop|connect|setup|dockerd]"
+  exit 1
 fi

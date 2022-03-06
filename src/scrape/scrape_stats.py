@@ -79,7 +79,7 @@ def main(in_file: str, out_file: str):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Scrape stats for the top 2 million OSRS players.""")
     parser.add_argument('infile', type=str, help="read usernames to scrape from this CSV file")
-    parser.add_argument('outfile', type=str, help="output scraped usernames to this CSV file")
+    parser.add_argument('outfile', type=str, help="dump scraped usernames to this CSV file")
     args = parser.parse_args()
     done = main(args.infile, args.outfile)
     if done:

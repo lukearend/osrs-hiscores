@@ -65,7 +65,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="""Build serialized data file to be used by main application.""")
     parser.add_argument('centroidsfile', type=str, help="load cluster centroids from this CSV file")
     parser.add_argument('clustersfile', type=str, help="load cluster analytics from this .pkl file")
-    parser.add_argument('xyzfile', type=str, help="load cluster dimensionality reduction results from this .pkl file")
+    parser.add_argument('xyzfile', type=str, help="load results of dimensionality reduction from this .pkl file")
     parser.add_argument('outfile', type=str, help="serialize app data to this .pkl file")
     args = parser.parse_args()
     main(args.centroidsfile, args.clustersfile, args.xyzfile, args.outfile)
