@@ -2,11 +2,11 @@
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)/.."
 DATA_DIR="$ROOT_DIR/test/data"
 
-stats_file="$DATA_DIR/player-stats-1000.csv"
+stats_file="$DATA_DIR/player-stats-tiny.csv"
 centroids_file="$DATA_DIR/cluster-centroids-k=20.csv"
-clusters_file="$DATA_DIR/player-clusters-k=20.csv"
-clust_analytics_file="$DATA_DIR/cluster_analytics-k=20.pkl"
+clusterids_file="$DATA_DIR/player-clusters-k=20.csv"
 clust_xyz_file="$DATA_DIR/clusters_xyz-k=20.pkl"
+clust_analytics_file="$DATA_DIR/cluster_analytics-k=20.pkl"
 kmeans_params="$ROOT_DIR/test/kmeans_params-k=20.json"
 umap_params="$ROOT_DIR/test/umap_params-small.json"
 appdata_file="$DATA_DIR/app_data-k=20.pkl"
@@ -14,13 +14,13 @@ appdata_file="$DATA_DIR/app_data-k=20.pkl"
 echo -e "testing pipeline...\n"
 if cd "$ROOT_DIR" && source env/bin/activate && \
 python src/models/fit_clusters.py "$stats_file" "$centroids_file" --params $kmeans_params && \
-python src/models/cluster_players.py "$stats_file" "$centroids_file" "$clusters_file" && \
+python src/models/cluster_players.py "$stats_file" "$centroids_file" "$clusterids_file" && \
 python src/models/dim_reduce_clusters.py "$centroids_file" "$clust_xyz_file" --params $umap_params && \
-python src/results/postprocess_clusters.py "$stats_file" "$clusters_file" "$clust_analytics_file" && \
+python src/results/postprocess_clusters.py "$stats_file" "$clusterids_file" "$clust_analytics_file" && \
 python src/results/build_app_data.py "$centroids_file" "$clust_analytics_file" "$clust_xyz_file" "$appdata_file" && \
 bin/mongo_instance pull && \
 bin/mongo_instance start && \
-bin/build_database "$stats_file" "$clusters_file" 'players-test' --url localhost:27017 --drop
+bin/build_database "$stats_file" "$clusterids_file" 'players-test' --url localhost:27017 --drop
 then
   echo -e "\npipeline test passed"
 else

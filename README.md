@@ -71,12 +71,18 @@ The stages of the data pipeline are driven by a [Makefile](https://opensource.co
 2. `make scrape`: scrape data from the official OSRS hiscores. The full scraping process takes about 18 hours.
 3. `make cluster`: cluster players into similar groups according to their stats. The clustering algorithm used is the [faiss](https://github.com/facebookresearch/faiss) implementation of [k-means](https://en.wikipedia.org/wiki/K-means_clustering). The full clustering process (for 2 million players and several thousand clusters) takes about 4 hours on an Apple M1 processor.
 4. `make dimreduce`: project cluster centroids from high-dimensional space to 3D for visualization purposes. This dimensionality reduction is done with the [UMAP](https://umap-learn.readthedocs.io/en/latest/index.html#) algorithm.
-5. `make app`: build application data and database from analytic results. Expects a [MongoDB](https://www.mongodb.com/) instance running at `localhost:27017` or the URL specified by the environment variable `OSRS_MONGO_URI`. A Mongo instance can be started at `localhost:27017` using the target `make mongo` (requires [Docker](https://www.docker.com/)).
+5. `make app`: build application data and database from analytic results. Expects a [MongoDB](https://www.mongodb.com/) instance running at `localhost:27017` or the URL specified by the environment variable `OSRS_MONGO_URI`. A Mongo instance can be started at `localhost:27017` using the target `make mongo` (requires Docker).
 
-Steps 2 and 3 can be skipped by simply running `make download`, which fetches the final dataset from an S3 bucket. This requires installation of the [AWS CLI](https://aws.amazon.com/cli/).
+Steps 2 and 3 can be skipped by simply running `make download`, which fetches the final dataset from an S3 bucket. This requires installation of the .
 
 All steps can be run in one shot via `make build` (which uses the S3 download) or `make all` (which actually scrapes and clusters the data from scratch).
 
 To launch the application, run `make run` and visit the URL `localhost:8050` in a web browser. The application expects the environment variable `OSRS_MONGO_URI` (or `localhost:27017` if unset) to point to the database populated during `make app`.
 
-This project expects Python version 3.7 or greater. The scraping scripts make use of [expresso](https://github.com/sttz/expresso) (a CLI to [ExpressVPN](https://www.expressvpn.com/)) to occasionally reset the proxied IP address to avoid request throttling.
+Dependencies
+------------
+
+* Python version 3.7 or greater
+* [Docker](https://www.docker.com/) is required to run the MongoDB instance that is used by the final visualization application.
+* The scraping scripts make use of [expresso](https://github.com/sttz/expresso) (a CLI to [ExpressVPN](https://www.expressvpn.com/)) to use a proxied IP to avoid request throttling.
+* One utility in `bin` requires [jq](https://stedolan.github.io/jq/). Several others make use of the [AWS CLI](https://aws.amazon.com/cli/).

@@ -1,32 +1,29 @@
 export SHELL:=/bin/bash
-export AMBER_LICENSE_ID:=luke-dev
-
 ifneq (,$(wildcard ./.env))
 	include .env
 	export
 endif
-
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-DATA_RAW:=$(ROOT_DIR)/data/raw
-DATA_TMP:=$(ROOT_DIR)/data/interim
-DATA_FINAL:=$(ROOT_DIR)/data/processed
-TEST_DIR:=$(ROOT_DIR)/test
-REF_DIR:=$(ROOT_DIR)/ref
+DATA_DIR:=$(ROOT_DIR)/data
 
-.DEFAULT_GOAL := help
+stats_file:="$(DATA_DIR)/processed/player-stats.csv"
+centroids_file:="$(DATA_DIR)/processed/cluster-centroids.csv"
+clusterids_file:="$(DATA_DIR)/processed/player-clusters.csv"
+clust_xyz_file:="$(DATA_DIR)/interim/clusters_xyz.pkl"
+clust_analytics_file:="$(DATA_DIR)/interim/cluster_analytics.pkl"
+
+kmeans_params:="$(ROOT_DIR)/ref/kmeans_params.json"
+umap_params:="$(ROOT_DIR)/ref/umap_params.json"
+appdata_file:="$(DATA_DIR)/processed/app_data.pkl"
 
 # Top-level ---------------------------------------------------------------------------------------
-
-all: init scrape cluster dimreduce app # Scrape data, process it and build final application data.
-
-build: init download test dimreduce app # Build application data from downloaded, already-scraped data.
-
-run: # Run Dash application.
+.DEFAULT_GOAL := help
+all: init scrape cluster analytics app # Scrape data, process it and build final application data.
+build: init download test analytics app # Build application data from downloaded, already-scraped data.
+run: app-run # Run main application.
 	@source env/bin/activate && python app
-
-clean: env-clean scrape-clean cluster-clean dimreduce-clean app-clean ## Remove all generated artifacts.
-
-.PHONY: all everything run clean
+clean: env-clean scrape-clean cluster-clean analytics-clean app-clean ## Remove all generated artifacts.
+.PHONY: all build run clean
 
 # Setup -------------------------------------------------------------------------------------------
 init: env mongo-pull mongo-start ## Setup project dependencies.
@@ -42,118 +39,117 @@ env:
 env-clean:
 	rm -rf env
 
-.PHONY: init env env-clean clean
+.PHONY: init env env-clean
 
 # Data scraping -----------------------------------------------------------------------------------
-scrape: $(DATA_FINAL)/player-stats.csv ## Run data scrape of OSRS hiscores.
+scrape: $(stats_file) ## Run data scrape of OSRS hiscores.
 
-$(DATA_RAW)/usernames-raw.csv:
-	cd bin && ./scrape_usernames $@
-
-$(DATA_TMP)/usernames.csv: $(DATA_RAW)/usernames-raw.csv
-	@source env/bin/activate && \
-	cd src/scrape && python cleanup_usernames.py $< $@
-
-$(DATA_RAW)/stats-raw.csv: $(DATA_TMP)/usernames.csv
-	cd bin && ./scrape_stats $< $@
-
-$(DATA_FINAL)/player-stats.csv: $(DATA_RAW)/stats-raw.csv
-	@source env/bin/activate && \
-	cd src/scrape && python cleanup_stats.py $(DATA_RAW)/stats-raw.csv $@
+raw_usernames_file:="$(DATA_DIR)/raw/usernames-raw.csv"
+usernames_file:="$(DATA_DIR)/interim/usernames.csv"
+raw_stats_file:="$(DATA_DIR)/raw/stats-raw.csv"
 
 scrape-clean: # Keep raw dump files.
-	rm -f $(DATA_TMP)/usernames.csv
-	rm -f $(DATA_FINAL)/player-stats.csv
+	rm -f $(usernames_file)
+	rm -f $(stats_file)
 
 scrape-clobber: # Delete all files from scraping process.
-	rm -f $(DATA_RAW)/usernames-raw.csv
-	rm -f $(DATA_TMP)/usernames.csv
-	rm -f $(DATA_RAW)/stats-raw.csv
-	rm -f $(DATA_FINAL)/player-stats.csv
+	rm -f $(raw_usernames_file)
+	rm -f $(usernames_file)
+	rm -f $(raw_stats_file)
+	rm -f $(stats_file)
 
 .PHONY: scrape scrape-clean scrape-clobber
-.PRECIOUS: $(DATA_RAW)/usernames-raw.csv $(DATA_RAW)/stats-raw.csv
 
-# Clustering --------------------------------------------------------------------------------------
-cluster: $(DATA_FINAL)/player-clusters.csv ## Cluster players according to scraped stats.
+$(raw_usernames_file):
+	bin/scrape_usernames $@
 
-$(DATA_FINAL)/cluster-centroids.csv:
-	@source env/bin/activate && cd src/models && \
-	python fit_clusters.py $(DATA_FINAL)/player-stats.csv $@ -p $(REF_DIR)/kmeans_params.json --verbose
+$(usernames_file): $(raw_usernames_file)
+	@source env/bin/activate && python src/scrape/cleanup_usernames.py $< $@
 
-$(DATA_FINAL)/player-clusters.csv: $(DATA_FINAL)/cluster-centroids.csv
-	@source env/bin/activate && cd src/models && \
-	python cluster_players.py $(DATA_FINAL)/player-stats.csv $< $@
+$(raw_stats_file): $(usernames_file)
+	bin/scrape_stats $< $@
+
+$(stats_file): $(raw_stats_file)
+	@source env/bin/activate && python src/scrape/cleanup_stats.py $< $@
+
+.PRECIOUS: $(raw_usernames_file) $(raw_stats_file)
+
+# Player clustering -------------------------------------------------------------------------------
+cluster: clusterids_file ## Cluster players according to scraped stats.
 
 cluster-clean:
-	rm -f $(DATA_FINAL)/cluster-centroids.csv
-	rm -f $(DATA_FINAL)/player-clusters.csv
+	rm -f $(centroids_file)
+	rm -f $(clusterids_file)
 
 .PHONY: cluster cluster-clean
 
+$(centroids_file):
+	@source env/bin/activate && python src/models/fit_clusters.py $(stats_file) $@ \
+	--params $(kmeans_params) --verbose
+
+$(clusterids_file): $(centroids_file)
+	@source env/bin/activate && python sr/models/cluster_players.py $(stats_file) $< $@
+
 # Cluster analytics -------------------------------------------------------------------------------
-dimreduce: $(DATA_TMP)/clusters_xyz.pkl ## Reduce cluster dimensionality for visualization.
+analytics: clust_xyz_file clust_analytics_file ## Reduce dimensionality and run cluster analysis.
 
-$(DATA_TMP)/clusters_xyz.pkl:
-	@source env/bin/activate && cd src/models && \
-	python dim_reduce_clusters.py $(DATA_FINAL)/cluster-centroids.csv $@ -p $(REF_DIR)/umap_params.json
+analytics-clean:
+	rm -f $(cluster_xyz_file)
 
-$(DATA_TMP)/cluster_analytics.pkl:
-	@source env/bin/activate && cd src/results && \
-	python postprocess_clusters.py $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/player-clusters.csv $@
+.PHONY: analytics analytics-clean
 
-dimreduce-clean:
-	rm -f $(DATA_TMP)/clusters_xyz.pkl
+$(clust_xyz_file):
+	@source env/bin/activate && \
+	python src/modelsdim_reduce_clusters.py $(centroids_file) $@ --params $(umap_params)
 
-.PHONY: dimreduce dimreduce-clean
+$(clust_analytics_file):
+	@source env/bin/activate && \
+	python src/results/postprocess_clusters.py $(stats_file) $(clusterids_file) $@
 
 # Application -------------------------------------------------------------------------------------
-app: $(DATA_FINAL)/app_data.pkl build-db ## Build data file and database for visualization app.
-
-$(DATA_FINAL)/app_data.pkl: $(DATA_FINAL)/cluster-centroids.csv $(DATA_TMP)/cluster_analytics.pkl $(DATA_TMP)/clusters_xyz.pkl
-	@source env/bin/activate && cd src/results && python build_app_data.py $^ $@
+app: $(appdata_file) build-db ## Build data file and database for application to use.
 
 build-db:
-	@source env/bin/activate && cd bin && \
-	./build_database $(DATA_FINAL)/player-stats.csv $(DATA_FINAL)/player-clusters.csv players -u $(OSRS_MONGO_URI)
+	@source env/bin/activate && \
+	bin/build_database $(stats_file) $(clusterids_file) 'players' --url $(OSRS_MONGO_URI)
 
 app-clean:
 	rm -rf volume
-	rm -f $(DATA_FINAL)/app_data.pkl
+	rm -f $(appdata_file)
 
 .PHONY: app build-db app-clean
 
+$(appdata_file): $(centroids_file) $(clust_analytics_file) $(clust_xyz_file)
+	@source env/bin/activate && python src/results/build_app_data.py $^ $@
+
 # Testing -----------------------------------------------------------------------------------------
+test_data_file:=$(ROOT_DIR)/test/data/player-stats-tiny.csv
 
-test: lint test-units test-pipeline ## Run tests for processing pipeline.
-
-$(TEST_DIR)/data/player-stats-1000.csv:
-	@source env/bin/activate && cd test && \
-	python build_stats_small.py $(DATA_FINAL)/player-stats.csv $@
+test: $(test_data_file) lint test-units test-pipeline ## Run tests for processing pipeline.
 
 lint: ## Run code style checker.
-	@source env/bin/activate && \
-	pycodestyle app src --ignore=E501,E302 && \
+	@source env/bin/activate && pycodestyle app src --ignore=E501,E302 && \
 	echo "code check passed"
 
-test-units: $(TEST_DIR)/data/player-stats-1000.csv
+test-units: $(test_data_file)
 	@source env/bin/activate && pytest test -sv
 
-test-pipeline: $(TEST_DIR)/data/player-stats-1000.csv
+test-pipeline:
 	@cd test && ./test_pipeline
-
 
 .PHONY: test lint test-units test-pipeline
 
-# Other -------------------------------------------------------------------------------------------
+$(test_data_file):
+	@source env/bin/activate && python test/build_stats_small.py $(stats_file) $@
 
+# Other -------------------------------------------------------------------------------------------
 upload-appdata:
 	@cd bin && ./upload_appdata
 
 upload-dataset:
 	@cd bin && ./upload_dataset
 
-download: ## Download processed dataset from S3.
+download: ## Download finalized dataset from S3.
 	@source env/bin/activate && \
 	cd bin && ./download_dataset
 
