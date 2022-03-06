@@ -22,8 +22,7 @@ player_coll:="players"
 .DEFAULT_GOAL := help
 all: init scrape cluster analytics app  ## Scrape data, process it and build final application data.
 build: init download test analytics app ## Build application data from downloaded, already-scraped data.
-run: app-run                            ## Run main application.
-	@source env/bin/activate && python app
+run: mongo-pull mongo-start app-run     ## Run main application.
 clean: env-clean scrape-clean cluster-clean analytics-clean app-clean ## Remove all generated artifacts.
 .PHONY: all build run clean
 
@@ -77,7 +76,7 @@ $(stats_file): $(raw_stats_file)
 .PRECIOUS: $(raw_usernames_file) $(raw_stats_file)
 
 # Player clustering -------------------------------------------------------------------------------
-cluster: clusterids_file ## Cluster players according to scraped stats.
+cluster: $(centroids_file) $(clusterids_file) ## Cluster players according to scraped stats.
 
 cluster-clean:
 	rm -f $(centroids_file)
@@ -93,7 +92,7 @@ $(clusterids_file): $(centroids_file)
 	@source env/bin/activate && python sr/models/cluster_players.py $(stats_file) $< $@
 
 # Cluster analytics -------------------------------------------------------------------------------
-analytics: clust_xyz_file clust_analytics_file ## Reduce dimensionality and analyze clusters.
+analytics: $(clust_xyz_file) $(clust_analytics_file) ## Reduce dimensionality and analyze clusters.
 
 analytics-clean:
 	rm -f $(cluster_xyz_file)
@@ -111,15 +110,18 @@ $(clust_analytics_file):
 # Application -------------------------------------------------------------------------------------
 app: $(appdata_file) build-db ## Build data file and database for application to use.
 
-build-db:
-	@source env/bin/activate && \
-	bin/build_database $(stats_file) $(clusterids_file) $(player_coll) $(OSRS_MONGO_URI)
+app-run:
+	@source env/bin/activate && python app
 
 app-clean:
 	rm -rf volume
 	rm -f $(appdata_file)
 
-.PHONY: app build-db app-clean
+build-db:
+	@source env/bin/activate && \
+	bin/build_database $(stats_file) $(clusterids_file) $(player_coll) $(OSRS_MONGO_URI)
+
+.PHONY: app app-run app-clean build-db
 
 $(appdata_file): $(centroids_file) $(clust_analytics_file) $(clust_xyz_file)
 	@source env/bin/activate && python src/results/build_app_data.py $^ $@
