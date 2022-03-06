@@ -2,6 +2,10 @@
 sudo yum upgrade -y
 sudo yum install git -y
 sudo yum install docker -y
+
 sudo groupadd docker
 sudo usermod -aG docker ec2-user
+newgrp docker
+
 sudo service docker start
+docker run hello-world
