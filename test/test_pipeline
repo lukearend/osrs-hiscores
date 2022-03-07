@@ -18,8 +18,8 @@ python src/models/cluster_players.py "$stats_file" "$centroids_file" "$clusterid
 python src/models/dim_reduce_clusters.py "$centroids_file" "$clust_xyz_file" --params $umap_params && \
 python src/results/postprocess_clusters.py "$stats_file" "$clusterids_file" "$clust_analytics_file" && \
 python src/results/build_app_data.py "$centroids_file" "$clust_analytics_file" "$clust_xyz_file" "$appdata_file" && \
-bin/mongo_local pull && \
-bin/mongo_local start && \
+bin/dev/mongo_local pull && \
+bin/dev/mongo_local start && \
 bin/build_database "$stats_file" "$clusterids_file" 'players-test' --url localhost:27017 --drop
 then
   echo -e "\npipeline test passed"
