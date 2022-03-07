@@ -96,7 +96,7 @@ $(clusterids_file): $(centroids_file)
 analytics: $(clust_xyz_file) $(clust_analytics_file) ## Reduce dimensionality and analyze clusters.
 
 analytics-clean:
-	rm -f $(cluster_xyz_file)
+	rm -f $(clust_xyz_file)
 
 .PHONY: analytics analytics-clean
 
