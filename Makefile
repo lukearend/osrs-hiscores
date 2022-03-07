@@ -24,6 +24,7 @@ all: init scrape cluster analytics app  ## Scrape data, process it and build fin
 build: init download test analytics app ## Build application data from downloaded, already-scraped data.
 run: mongo-pull mongo-start app-run     ## Run main application.
 clean: env-clean scrape-clean cluster-clean analytics-clean app-clean ## Remove all generated artifacts.
+clobber: env-clean scrape-clobber cluster-clean analytics-clean app-clean # Reset repo to initial state.
 .PHONY: all build run clean
 
 # Setup -------------------------------------------------------------------------------------------
