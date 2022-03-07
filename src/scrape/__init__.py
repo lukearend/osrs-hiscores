@@ -1,5 +1,5 @@
 import asyncio
-from typing import Callable, Iterable, Any
+from typing import Callable, Iterable, Any, Dict
 
 import aiohttp
 from bs4 import BeautifulSoup
@@ -18,7 +18,14 @@ class UserNotFound(Exception):
     pass
 
 
-def parse_page(page_html):
+def parse_page(page_html: str) -> Dict[str, Any]:
+    """
+    Parse username info out of the raw HTML for a front page of the OSRS hiscores.
+
+    :param page_html: raw HTML for an OSRS hiscores page
+    :return: dictionary mapping the rank for each player found on the page
+             to username and total level for that player.
+    """
     soup = BeautifulSoup(page_html, 'html.parser')
     try:
         page_body = soup.html.body
@@ -44,13 +51,21 @@ def parse_page(page_html):
 
         result[rank] = {
             'username': username,
-            'total_level': total_level
+            'totlevel': total_level
         }
 
     return result
 
 
-async def request_page(session, page_num, max_attempts=5):
+async def request_page(session, page_num, max_attempts=5) -> str:
+    """
+    Fetch a front page of the OSRS hiscores by page number.
+
+    :param session: HTTP client session
+    :param page_num: integer between 1 and 80000
+    :param max_attempts: number of times to try before giving up
+    :return: requested page as raw HTML
+    """
     for _ in range(max_attempts):
         async with session.get(
             'https://secure.runescape.com/m=hiscore_oldschool/overall',
@@ -72,7 +87,15 @@ async def request_page(session, page_num, max_attempts=5):
         raise HiscoresApiError("could not get page after {} tries: {}".format(max_attempts, error))
 
 
-async def request_stats(session, username, max_attempts=5):
+async def request_stats(session, username, max_attempts=5) -> str:
+    """
+    Request stats for a player from the OSRS hiscores CSV API.
+
+    :param session: HTTP client session
+    :param username: username for player to fetch
+    :param max_attempts: number of times to try before giving up
+    :return: player stats as CSV
+    """
     for _ in range(max_attempts):
         async with session.get(
             'http://services.runescape.com/m=hiscore_oldschool/index_lite.ws',
@@ -89,9 +112,11 @@ async def request_stats(session, username, max_attempts=5):
             elif response.status != 200:
                 continue
 
+            # Stats arrive as CSV series of rank,level,xp for each skill.
+            # Order of skills is same as given in osrs_skills.json reference file.
             csv = await response.text()
             csv = csv.strip().replace('\n', ',')
-            csv = f'{username},{csv}'
+            csv = f"{username},{csv}"
             return csv
 
     else:
@@ -99,9 +124,10 @@ async def request_stats(session, username, max_attempts=5):
         raise HiscoresApiError(f"could not get page after {max_attempts} tries: {error}")
 
 
-async def run_scrape_workers(workerfn: Callable, jobs: Iterable[Any], out_file: str, pbar: tqdm, nworkers: int):
+async def run_workers(workerfn: Callable, jobs: Iterable[Any], out_file: str, pbar: tqdm, nworkers: int):
     """
     Launch a set of workers to perform data scraping.
+
     :param workerfn: Each worker invokes this function to process jobs.
     :param jobs: An iterable of jobs to be processed by workers.
     :param out_file: CSV file to which results are appended.

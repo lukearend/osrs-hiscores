@@ -1,0 +1,24 @@
+{
+    "names": ["first5", "last10"],
+    "skills": {
+        "first5": [
+            "attack",
+            "defence",
+            "strength",
+            "hitpoints",
+            "ranged"
+        ],
+        "last10": [
+            "smithing",
+            "mining",
+            "herblore",
+            "agility",
+            "thieving",
+            "slayer",
+            "farming",
+            "runecraft",
+            "hunter",
+            "construction"
+        ]
+    }
+}

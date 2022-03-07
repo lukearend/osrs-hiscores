@@ -14,7 +14,7 @@ import sys
 
 from tqdm import tqdm
 
-from src.scrape import UserNotFound, HiscoresApiError, request_stats, run_scrape_workers
+from src.scrape import UserNotFound, HiscoresApiError, request_stats, run_workers
 
 
 async def process_stats(session, job_queue, out_file, file_lock, pbar):
@@ -71,7 +71,7 @@ def main(in_file: str, out_file: str):
     with tqdm(total=nplayers, initial=nplayers - len(names_to_scrape)) as pbar:
         loop = asyncio.get_event_loop()
         loop.run_until_complete(
-            run_scrape_workers(process_stats, names_to_scrape, out_file, pbar, nworkers=36)
+            run_workers(process_stats, names_to_scrape, out_file, pbar, nworkers=36)
         )
         return False
 

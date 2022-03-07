@@ -38,7 +38,7 @@ def main(stats_file: str, clusters_file: str, out_file: str):
         print(f"computing quartiles for split '{split.name}'...")
         nclusters = len(cluster_sizes[split.name])
         quartiles = np.zeros((nclusters, 5, 1 + split.nskills))
-        player_vectors = split_dataset(stats, split)
+        player_vectors = split_dataset(stats, split.name)
 
         for cid in tqdm(range(nclusters)):
             id_locs = clusterids[:, s] == cid  # inds for players with this cluster ID

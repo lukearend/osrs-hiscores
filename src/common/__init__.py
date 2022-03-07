@@ -63,17 +63,39 @@ class DataSplit:
 
 
 @lru_cache()
-def skill_splits() -> List[DataSplit]:
-    """
-    Load metadata about the three splits of the dataset used throughout:
-    1) "all": player vector includes all skills
-    2) "cb": player vector includes combat skills only
-    3) "noncb": player vector includes non-combat skills only
+def splitinfo(splitname: str) -> DataSplit:
+    splits = load_skill_splits()
+    for split in splits:
+        if splitname == split.name:
+            return split
+    raise KeyError(splitname)
 
+
+@lru_cache()
+def load_skill_splits(file: str = None) -> List[DataSplit]:
+    """
+    Loads metadata about splits of the dataset to use for this project.
+
+    If `file` is provided, split information is loaded from there. Otherwise
+    if OSRS_SPLITS_FILE is set in the environment, splits are loaded from there.
+    Otherwise the following splits are loaded from a default location:
+        1) "all": player vector includes all skills
+        2) "cb": player vector includes combat skills only
+        3) "noncb": player vector includes non-combat skills only
+
+    :param file: load split information from this reference file
     :return: list of objects representing metadata about each split
     """
-    splits_file = Path(__file__).resolve().parents[2] / "ref" / "data_splits.json"
-    with open(splits_file, 'r') as f:
+    file_from_env = os.getenv("OSRS_SPLITS_FILE", None)
+    if file:
+        pass
+    elif file_from_env:
+        print(f"loading splits from OSRS_SPLITS_FILE: {file_from_env}")
+        file = file_from_env
+    else:
+        file = Path(__file__).resolve().parents[2] / "ref" / "data_splits.json"
+
+    with open(file, 'r') as f:
         split_config = json.load(f)
 
     split_names: List[str] = split_config["names"]
@@ -90,10 +112,12 @@ def skill_splits() -> List[DataSplit]:
             skill_inds=[all_skills.index(s) for s in skills]
         )
         splits.append(split)
+
     return splits
 
 
-def split_dataset(data: NDArray, split: DataSplit) -> NDArray:
+def split_dataset(data: NDArray, splitname: str) -> NDArray:
+    split = splitinfo(splitname)
     player_vectors = data[:, split.skill_inds]
     return player_vectors.copy()  # copy to make C-contiguous array (needed by faiss)
 
@@ -223,11 +247,6 @@ def download_from_s3(bucket: str, s3_file: str, local_file: str):
         print("file not found")
     except NoCredentialsError:
         print("credentials not available")
-
-
-@lru_cache()
-def asset_dir():
-    return Path(__file__).resolve().parents[2] / "app" / "assets"
 
 
 @dataclass

@@ -3,7 +3,6 @@
 """ Preprocess and build a single file for the data to be used in Dash app. """
 import argparse
 import pickle
-import sys
 
 import numpy as np
 

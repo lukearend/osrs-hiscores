@@ -11,7 +11,7 @@ from numpy.typing import NDArray
 os.environ["KMP_WARNINGS"] = 'off'  # suppress OMP deprecation warning from UMAP (github.com/numba/numba/issues/5275)
 
 
-def kmeans_params(file: str = None) -> Dict[str, int]:
+def load_kmeans_params(file: str = None) -> Dict[str, int]:
     """ Load parameters for running k-means.
     :param file: load from this local file (optional, otherwise uses default location)
     :return: mapping from split names to k values
@@ -23,7 +23,7 @@ def kmeans_params(file: str = None) -> Dict[str, int]:
         return json.load(f)
 
 
-def umap_params(file: str = None) -> Dict[str, Dict]:
+def load_umap_params(file: str = None) -> Dict[str, Dict]:
     """ Load parameters for running UMAP.
     :param file: load from this local file (optional, otherwise uses default location)
     :return: mapping from split names to UMAP parameter sets

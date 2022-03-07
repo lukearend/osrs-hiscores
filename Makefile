@@ -20,15 +20,17 @@ player_coll:="players"
 
 # Top-level ---------------------------------------------------------------------------------------
 .DEFAULT_GOAL := help
-all: init scrape cluster analytics app  ## Scrape data, process it and build final application data.
-build: init download test analytics app ## Build application data from downloaded, already-scraped data.
-run: mongo-pull mongo-start app-run     ## Run main application.
-clean: env-clean scrape-clean cluster-clean analytics-clean app-clean ## Remove all generated artifacts.
-clobber: env-clean scrape-clobber cluster-clean analytics-clean app-clean # Reset repo to initial state.
+all: init scrape cluster analytics mongo app   ## Scrape data, process it and build final application data.
+build: init download test analytics mongo app  ## Build application data from downloaded, pre-scraped data.
+run: mongo app-run                             ## Run main application.
+clean: cluster-clean analytics-clean app-clean ## Remove all generated artifacts.
+clobber: env-clean clean scrape-clobber        ## Fully reset repo to initial state.
 .PHONY: all build run clean
 
+ec2: init download analytics-clean app-clean
+
 # Setup -------------------------------------------------------------------------------------------
-init: env mongo-pull mongo-start ## Setup project dependencies.
+init: env
 
 env:
 	@echo "building virtual environment..."
@@ -63,7 +65,7 @@ scrape-clobber: # Delete all files from scraping process.
 .PHONY: scrape scrape-clean scrape-clobber
 
 $(raw_usernames_file):
-	bin/scrape_usernames $@
+	bin/scrape_usernames $@ 1 80000
 
 $(usernames_file): $(raw_usernames_file)
 	@source env/bin/activate && python src/scrape/cleanup_usernames.py $< $@
@@ -120,7 +122,8 @@ app-clean:
 
 build-db:
 	@source env/bin/activate && \
-	bin/build_database $(stats_file) $(clusterids_file) $(player_coll) --url $(OSRS_MONGO_URI)
+	python src/results/build_database.py $(stats_file) $(clusterids_file) \
+	--coll $(player_coll) --url $(OSRS_MONGO_URI)
 
 .PHONY: app app-run app-clean build-db
 
@@ -129,11 +132,12 @@ $(appdata_file): $(centroids_file) $(clust_analytics_file) $(clust_xyz_file)
 
 # Testing -----------------------------------------------------------------------------------------
 test_data_file:=$(ROOT_DIR)/test/data/player-stats-small.csv
+test_splits_file:=$(ROOT_DIR)/test/data_splits-test.json
 
 test: $(test_data_file) lint test-units test-pipeline ## Run tests for data processing pipeline.
 
 test-units: $(test_data_file)
-	@source env/bin/activate && pytest test -sv
+	@source env/bin/activate && OSRS_SPLITS_FILE=test/data_splits.json pytest test -sv
 
 test-pipeline:
 	@cd test && ./test_pipeline
@@ -144,23 +148,25 @@ $(test_data_file):
 	@source env/bin/activate && python test/build_stats_small.py $(stats_file) $@
 
 # Other -------------------------------------------------------------------------------------------
+mongo: mongo-pull mongo-start
+
+download: ## Download finalized dataset (player stats and clusters).
+	@source env/bin/activate && \
+	cd bin && ./download_dataset
+
+ec2-%: # EC2 instance: status, start, stop, connect, setup
+	@cd bin/dev && ./ec2_instance $*
+
+mongo-%: ## Local Mongo instance: pull, status, start, stop
+	@cd bin/dev && ./mongo_local $*
+
 upload-appdata:
 	@cd bin/dev && ./upload_appdata
 
 upload-dataset:
 	@cd bin/dev && ./upload_dataset
 
-download: ## Download finalized dataset (player stats and clusters).
-	@source env/bin/activate && \
-	cd bin && ./download_dataset
-
-ec2-%: ## EC2 instance: status, start, stop, connect, setup
-	@cd bin/dev && ./ec2_instance $*
-
-mongo-%: ## Local Mongo instance: pull, status, start, stop
-	@cd bin/dev && ./mongo_local $*
-
-.PHONY: upload-appdata upload-dataset download ec2-% mongo-%
+.PHONY: upload-appdata upload-dataset download ec2-% mongo-% mongo
 
 vim-binding:
 	@source env/bin/activate && \

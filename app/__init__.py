@@ -12,6 +12,10 @@ import boto3
 from src.results import AppData
 
 
+def asset_dir():
+    return Path(__file__).resolve().parent / "assets"
+
+
 _username_chars = string.ascii_lowercase + string.ascii_uppercase + string.digits + ' -_'
 def validate_username(username):
     if len(username) > 12:

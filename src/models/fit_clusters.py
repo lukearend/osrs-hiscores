@@ -16,15 +16,15 @@ import numpy as np
 from codetiming import Timer
 from numpy.typing import NDArray
 
-from src.common import DataSplit, skill_splits, load_stats_data, split_dataset
-from src.models import kmeans_params, fit_kmeans
+from src.common import DataSplit, load_stats_data, load_skill_splits, split_dataset
+from src.models import load_kmeans_params, fit_kmeans
 
 
-def write_results(splits: List[DataSplit], all_skills: List[str], centroids: Dict[str, NDArray], out_file: str):
+def write_results(header_skills: List[str], splits: List[DataSplit],
+                  centroids_per_split: Dict[str, NDArray], out_file: str):
     print("writing cluster centroids to CSV...")
     with open(out_file, 'w') as f:
-        f.write(f"split,clusterid,{','.join(s for s in all_skills)}\n")
-
+        f.write(f"split,clusterid,{','.join(s for s in header_skills)}\n")
         for split in splits:
             # Each split contains a different subset of skills. We need
             # to map the skill columns in the centroid results for each
@@ -37,7 +37,7 @@ def write_results(splits: List[DataSplit], all_skills: List[str], centroids: Dic
                 except ValueError:
                     pass
 
-            for clusterid, centroid in enumerate(centroids[split.name]):
+            for clusterid, centroid in enumerate(centroids_per_split[split.name]):
                 line = []
                 for i in range(len(split.skills)):
                     stat_ind = ind_map.get(i, None)
@@ -49,25 +49,26 @@ def write_results(splits: List[DataSplit], all_skills: List[str], centroids: Dic
                 f.write(line)
 
 
-@Timer(text="done fitting clusters (total time {:.2f} sec)")
-def main(stats_file: str, out_file: str, params_file: str, verbose: bool = True):
-    _, statnames, data = load_stats_data(stats_file, include_total=False)
-
+def main(skills_data: NDArray, k_per_split: Dict[str, int], verbose: bool = True) -> Dict[str, NDArray]:
+    """
+    TODO
+    :param skilldata:
+    :param k_per_split:
+    :param verbose:
+    :return:
+    """
     centroids_per_split = {}
-    splits = skill_splits()
-    params = kmeans_params(params_file)
-    for split in splits:
-        player_vectors = split_dataset(data, split)
+    for splitname, k in k_per_split:
+        player_vectors = split_dataset(skills_data, splitname)
 
         # Player weight is proportional to the number of ranked skills.
-        weights = np.sum(player_vectors != -1, axis=1) / split.nskills
+        weights = np.sum(player_vectors != -1, axis=1) / player_vectors.shape[1]
 
         # Replace missing data, i.e. unranked stats, with 1s. This is
         # a reasonable substitution for clustering purposes since an
         # unranked stat is known to be relatively low.
         player_vectors[player_vectors == -1] = 1
 
-        k = params[split.name]
         centroids = fit_kmeans(player_vectors, k=k, w=weights, verbose=verbose)
 
         # Sort clusters by total level descending.
@@ -75,10 +76,9 @@ def main(stats_file: str, out_file: str, params_file: str, verbose: bool = True)
         sort_inds = np.argsort(total_levels)[::-1]
         centroids = centroids[sort_inds]
 
-        centroids_per_split[split.name] = centroids
+        centroids_per_split[splitname] = centroids
 
-    all_skills = [s.skills for s in splits if s.name == "all"][0]
-    write_results(splits, all_skills, centroids_per_split, out_file)
+    return centroids_per_split
 
 
 if __name__ == '__main__':
@@ -88,6 +88,14 @@ if __name__ == '__main__':
     parser.add_argument('-p', '--params', type=str, required=False,
                         help="load k-means parameters from this file (if not provided, uses default location)")
     parser.add_argument('-v', '--verbose', action='store_true',
-                        help="whether to output progress during training")
+                        help="if set, will output progress during training")
     args = parser.parse_args()
-    main(args.statsfile, args.outfile, args.params, args.verbose)
+
+    _, statnames, skilldata = load_stats_data(args.statsfile, include_total=False)
+    splits = load_skill_splits()
+    k_per_split = load_kmeans_params(file=args.params)
+
+    with Timer(text="done fitting clusters (total time {:.2f} sec)"):
+        centroids_per_split = main(skilldata, k_per_split, verbose=args.verbose)
+
+    write_results(statnames, splits, centroids_per_split, args.outfile)

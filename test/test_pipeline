@@ -2,13 +2,17 @@
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)/.."
 DATA_DIR="$ROOT_DIR/test/data"
 
+export OSRS_SPLITS_FILE="$ROOT_DIR/test/data_splits.json"
 stats_file="$DATA_DIR/player-stats-small.csv"
+
 centroids_file="$DATA_DIR/cluster-centroids-k=20.csv"
 clusterids_file="$DATA_DIR/player-clusters-k=20.csv"
 clust_xyz_file="$DATA_DIR/clusters_xyz-k=20.pkl"
 clust_analytics_file="$DATA_DIR/cluster_analytics-k=20.pkl"
-kmeans_params="$ROOT_DIR/test/kmeans_params-k=20.json"
-umap_params="$ROOT_DIR/test/umap_params-small.json"
+
+kmeans_params="$ROOT_DIR/test/kmeans_params_test.json"
+umap_params="$ROOT_DIR/test/umap_params_test.json"
+
 appdata_file="$DATA_DIR/app_data-k=20.pkl"
 
 echo -e "testing pipeline...\n"
@@ -20,7 +24,8 @@ python src/results/postprocess_clusters.py "$stats_file" "$clusterids_file" "$cl
 python src/results/build_app_data.py "$centroids_file" "$clust_analytics_file" "$clust_xyz_file" "$appdata_file" && \
 bin/dev/mongo_local pull && \
 bin/dev/mongo_local start && \
-bin/build_database "$stats_file" "$clusterids_file" 'players-test' --url localhost:27017 --drop
+python src/results/build_database.py "$stats_file" "$clusterids_file" \
+  --url localhost:27017 --coll 'players-test' --drop
 then
   echo -e "\npipeline test passed"
 else
