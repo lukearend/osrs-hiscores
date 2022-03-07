@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
 sudo yum upgrade -y
-sudo yum install git -y
-sudo yum install docker -y
+sudo yum install git docker -y
 
 sudo groupadd docker
 sudo usermod -aG docker ec2-user

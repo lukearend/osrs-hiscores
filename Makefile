@@ -127,7 +127,7 @@ $(appdata_file): $(centroids_file) $(clust_analytics_file) $(clust_xyz_file)
 	@source env/bin/activate && python src/results/build_app_data.py $^ $@
 
 # Testing -----------------------------------------------------------------------------------------
-test_data_file:=$(ROOT_DIR)/test/data/player-stats-tiny.csv
+test_data_file:=$(ROOT_DIR)/test/data/player-stats-small.csv
 
 test: $(test_data_file) lint test-units test-pipeline ## Run tests for data processing pipeline.
 

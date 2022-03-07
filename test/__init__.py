@@ -4,7 +4,7 @@ from pathlib import Path
 
 @dataclass
 class FilePaths:
-    stats: str = Path(__file__).resolve().parent / "data" / "player-stats-1000.csv"
+    stats: str = Path(__file__).resolve().parent / "data" / "player-stats-small.csv"
     centroids: str = Path(__file__).resolve().parent / "data" / "cluster-centroids-k=20.csv"
     clusters: str = Path(__file__).resolve().parent / "data" / "player-clusters-k=20.csv"
     clusters_xyz: str = Path(__file__).resolve().parent / "data" / "clusters_xyz-k=20.pkl"
