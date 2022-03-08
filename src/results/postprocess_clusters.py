@@ -10,7 +10,7 @@ import numpy as np
 from codetiming import Timer
 from tqdm import tqdm
 
-from src.common import skill_splits, split_dataset, load_clusterids_data, load_stats_data
+from src.common import load_skill_splits, split_dataset, load_clusterids_data, load_stats_data
 from src.results import ClusterAnalytics, compute_cluster_sizes, compute_cluster_uniqueness, compute_stat_quartiles
 
 
@@ -27,7 +27,7 @@ def main(stats_file: str, clusters_file: str, out_file: str):
     for split in splits:
         cluster_uniqueness[split] = compute_cluster_uniqueness(cluster_sizes[split])
 
-    splits = skill_splits()
+    splits = load_skill_splits()
     _, skills, stats = load_stats_data(stats_file, include_total=True)
     stats = stats.astype('float')  # cast to float so we can use nan
     stats[stats < 0] = np.nan      # change missing values from -1 to nan

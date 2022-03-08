@@ -10,7 +10,7 @@ import sys
 
 from codetiming import Timer
 
-from src.common import skill_splits, load_centroid_data
+from src.common import load_centroid_data, load_skill_splits
 from src.models import load_umap_params, umap_reduce
 
 
@@ -19,7 +19,7 @@ def main(in_file: str, out_file: str, params_file: str = None):
     centroids = load_centroid_data(in_file)
 
     print("computing 3d embeddings...")
-    splits = skill_splits()
+    splits = load_skill_splits()
     params = load_umap_params(params_file)
     njobs = len(splits) * len(params['n_neighbors']) * len(params['min_dist'])
 

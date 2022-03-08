@@ -1,6 +1,6 @@
 from pymongo import MongoClient
 
-from src.common import line_count, skill_splits, mongodoc_to_playerdata, osrs_statnames
+from src.common import line_count, mongodoc_to_playerdata, osrs_statnames, load_skill_splits
 from src.models import fit_clusters, cluster_players, dim_reduce_clusters, load_kmeans_params
 from src.results import (postprocess_clusters, build_app_data, build_database,
                          load_clusters_xyz, load_cluster_analytics, load_app_data)
@@ -12,7 +12,6 @@ nplayers = None
 
 
 def test_scrape_username():
-    for i in range(5):
     assert line_count(fp.usernames_raw) - 1 == 500
     # todo: continue
 
@@ -56,7 +55,7 @@ def test_postprocess_clusters():
     postprocess_clusters.main(fp.stats, fp.clusters, fp.cluster_analytics)
     analytics_per_split = load_cluster_analytics(fp.cluster_analytics)
     k_per_split = load_kmeans_params(fp.kmeans_params)
-    for split in skill_splits():
+    for split in load_skill_splits():
         nclusters = k_per_split[split.name]
         analytics = analytics_per_split[split.name]
         assert len(analytics.sizes) == nclusters
@@ -68,9 +67,9 @@ def test_build_app_data():
     build_app_data.main(fp.centroids, fp.cluster_analytics, fp.clusters_xyz, fp.app_data)
     app_data = load_app_data(fp.app_data)
     k_per_split = load_kmeans_params(fp.kmeans_params)
-    splits = skill_splits()
+    splits = load_skill_splits()
     assert app_data.splitnames == [s.name for s in splits]
-    for split in skill_splits():
+    for split in splits:
         splitdata = app_data.splitdata[split.name]
         assert splitdata.skills == split.skills
         # assert splitdata.axlims.shape == (3, 2)  # TODO: uncomment when umap params frozen

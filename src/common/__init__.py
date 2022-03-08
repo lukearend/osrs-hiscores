@@ -184,7 +184,7 @@ def load_centroid_data(file: str) -> Dict[str, NDArray]:
             clusterids[splitname].append(clusterid)
             centroids[splitname].append(centroid)
 
-    splits = skill_splits()
+    splits = load_skill_splits()
     centroids_per_split = {}
     for split in splits:
         split_centroids = np.zeros_like(centroids[split.name])

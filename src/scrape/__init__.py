@@ -139,11 +139,11 @@ async def run_workers(workerfn: Callable, jobs: Iterable[Any], out_file: str, pb
     for job in jobs:
         job_queue.put_nowait(job)
 
-    async with aiohttp.ClientSession() as session:
+    async with aiohttp.ClientSession() as sess:
         workers = []
         for i in range(nworkers):
             workers.append(asyncio.create_task(
-                workerfn(session, job_queue, out_file, file_lock, pbar)
+                workerfn(sess, job_queue, out_file, file_lock, pbar)
             ))
             await asyncio.sleep(0.1)
 
