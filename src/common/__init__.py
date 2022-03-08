@@ -1,3 +1,5 @@
+""" Contains knowledge shared across modules. """
+
 import csv
 import json
 import os
