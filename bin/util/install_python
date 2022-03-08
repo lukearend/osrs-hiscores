@@ -1,0 +1,9 @@
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)/../.."
+mkdir "$ROOT_DIR/tmp" && cd tmp &&\
+wget http://www.python.org/ftp/python/3.9.9/Python-3.9.9.tgz &&
+tar -zxvf Python-3.9.9.tgz && \
+cd Python-2.7.9 && \
+mkdir "$ROOT_DIR/.localpython" && \
+./configure --prefix="$ROOT_DIR/.localpython" && \
+make && \
+make install

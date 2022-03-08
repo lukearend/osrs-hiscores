@@ -34,7 +34,7 @@ init: env
 
 env:
 	@echo "building virtual environment..."
-	@python3 -m venv env && \
+	@python3.9 -m venv env && \
 	source env/bin/activate && \
 	pip3 install --upgrade pip && \
 	pip3 install -r requirements.txt && \
@@ -68,13 +68,13 @@ $(raw_usernames_file):
 	bin/scrape_usernames $@ 1 80000
 
 $(usernames_file): $(raw_usernames_file)
-	@source env/bin/activate && python src/scrape/cleanup_usernames.py $< $@
+	@source env/bin/activate && python3 src/scrape/cleanup_usernames.py $< $@
 
 $(raw_stats_file): $(usernames_file)
 	bin/scrape_stats $< $@
 
 $(stats_file): $(raw_stats_file)
-	@source env/bin/activate && python src/scrape/cleanup_stats.py $< $@
+	@source env/bin/activate && python3 src/scrape/cleanup_stats.py $< $@
 
 .PRECIOUS: $(raw_usernames_file) $(raw_stats_file)
 
@@ -88,11 +88,11 @@ cluster-clean:
 .PHONY: cluster cluster-clean
 
 $(centroids_file):
-	@source env/bin/activate && python src/models/fit_clusters.py $(stats_file) $@ \
+	@source env/bin/activate && python3 src/models/fit_clusters.py $(stats_file) $@ \
 	--params $(kmeans_params) --verbose
 
 $(clusterids_file): $(centroids_file)
-	@source env/bin/activate && python sr/models/cluster_players.py $(stats_file) $< $@
+	@source env/bin/activate && python3 src/models/cluster_players.py $(stats_file) $< $@
 
 # Cluster analytics -------------------------------------------------------------------------------
 analytics: $(clust_xyz_file) $(clust_analytics_file) ## Reduce dimensionality and analyze clusters.
@@ -114,7 +114,7 @@ $(clust_analytics_file):
 app: $(appdata_file) build-db ## Build data file and database for application to use.
 
 app-run:
-	@source env/bin/activate && python app
+	@source env/bin/activate && python3 app
 
 app-clean:
 	rm -rf volume
@@ -128,7 +128,7 @@ build-db:
 .PHONY: app app-run app-clean build-db
 
 $(appdata_file): $(centroids_file) $(clust_analytics_file) $(clust_xyz_file)
-	@source env/bin/activate && python src/results/build_app_data.py $^ $@
+	@source env/bin/activate && python3 src/results/build_app_data.py $^ $@
 
 # Testing -----------------------------------------------------------------------------------------
 test_data_file:=$(ROOT_DIR)/test/data/player-stats-small.csv
@@ -145,7 +145,7 @@ test-pipeline:
 .PHONY: test lint test-units test-pipeline
 
 $(test_data_file):
-	@source env/bin/activate && python test/build_stats_small.py $(stats_file) $@
+	@source env/bin/activate && python3 test/build_stats_small.py $(stats_file) $@
 
 # Other -------------------------------------------------------------------------------------------
 mongo: mongo-pull mongo-start

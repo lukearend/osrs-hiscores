@@ -82,7 +82,7 @@ To launch the application, run `make run` and visit the URL `localhost:8050` in 
 Dependencies
 ------------
 
-* Python version 3.7 or greater.
+* Python version 3.9+ or greater.
 * [Docker](https://www.docker.com/) is required to run the MongoDB instance that is used by the application.
 * The scraping scripts make use of [expresso](https://github.com/sttz/expresso) (a CLI to [ExpressVPN](https://www.expressvpn.com/)) to use a proxied IP to avoid request throttling.
 * One utility in `bin` requires [jq](https://stedolan.github.io/jq/). Several make use of the [AWS CLI](https://aws.amazon.com/cli/).
