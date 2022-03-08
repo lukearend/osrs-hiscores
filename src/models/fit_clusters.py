@@ -5,7 +5,7 @@ import numpy as np
 from codetiming import Timer
 from numpy.typing import NDArray
 
-from src.common import DatasetSplit, load_stats_data, load_skill_splits, split_dataset
+from src.common import DatasetSplit, load_stats_data, load_splits, split_dataset
 from src.models import load_kmeans_params, fit_kmeans
 
 
@@ -82,7 +82,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     _, statnames, skilldata = load_stats_data(args.statsfile, include_total=False)
-    splits = load_skill_splits()
+    splits = load_splits()
     k_per_split = load_kmeans_params(file=args.params)
 
     with Timer(text="done fitting clusters (total time {:.2f} sec)"):

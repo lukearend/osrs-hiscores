@@ -21,24 +21,18 @@ from tqdm import tqdm
 
 
 @lru_cache()
-def osrs_statnames(include_total: bool = True) -> List[str]:
+def osrs_skills() -> List[str]:
     """
     Load the list of OSRS skill names in a an ordering for use throughout this
     project. The ordering given here is the same as that of the data returned
     by the CSV hiscores API.
 
-    :include_total: whether to include total level as first element
-    :return: list of OSRS stat names, e.g. ['total', 'attack', 'defence', ...]
+    :return: list of OSRS stat names, e.g. ['attack', 'defence', ...]
     """
-    skills = ['attack', 'defence', 'strength', 'hitpoints', 'ranged', 'prayer', 'magic',
-              'cooking', 'woodcutting', 'fletching', 'fishing', 'firemaking', 'crafting',
-              'smithing', 'mining', 'herblore', 'agility', 'thieving', 'slayer', 'farming',
-              'runecraft', 'hunter', 'construction']
-
-    if include_total:
-        skills.insert(0, 'total')
-
-    return skills
+    return ['attack', 'defence', 'strength', 'hitpoints', 'ranged', 'prayer', 'magic',
+            'cooking', 'woodcutting', 'fletching', 'fishing', 'firemaking', 'crafting',
+            'smithing', 'mining', 'herblore', 'agility', 'thieving', 'slayer', 'farming',
+            'runecraft', 'hunter', 'construction']
 
 
 @dataclass
@@ -51,77 +45,55 @@ class DatasetSplit:
     name: str
     nskills: int
     skills: List[str]
-    skill_inds: List[int]  # index of each skill in the CSV ordering
+    skillinds: List[int]  # index of each skill in the canonical skill ordering
 
 
-def env_var(var_name: str) -> str:
-    try:
-        return os.environ[var_name]
-    except KeyError as e:
-        raise ValueError(f"{e} is not set in environment")
+@lru_cache()
+def load_splits(file: str = None) -> List[DatasetSplit]:
+    """
+    Load metadata about splits of the dataset to use for this project.
 
+    If `file` is provided, split information is loaded from there. Otherwise,
+    if OSRS_SPLITS_FILE is set in the environment, splits are loaded from there.
+    Otherwise the splits are loaded from a default location.
 
-def line_count(file: str) -> int:
-    return int(check_output(['wc', '-l', file]).split()[0])
+    :param file: load split information from this JSON file. Splits should be
+                 given as a list of maps, each having a 'name' key giving a name
+                 for the split a key 'skills' which is a list of the OSRS skills
+                 to be included in that split of the dataset.
+    :return: list of objects representing metadata about each split
+    """
+    if not file:
+        file = os.getenv("OSRS_SPLITS_FILE", None)
+    elif not file:
+        file = Path(__file__).resolve().parents[2] / "ref" / "data_splits.json"
+
+    splits = []
+    with open(file, 'r') as f:
+        for s in json.load(f):
+            split = DatasetSplit(
+                name=s['name'],
+                skills=s['skills'],
+                nskills=len(s['skills']),
+                skillinds=[osrs_skills.index(skill) for skill in s['skills']]
+            )
+            splits.append(split)
+
+    return splits
 
 
 @lru_cache()
 def splitinfo(splitname: str) -> DatasetSplit:
-    splits = load_skill_splits()
+    splits = load_splits()
     for split in splits:
         if splitname == split.name:
             return split
     raise KeyError(splitname)
 
 
-@lru_cache()
-def load_skill_splits(file: str = None) -> List[DatasetSplit]:
-    """
-    Loads metadata about splits of the dataset to use for this project.
-
-    If `file` is provided, split information is loaded from there. Otherwise
-    if OSRS_SPLITS_FILE is set in the environment, splits are loaded from there.
-    Otherwise the following splits are loaded from a default location:
-        1) "all": player vector includes all skills
-        2) "cb": player vector includes combat skills only
-        3) "noncb": player vector includes non-combat skills only
-
-    :param file: load split information from this reference file
-    :return: list of objects representing metadata about each split
-    """
-    file_from_env = os.getenv("OSRS_SPLITS_FILE", None)
-    if file:
-        pass
-    elif file_from_env:
-        print(f"loading splits from OSRS_SPLITS_FILE: {file_from_env}")
-        file = file_from_env
-    else:
-        file = Path(__file__).resolve().parents[2] / "ref" / "data_splits.json"
-
-    with open(file, 'r') as f:
-        split_config = json.load(f)
-
-    split_names: List[str] = split_config["names"]
-    skills_per_split: Dict[str, List] = split_config["skills"]
-    all_skills = osrs_statnames(include_total=False)
-
-    splits = []
-    for split_name in split_names:
-        skills = skills_per_split[split_name]
-        split = DatasetSplit(
-            name=split_name,
-            nskills=len(skills),
-            skills=skills,
-            skill_inds=[all_skills.index(s) for s in skills]
-        )
-        splits.append(split)
-
-    return splits
-
-
 def split_dataset(data: NDArray, splitname: str) -> NDArray:
     split = splitinfo(splitname)
-    player_vectors = data[:, split.skill_inds]
+    player_vectors = data[:, split.skillinds]
     return player_vectors.copy()  # copy to make C-contiguous array (needed by faiss)
 
 
@@ -187,7 +159,7 @@ def load_centroid_data(file: str) -> Dict[str, NDArray]:
             clusterids[splitname].append(clusterid)
             centroids[splitname].append(centroid)
 
-    splits = load_skill_splits()
+    splits = load_splits()
     centroids_per_split = {}
     for split in splits:
         split_centroids = np.zeros_like(centroids[split.name])
@@ -291,3 +263,14 @@ def connect_mongo(url: str) -> Database:
     except ServerSelectionTimeoutError:
         raise ValueError(f"could not connect to mongodb at {url}")
     return db
+
+
+def env_var(var_name: str) -> str:
+    try:
+        return os.environ[var_name]
+    except KeyError as e:
+        raise ValueError(f"{e} is not set in environment")
+
+
+def line_count(file: str) -> int:
+    return int(check_output(['wc', '-l', file]).split()[0])

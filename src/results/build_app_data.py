@@ -6,7 +6,7 @@ import pickle
 
 import numpy as np
 
-from src.common import load_skill_splits, load_centroid_data
+from src.common import load_splits, load_centroid_data
 from src.results import AppData, SplitData, ClusterData, load_cluster_analytics, load_clusters_xyz
 
 
@@ -24,7 +24,7 @@ def main(centroids_file: str, cluster_analytics_file: str, clusters_xyz_file: st
     cluster_xyz = load_clusters_xyz(clusters_xyz_file)
     centroids = load_centroid_data(centroids_file)
 
-    splits = load_skill_splits()
+    splits = load_splits()
     results = {}
     for split in splits:
         cluster_data = ClusterData(

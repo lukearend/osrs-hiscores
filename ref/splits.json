@@ -1,7 +1,7 @@
-{
-    "names": ["all", "cb", "noncb"],
-    "skills": {
-        "all": [
+[
+    {
+        "name": "all",
+        "skills":[
             "attack",
             "defence",
             "strength",
@@ -25,8 +25,11 @@
             "runecraft",
             "hunter",
             "construction"
-        ],
-        "cb": [
+        ]
+    },
+    {
+        "name": "cb",
+        "skills": [
             "attack",
             "defence",
             "strength",
@@ -34,8 +37,10 @@
             "ranged",
             "prayer",
             "magic"
-        ],
-        "noncb": [
+        ]
+    },
+    {   "name": "noncb",
+        "skills": [
             "cooking",
             "woodcutting",
             "fletching",

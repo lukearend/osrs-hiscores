@@ -5,7 +5,7 @@ from typing import Dict
 from codetiming import Timer
 from numpy.typing import NDArray
 
-from src.common import load_skill_splits, load_stats_data, load_centroid_data, split_dataset, DatasetSplit
+from src.common import load_splits, load_stats_data, load_centroid_data, split_dataset, DatasetSplit
 from src.models import cluster_l2
 
 
@@ -30,7 +30,7 @@ if __name__ == "__main__":
     parser.add_argument('outfile', type=str, help="write cluster IDs to this file")
     args = parser.parse_args()
 
-    splits = load_skill_splits()
+    splits = load_splits()
     centroids_per_split = load_centroid_data(args.centroidsfile)
     usernames, _, player_data = load_stats_data(args.statsfile, include_total=False)
     clusterids_per_split = main(player_data, centroids_per_split, args.outfile)
