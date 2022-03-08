@@ -1,14 +1,3 @@
-""" Assign OSRS accounts into clusters based on distance from each
-    other in 23D space. Each account is represented as a length-23
-    vector of the player's levels in each skill. The distance between
-    two accounts is then measured as the sum of squared stat-by-stat
-    differences. This is much like taking the Euclidean distance
-    between points in 3D space, except the points live in a 23-
-    dimensional space instead.
-
-    For k = {"all": 4000, "cb": 2000, "noncb": 2000}, this script
-    runs in about 4 hours on a 2021 M1 Mac.
-"""
 import argparse
 from typing import List, Dict
 
@@ -16,11 +5,11 @@ import numpy as np
 from codetiming import Timer
 from numpy.typing import NDArray
 
-from src.common import DataSplit, load_stats_data, load_skill_splits, split_dataset
+from src.common import DatasetSplit, load_stats_data, load_skill_splits, split_dataset
 from src.models import load_kmeans_params, fit_kmeans
 
 
-def write_results(header_skills: List[str], splits: List[DataSplit],
+def write_results(header_skills: List[str], splits: List[DatasetSplit],
                   centroids_per_split: Dict[str, NDArray], out_file: str):
     print("writing cluster centroids to CSV...")
     with open(out_file, 'w') as f:
@@ -49,17 +38,18 @@ def write_results(header_skills: List[str], splits: List[DataSplit],
                 f.write(line)
 
 
-def main(skills_data: NDArray, k_per_split: Dict[str, int], verbose: bool = True) -> Dict[str, NDArray]:
+def main(player_skills_data: NDArray, k_per_split: Dict[str, int], verbose: bool = True) -> Dict[str, NDArray]:
     """
-    TODO
-    :param skilldata:
-    :param k_per_split:
-    :param verbose:
-    :return:
+    Fit clusters for OSRS account data for each split of the dataset.
+
+    :param player_skills_data: 2D array where each row gives a player's level in each stat
+    :param k_per_split: k parameter to use for running k-means on each split
+    :param verbose: whether to output progress during model fitting
+    :return: dictionary mapping split names to cluster centroids for each split
     """
     centroids_per_split = {}
     for splitname, k in k_per_split:
-        player_vectors = split_dataset(skills_data, splitname)
+        player_vectors = split_dataset(player_skills_data, splitname)
 
         # Player weight is proportional to the number of ranked skills.
         weights = np.sum(player_vectors != -1, axis=1) / player_vectors.shape[1]

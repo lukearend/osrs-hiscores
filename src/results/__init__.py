@@ -5,7 +5,7 @@ from typing import List, Dict
 import numpy as np
 from numpy.typing import NDArray
 
-from src.common import DataSplit
+from src.common import DatasetSplit
 
 
 @dataclass
@@ -29,7 +29,7 @@ class SplitData:
 @dataclass
 class AppData:
     """ Contains all data needed to run Dash app. """
-    splitnames: List[DataSplit]
+    splitnames: List[DatasetSplit]
     splitdata: Dict[str, SplitData]
 
 

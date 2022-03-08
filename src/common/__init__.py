@@ -20,6 +20,40 @@ from pymongo.errors import ServerSelectionTimeoutError
 from tqdm import tqdm
 
 
+@lru_cache()
+def osrs_statnames(include_total: bool = True) -> List[str]:
+    """
+    Load the list of OSRS skill names in a an ordering for use throughout this
+    project. The ordering given here is the same as that of the data returned
+    by the CSV hiscores API.
+
+    :include_total: whether to include total level as first element
+    :return: list of OSRS stat names, e.g. ['total', 'attack', 'defence', ...]
+    """
+    skills = ['attack', 'defence', 'strength', 'hitpoints', 'ranged', 'prayer', 'magic',
+              'cooking', 'woodcutting', 'fletching', 'fishing', 'firemaking', 'crafting',
+              'smithing', 'mining', 'herblore', 'agility', 'thieving', 'slayer', 'farming',
+              'runecraft', 'hunter', 'construction']
+
+    if include_total:
+        skills.insert(0, 'total')
+
+    return skills
+
+
+@dataclass
+class DatasetSplit:
+    """ Represents a "split" of the dataset, or subset of skill columns to be
+    taken as clustering features. This allows us to choose which skills are
+    involved in the account distance calculation. The data pipeline for this
+    project will be run on each split of the data defined in ref/splits.json.
+    """
+    name: str
+    nskills: int
+    skills: List[str]
+    skill_inds: List[int]  # index of each skill in the CSV ordering
+
+
 def env_var(var_name: str) -> str:
     try:
         return os.environ[var_name]
@@ -32,38 +66,7 @@ def line_count(file: str) -> int:
 
 
 @lru_cache()
-def osrs_statnames(include_total: bool = True) -> List[str]:
-    """
-    Load the list of OSRS skill names in the order to be used for
-    CSV columns. This includes total level and the following 23 skills:
-
-        Attack, Defence, Strength, Hitpoints, Ranged, Prayer, Magic,
-        Cooking, Woodcutting, Fletching, Fishing, Firemaking, Crafting,
-        Smithing, Mining, Herblore, Agility, Thieving, Slayer, Farming,
-        Runecraft, Hunter, and Construction.
-
-    :include_total: if false, total level is not included
-    :return: list of OSRS skill names in an order matching CSV file columns
-    """
-    splits_file = Path(__file__).resolve().parents[2] / "ref" / "osrs_skills.json"
-    with open(splits_file, 'r') as f:
-        skills = json.load(f)
-    if not include_total:
-        del skills[skills.index("total")]
-    return skills
-
-
-@dataclass
-class DataSplit:
-    """ Describes a dataset "split", or subset of skills used in analysis. """
-    name: str
-    nskills: int
-    skills: List[str]
-    skill_inds: List[int]  # index of each skill in the CSV ordering
-
-
-@lru_cache()
-def splitinfo(splitname: str) -> DataSplit:
+def splitinfo(splitname: str) -> DatasetSplit:
     splits = load_skill_splits()
     for split in splits:
         if splitname == split.name:
@@ -72,7 +75,7 @@ def splitinfo(splitname: str) -> DataSplit:
 
 
 @lru_cache()
-def load_skill_splits(file: str = None) -> List[DataSplit]:
+def load_skill_splits(file: str = None) -> List[DatasetSplit]:
     """
     Loads metadata about splits of the dataset to use for this project.
 
@@ -105,7 +108,7 @@ def load_skill_splits(file: str = None) -> List[DataSplit]:
     splits = []
     for split_name in split_names:
         skills = skills_per_split[split_name]
-        split = DataSplit(
+        split = DatasetSplit(
             name=split_name,
             nskills=len(skills),
             skills=skills,
