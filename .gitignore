@@ -1,9 +1,10 @@
 .DS_Store
+.env
 .ipynb_checkpoints
 .idea
-.env
+.pytest_cache
 *.egg-info
 __pycache__
-/volume
 /env
 /tmp
+/volume
