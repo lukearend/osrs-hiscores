@@ -1,14 +1,14 @@
-from pymongo import MongoClient
-
-from src.common import line_count, mongodoc_to_playerdata, osrs_statnames, load_splits
-from src.models import fit_clusters, cluster_players, dim_reduce_clusters, load_kmeans_params
-from src.results import (postprocess_clusters, build_app_data, build_database,
-                         load_clusters_xyz, load_cluster_analytics, load_app_data)
-from test import FilePaths
-
-fp = FilePaths()
-pagerange = (1, 20)
-nplayers = None
+# from pymongo import MongoClient
+#
+# from src.common import line_count, mongodoc_to_playerdata, osrs_statnames, load_splits
+# from src.models import fit_clusters, cluster_players, dim_reduce_clusters, load_kmeans_params
+# from src.results import (postprocess_clusters, build_app_data, build_database,
+#                          load_clusters_xyz, load_cluster_analytics, load_app_data)
+# from test import FilePaths
+#
+# fp = FilePaths()
+# pagerange = (1, 20)
+# nplayers = None
 
 
 # def test_fit_clusters():

@@ -9,7 +9,7 @@ This repository is accompanied by three important data files:
 2. `cluster-centroids.csv`: Central values for clusters that emerge from partitioning player dataset into groups based on account similarity. Each centroid is a vector of values between 1-99 in "OSRS skill" space.
 5. `player-clusters.csv`: Cluster IDs per player for three separate clustering runs, grouping similar accounts according to (i) all skills, (ii) combat skills only and (iii) non-combat skills only.
 
-These files are **not included in the repo** due to file size restraints, and must be downloaded separately from the following public Google Drive folder: <https://drive.google.com/drive/folders/***REMOVED***?usp=sharing>
+These files are **not included in the repo** due to file size restraints, and can be downloaded separately from the following public Google Drive folder: <https://drive.google.com/drive/folders/***REMOVED***?usp=sharing>
 
 Player stats were scraped from the [official OSRS hiscores](https://secure.runescape.com/m=hiscore_oldschool/overall) on [TODO: Dec 28, 2021 between 00:00 and 18:00 CST].
 
@@ -42,7 +42,8 @@ Project organization
     │   ├── results      <- Scripts for building application data.
     │   └── scrape       <- Scripts for scraping raw hiscores data.
     │
-    ├── test             <- Testing code. Reading may help understand data pipeline.
+    ├── test             <- Unit and integration tests. Reading these may be a good
+    │                       starting point for getting to know the code and pipeline.
     │
     ├── Procfile         <- Entry point for deployment as a Heroku application.
     ├── requirements.txt <- Dependencies file for reproducing the project environment.
@@ -51,38 +52,46 @@ Project organization
 Usage
 -----
 
-At a high level, this repository implements the following data pipeline
+At a high level, this repository implements
 
-```
-scrape hiscores data
-         ↓
-cluster players by stats
-         ↓
-project clusters to 3D
-         ↓
-build application data     ->     (run Dash app)
-```
+1. The following data pipeline:
 
-and source code for a [Dash](https://plotly.com/dash/) application which visualizes the clustering results.
+    ```
+    scrape hiscores data
+             ↓
+    cluster players by stats
+             ↓
+    project clusters to 3D
+             ↓
+    build application data     ->     (run Dash app)
+    ```
+
+2. A [Dash](https://plotly.com/dash/) application which visualizes the clustering results.
 
 The stages of the data pipeline are driven by a [Makefile](https://opensource.com/article/18/8/what-how-makefile) with top-level `make` targets for each data processing stage:
 
 1. `make init`: set up Python virtual environment. This installs all dependencies for the Python code used in the project.
-2. `make scrape`: scrape data from the official OSRS hiscores. The full scraping process takes about 18 hours.
-3. `make cluster`: cluster players into similar groups according to their stats. The clustering algorithm used is the [faiss](https://github.com/facebookresearch/faiss) implementation of [k-means](https://en.wikipedia.org/wiki/K-means_clustering). The full clustering process (for 2 million players and several thousand clusters) takes about [TODO: X] hours on a [TODO: x processor].
-4. `make analytics`: project cluster centroids from high-dimensional space to 3D for visualization purposes. This dimensionality reduction is done with the [UMAP](https://umap-learn.readthedocs.io/en/latest/index.html#) algorithm. Compute summary statistics for each cluster based on the player population it contains.
-5. `make app`: build application data and database from analytic results. Expects a [MongoDB](https://www.mongodb.com/) instance running at `localhost:27017` or the URL specified by the environment variable `OSRS_MONGO_URI`. A Mongo instance can be started at `localhost:27017` using the target `make mongo` (requires Docker).
+2. `make scrape`: scrape data from the official OSRS hiscores. The scraping process takes about [TODO: X] hours.
+3. `make cluster`: cluster players into groups of similar accounts according to their stats. The clustering algorithm used is [k-means](https://en.wikipedia.org/wiki/K-means_clustering), implemented by the [faiss](https://github.com/facebookresearch/faiss) library. Running the clustering process for 2 million players and [TODO: k] clusters takes about [TODO: X] hours on a [TODO: x processor].
+4. `make analytics`: 
+   1. Map cluster centroids from a high-dimensional space to 3D for visualization purposes. Uses [UMAP](https://umap-learn.readthedocs.io/en/latest/index.html#) for dimensionality reduction.
+   2. Compute quartiles for each cluster based on the player population it contains.
+5. `make app`: build application data and database from analytic results. By default, this target will pull and launch a [MongoDB](https://www.mongodb.com/) instance inside a [Docker](https://www.docker.com/) container, reachable at `localhost:27017`. If the environment variable `OSRS_MONGO_URI` is set, the Mongo instance will run at that URL instead.
 
-Steps 2 and 3 can be skipped by simply running `make download`, which fetches the final dataset from an S3 bucket.
+Steps 2 and 3 can be skipped by simply running `make download`, which fetches the scraped data and clustering results from an S3 bucket.
 
 All steps can be run in one shot via `make build` (which uses the download) or `make all` (which actually scrapes and clusters the data from scratch).
 
-To launch the application, run `make run` and visit the URL `localhost:8050` in a web browser. The application expects the environment variable `OSRS_MONGO_URI` (or `localhost:27017` if unset) to point to the database populated during `make app`.
+To launch the application, run `make run` and visit the URL `localhost:8050` in a web browser. The application expects to find the Mongo instance running at `localhost:27017` or the environment variable `OSRS_MONGO_URI`, if set.
 
 Dependencies
 ------------
 
-* Python version 3.9+ or greater.
-* [Docker](https://www.docker.com/) is required to run the MongoDB instance that is used by the application.
-* The scraping scripts make use of [expresso](https://github.com/sttz/expresso) (a CLI to [ExpressVPN](https://www.expressvpn.com/)) to use a proxied IP to avoid request throttling.
-* One utility in `bin` requires [jq](https://stedolan.github.io/jq/). Several make use of the [AWS CLI](https://aws.amazon.com/cli/).
+* Python 3.[TODO]+
+* Docker ([TODO: installation instructions])
+* for data scraping:
+  * [expresso](https://github.com/sttz/expresso) ([TODO: installation instructions)]: a command line interface to [ExpressVPN](https://www.expressvpn.com/)
+  * ExpressVPN ([TODO: installation instructions])
+* for developers:
+  * `jq` ([TODO: installation instructions])
+  * the [AWS CLI](https://aws.amazon.com/cli/) ([TODO: installation instructions])
