@@ -2,7 +2,7 @@ import string
 import json
 import pickle
 from dataclasses import dataclass
-from functools import lru_cache
+from functools import cache
 from io import BytesIO
 from pathlib import Path
 from typing import List
@@ -67,7 +67,7 @@ class BoxplotLayout:
     tickxoffset: float
 
 
-@lru_cache()
+@cache
 def load_boxplot_layout(split: str) -> BoxplotLayout:
     """
     Load layout information for boxplot for the given split.
@@ -90,7 +90,7 @@ def load_boxplot_layout(split: str) -> BoxplotLayout:
     )
 
 
-@lru_cache()
+@cache
 def load_table_layout() -> List[List[str]]:
     """
     Load layout for the skills to be displayed in skill tables.

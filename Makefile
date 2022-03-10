@@ -94,7 +94,8 @@ build-app-data: $(centroids_file) $(clust_xyz_file) $(clust_quartiles_file)
 build-database:
 	source env/bin/activate && cd src/app && \
 	if ! python check_collection $(clusterids_file) $(MONGO_COLLECTION) ; then \
-  		python -m build_database $(stats_file) $(clusterids_file) --collection $(MONGO_COLLECTION)
+  		python -m build_database $(stats_file) $(clusterids_file) \
+  		--url $(OSRS_MONGO_URI) --collection $(MONGO_COLLECTION)
 
 start-mongo:
 	cd bin && ./start_mongo
@@ -106,10 +107,10 @@ download: ## Download finalized dataset (player stats and clusters).
 	bin/download_dataset $(stats_file).pkl $(centroids_file).pkl $(clusterids_file).pkl
 
 upload-s3:
-	aws s3 cp $(app_data_file) s3://$(OSRS_APPDATA_BUCKET)/app-data.pkl && \
-	aws s3 cp $(centroids_file) s3://$(OSRS_DATASET_BUCKET)/cluster-centroids.pkl && \
-	aws s3 cp $(clusterids_file) s3://$(OSRS_DATASET_BUCKET)/player-clusters.pkl && \
-	aws s3 cp $(stats_file) s3://$(OSRS_DATASET_BUCKET)/player-stats.pkl
+	aws s3 cp $(app_data_file).pkl s3://$(OSRS_APPDATA_BUCKET)/app-data.pkl && \
+	aws s3 cp $(centroids_file).pkl s3://$(OSRS_DATASET_BUCKET)/cluster-centroids.pkl && \
+	aws s3 cp $(clusterids_file).pkl s3://$(OSRS_DATASET_BUCKET)/player-clusters.pkl && \
+	aws s3 cp $(stats_file).pkl s3://$(OSRS_DATASET_BUCKET)/player-stats.pkl
 
 upload-gdrive: csv-files
 	upload_gdrive $(stats_file).csv $(centroids_file).csv $(clusterids_file).csv
@@ -148,7 +149,7 @@ $(test_data_file):
 
 # Other -------------------------------------------------------------------------------------------
 
-clean: env-clean scrape-clean cluster-clean analytics-clean app-clean ## Remove all generated artifacts.
+clean: env-clean scrape-clean cluster-clean analytics-clean app-clean csv-clean ## Remove all generated artifacts.
 
 env-clean:
 	rm -rf env

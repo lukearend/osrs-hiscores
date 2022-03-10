@@ -1,4 +1,4 @@
-from functools import lru_cache
+from functools import cache
 from typing import Dict, List, Tuple
 
 import numpy as np
@@ -86,7 +86,7 @@ def compute_boxplot_data(splitname: str, splitdata: SplitData, clusterid=None) -
     return quartiles_dict
 
 
-@lru_cache()
+@cache
 def ticklabel_skill_inds(splitname: str, skills_in_split: Tuple[str]) -> List[int]:
     """ Build index for reordering skills to match tick labels along box plot x-axis. """
     tick_labels = load_boxplot_layout(splitname).ticklabels

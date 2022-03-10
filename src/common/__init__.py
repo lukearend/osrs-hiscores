@@ -1,29 +1,25 @@
 """ Contains knowledge shared across modules. """
-
-import csv
 import json
 import os
-from collections import defaultdict
+import pickle
 from dataclasses import dataclass
-from functools import lru_cache
+from functools import cache
 from pathlib import Path
 from subprocess import check_output
-from typing import List, Dict, Tuple, Any
+from typing import List, Dict, Any
 
 import boto3
 import certifi as certifi
-import numpy as np
 import progressbar as progressbar
 from botocore.exceptions import NoCredentialsError
 from numpy.typing import NDArray
 from pymongo import MongoClient
 from pymongo.database import Database
 from pymongo.errors import ServerSelectionTimeoutError
-from tqdm import tqdm
 
 
-@lru_cache()
-def osrs_skills() -> List[str]:
+@cache
+def osrs_skills(include_total: bool = False) -> List[str]:
     """
     Load the list of OSRS skill names in a canonical ordering for use throughout
     this project. The ordering here is the same as that of the data returned by
@@ -31,10 +27,13 @@ def osrs_skills() -> List[str]:
 
     :return: list of OSRS stat names, e.g. ['attack', 'defence', ...]
     """
-    return ['attack', 'defence', 'strength', 'hitpoints', 'ranged', 'prayer', 'magic',
-            'cooking', 'woodcutting', 'fletching', 'fishing', 'firemaking', 'crafting',
-            'smithing', 'mining', 'herblore', 'agility', 'thieving', 'slayer', 'farming',
-            'runecraft', 'hunter', 'construction']
+    skills = ['attack', 'defence', 'strength', 'hitpoints', 'ranged', 'prayer', 'magic',
+              'cooking', 'woodcutting', 'fletching', 'fishing', 'firemaking', 'crafting',
+              'smithing', 'mining', 'herblore', 'agility', 'thieving', 'slayer', 'farming',
+              'runecraft', 'hunter', 'construction']
+    if include_total:
+        skills.insert(0, 'total')
+    return skills
 
 
 @dataclass
@@ -45,12 +44,10 @@ class DatasetSplit:
     project will be run on each split of the data defined in ref/splits.json.
     """
     name: str
-    nskills: int
     skills: List[str]
-    skillinds: List[int]  # index of each skill in the canonical skill ordering
 
 
-@lru_cache()
+@cache
 def load_splits(file: str = None) -> List[DatasetSplit]:
     """
     Load metadata about splits of the dataset to use for this project.
@@ -75,19 +72,27 @@ def load_splits(file: str = None) -> List[DatasetSplit]:
         for s in json.load(f):
             split = DatasetSplit(
                 name=s['name'],
-                skills=s['skills'],
-                nskills=len(s['skills']),
-                skillinds=[osrs_skills.index(skill) for skill in s['skills']]
+                skills=s['skills']
             )
             splits.append(split)
 
     return splits
 
 
-def split_dataset(data: NDArray, splitname: str) -> NDArray:
-    split = splitinfo(splitname)
-    player_vectors = data[:, split.skillinds]
-    return player_vectors.copy()  # copy to make C-contiguous array (needed by faiss)
+def split_dataset(player_vectors: NDArray, split: str, has_total: bool = False, splits_file: str = None) -> DatasetSplit:
+    for ds in load_splits(splits_file):
+        if ds.name == split:
+            break
+    else:
+        raise KeyError(split)
+
+    all_skills = osrs_skills(include_total=has_total)
+    keep_cols = [all_skills.index(skill) for skill in ds.skills]
+    if has_total:
+        keep_cols.insert(0, all_skills.index('total'))
+
+    player_vectors = player_vectors[:, keep_cols]
+    return player_vectors.copy()  # copy to make array C-contiguous which is needed by faiss
 
 
 @dataclass
@@ -123,7 +128,7 @@ def connect_mongo(url: str) -> Database:
     """
     is_local = url.startswith("0.0.0.0") or url.startswith("localhost")
     mongo = MongoClient(url, tlsCAFile=None if is_local else certifi.where())
-    db = mongo['osrs-hiscores']
+    db = mongo[global_db_name()]
     try:
         db.command('ping')
     except ServerSelectionTimeoutError:
@@ -164,5 +169,14 @@ def env_var(var_name: str) -> str:
         raise ValueError(f"{e} is not set in environment")
 
 
+def unpickle(file: str) -> Any:
+    with open(file, 'rb') as f:
+        return pickle.load(f)
+
+
 def line_count(file: str) -> int:
     return int(check_output(['wc', '-l', file]).split()[0])
+
+
+def global_db_name() -> str:
+    return 'osrs-hiscores'

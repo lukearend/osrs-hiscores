@@ -2,10 +2,11 @@
 import argparse
 import sys
 
-from src.common import PlayerData, playerdata_to_mongodoc, connect_mongo
+from src.common import PlayerData, playerdata_to_mongodoc, connect_mongo, global_db_name
 from tqdm import tqdm
 
-from src.common import line_count, load_clusterids_data, load_stats_data
+from src.common import line_count
+from src.data import load_clusterids_data, load_stats_data
 
 
 def main(stats_file: str, clusters_file: str, url: str, coll_name: str, drop: bool = False):
@@ -55,9 +56,9 @@ def main(stats_file: str, clusters_file: str, url: str, coll_name: str, drop: bo
 
 
 if __name__ == "__main__":
-    desc = """Build a collection of mappings from usernames to player info
-           (stats and clustering results) in the database 'osrs-hiscores'
-           at the specified Mongo instance."""
+    desc = f"""Build a collection of mappings from usernames to player info
+           (stats and clustering results). The collection is created in the
+           database '{global_db_name()}' at the specified Mongo instance."""
 
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('statsfile', type=str, help="load player stats from this CSV file")
