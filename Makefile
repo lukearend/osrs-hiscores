@@ -101,10 +101,18 @@ start-mongo:
 
 # Data upload/download ----------------------------------------------------------------------------
 
-download: download-stats download-clusters ## Download finalized dataset (player stats and clusters).
+download: ## Download finalized dataset (player stats and clusters).
 	source env/bin/activate && \
-	bin/download_dataset $(stats_file) $(centroids_file) $(clusterids_file) && \
-	src/data/python -m pkls_to_csv $(centroids_file) $(clusterids_file)
+	bin/download_dataset $(stats_file).pkl $(centroids_file).pkl $(clusterids_file).pkl
+
+upload-s3:
+	aws s3 cp $(app_data_file) s3://$(OSRS_APPDATA_BUCKET)/app-data.pkl && \
+	aws s3 cp $(centroids_file) s3://$(OSRS_DATASET_BUCKET)/cluster-centroids.pkl && \
+	aws s3 cp $(clusterids_file) s3://$(OSRS_DATASET_BUCKET)/player-clusters.pkl && \
+	aws s3 cp $(stats_file) s3://$(OSRS_DATASET_BUCKET)/player-stats.pkl
+
+upload-gdrive: csv-files
+	upload_gdrive $(stats_file).csv $(centroids_file).csv $(clusterids_file).csv
 
 csv-files: $(stats_file).csv $(centroids_file).csv $(clusterids_file).csv
 
@@ -115,58 +123,6 @@ $(clusterids_file).csv: clusterids-pkl-to-csv
 %-pkl-to-csv:
 	source env/bin/activate && cd src/data && \
 	python -m $*_pkl_to_csv $($*_file).pkl $($*_file).csv
-
-upload-gdrive: csv-files
-	upload_gdrive $(stats_file).csv $(centroids_file).csv $(clusterids_file).csv
-
-upload-app-data:
-	aws s3 cp $(app_data_file) s3://$(OSRS_APPDATA_BUCKET)/app-data.pkl && \
-
-upload-s3:
-	aws s3 cp $(stats_file) s3://$(OSRS_DATASET_BUCKET)/player-stats.csv && \
-	aws s3 cp $(centroids_file) s3://$(OSRS_DATASET_BUCKET)/cluster-centroids.pkl && \
-	aws s3 cp $(clusterids_file) s3://$(OSRS_DATASET_BUCKET)/player-clusters.pkl && \
-
-
-
-centroids_file_csv:=$(subst .pkl,.csv,$(centroids_file))
-clusterids_file_csv:=$(subst .pkl,.csv,$(clusterids_file))
-
-$(centroids_file_csv):  write-centroids-csv
-	source env/bin/activate && cd src/data && \
-	python -m centroids_pkl_to_csv $(centroids_file)
-
-$(clusterids_file_csv): write-clusterids-csv
-	source env/bin/activate && cd src/data && \
-	python -m clusters_pkl_to_csv $(centroids_file)
-
-upload-gdrive: $(centroids_file_csv) $(clusterids_File_csv)
-
-
-
-
-upload-artifacts: upload-app upload-stats upload-clusters
-	upload_artifacts $(app_data_file)
-
-download-stats:
-	aws s3 cp s3://$(OSRS_S3_BUCKET)/player-stats.csv $(stats_file)
-
-download-clusters:
-	aws s3 cp s3://$(OSRS_S3_BUCKET)/cluster-centroids.csv $(centroids_file_csv)
-	aws s3 cp s3://$(OSRS_S3_BUCKET)/player-clusters.csv $(clusterids_file_csv)
-
-upload-app:
-
-upload-stats:
-	aws s3 cp $(app_data_file) s3://$(OSRS_S3_BUCKET)/app-data.pkl
-	aws s3 cp $(stats_file) s3://$(OSRS_S3_BUCKET)/player-stats.csv
-	aws s3 cp $(centroids_file_csv) s3://$(OSRS_S3_BUCKET)/cluster-centroids.csv && \
-	aws s3 cp $(clusterids_file_csv) s3://$(OSRS_S3_BUCKET)/player-clusters.csv
-
-upload-clusters:
-
-upload-gdrive:
-	cd bin && upload_gdrive $(stats_file).csv $(centroids_file).csv $(clusterids_file).csv
 
 # Testing -----------------------------------------------------------------------------------------
 
@@ -198,20 +154,25 @@ env-clean:
 	rm -rf env
 
 scrape-clean:
-	rm -f $(raw_stats_file)
-	rm -f $(stats_file)
+	rm -f $(raw_stats_file).csv
+	rm -f $(stats_file).pkl
 
 cluster-clean:
-	rm -f $(centroids_file)
-	rm -f $(clusterids_file)
+	rm -f $(centroids_file).pkl
+	rm -f $(clusterids_file).pkl
 
 analytics-clean:
-	rm -f $(clust_xyz_file)
-	rm -f $(clust_quartiles_file)
+	rm -f $(clust_xyz_file).pkl
+	rm -f $(clust_quartiles_file).pkl
 
 app-clean:
-	rm -f $(app_data_file)
+	rm -f $(app_data_file).pkl
 	rm -rf volume
+
+csv-clean:
+	rm -f $(stats_file).csv
+	rm -f $(centroids_file).csv
+	rm -f $(clusterids_file).csv
 
 ec2-%: # options: status, start, stop, connect, setup
 	cd bin/dev && ./ec2_instance $*

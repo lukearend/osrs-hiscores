@@ -1,19 +1,17 @@
 #!/usr/bin/env bash
-if [ "$#" -ne 3 ]
-then
+if [ "$#" -ne 3 ]; then
   echo "usage: ./upload_gdrive <statsfile> <centroidsfile> <clusteridsfile>"
   exit 1
+elif [ ! -f $1 ]; then
+  echo "stats file '$1' not found" && exit 1
+elif [ ! -f $2 ]; then
+  echo "centroids file '$2' not found" && exit 1
+elif [ ! -f $3 ]; then
+  echo "cluster IDs file '$3' not found" && exit 1
 fi
 stats_file=$1
 centroids_file=$2
 clusterids_file=$3
-if [ ! -f $1 ]; then
-  echo "stats file '$1' not found" && exit
-elif [ ! -f $2 ]; then
-  echo "centroids file '$2' not found" && exit
-elif [ ! -f $3 ]; then
-  echo "cluster IDs file '$3' not found" && exit
-fi
 
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)/.."
 tmp_dir="$ROOT_DIR/.tmpzip"

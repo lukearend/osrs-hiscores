@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
-if [ -z $1 ] || [ $1 == "help" ]
-then
-  echo "usage: ./scrape_stats <usernames-csv-file> <output-csv-file>"
-  exit 1
+usage="usage: ./scrape_stats <usernames-csv-file> <output-csv-file>" && exit 1
+if [ $1 == "help" ]; then
+  echo "$usage" && exit
+elif [ "$#" -ne 2 ]; then
+  echo "$usage" && exit 1
+elif [ ! -f $1 ]; then
+  echo "input file '$1' not found" && exit 1
 fi
 
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)/.."
 cd "$ROOT_DIR" && source env/bin/activate && \
-until python src/scrape/scrape_stats.py $1 $2
+until src/scrape/python -m scrape_stats $1 $2
 do
   bin/reset_vpn
 done

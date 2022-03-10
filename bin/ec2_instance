@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)/../.."
-cd "$ROOT_DIR" || exit
-bin/util/load_dotenv
+cd "$ROOT_DIR" && if [ -f .env ]; then
+  source .env
+fi
 
 arg=$1
+usage="usage: ./ec2_instance [status|start|stop|connect|setup]"
 
 if [ "$arg" == 'status' ] # check instance status
 then
@@ -16,13 +18,13 @@ then
 	aws ec2 stop-instances --instance-ids "$OSRS_EC2_ID"
 elif [ "$arg" == 'connect' ] # connect to instance through SSH
 then
-	ip_addr=$(aws ec2 describe-instances --instance-id "$OSRS_EC2_ID" \
-	          | jq -r '.Reservations[0].Instances[0].PublicIpAddress')
+	ip_addr=$(aws ec2 describe-instances --instance-id "$OSRS_EC2_ID" | \
+	          jq -r '.Reservations[0].Instances[0].PublicIpAddress')
 	ssh -i "$OSRS_EC2_PEM" "ec2-user@$ip_addr"
 elif [ "$arg" == 'setup' ] # setup script once logged into instance
 then
-  bin/util/ec2_setup
+  cd bin && ./ec2_setup
 else
-  echo "usage: ./ec2_instance [status|start|stop|connect|setup]"
+  echo
   exit 1
 fi
