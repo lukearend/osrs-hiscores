@@ -1,0 +1,32 @@
+#!/usr/bin/env bash
+if [ "$#" -ne 3 ]
+then
+  echo "usage: ./upload_gdrive <statsfile> <centroidsfile> <clusteridsfile>"
+  exit 1
+fi
+stats_file=$1
+centroids_file=$2
+clusterids_file=$3
+if [ ! -f $1 ]; then
+  echo "stats file '$1' not found" && exit
+elif [ ! -f $2 ]; then
+  echo "centroids file '$2' not found" && exit
+elif [ ! -f $3 ]; then
+  echo "cluster IDs file '$3' not found" && exit
+fi
+
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)/.."
+tmp_dir="$ROOT_DIR/.tmpzip"
+trap "rm -rf $tmp_dir" exit
+
+zip_dir=osrs-dataset
+
+mkdir "$tmp_dir" && cd "$tmp_dir" && mkdir $zip_dir && \
+cp "$centroids_file" $zip_dir/cluster-centroids.csv && \
+cp "$clusterids_file" $zip_dir/player-clusters.csv && \
+cp "$stats_file" $zip_dir/player-stats.csv && \
+zip -rX $zip_dir.zip $zip_dir && \
+gdrive upload $zip_dir/cluster-centroids.csv -p $OSRS_GDRIVE_DIR --name cluster-centroids.csv && \
+gdrive upload $zip_dir/player-clusters.csv -p $OSRS_GDRIVE_DIR --name player-clusters.csv && \
+gdrive upload $zip_dir/player-stats.csv -p $OSRS_GDRIVE_DIR --name player-stats.csv && \
+gdrive upload $zip_dir.zip -p $OSRS_GDRIVE_DIR --name $zip_dir.zip

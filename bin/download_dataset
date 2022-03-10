@@ -1,4 +1,9 @@
 #!/usr/bin/env python3
+"""
+todo:
+this script should use argparse and take in the namnes of files to download as command line arguments
+when run with no arguments or help, -h or --help, it should print the help text.
+"""
 import os
 from pathlib import Path
 from dotenv import find_dotenv, load_dotenv
@@ -19,3 +24,8 @@ bucket = env_var("OSRS_DATASET_S3BUCKET")
 lazy_download(bucket, "cluster-centroids.csv", str(centroids_file))
 lazy_download(bucket, "player-clusters.csv", str(clusters_file))
 lazy_download(bucket, "player-stats.csv", str(stats_file))
+
+
+
+
+
