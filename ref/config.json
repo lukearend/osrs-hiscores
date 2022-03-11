@@ -1,0 +1,8 @@
+{
+    "stats_file": "data/processed/player-stats",
+    "centroids_file": "data/processed/cluster-centroids",
+    "clusterids_file": "data/processed/player-clusters",
+    "clust_xyz_file": "data/interim/clusters-xyz",
+    "clust_quartiles_file": "data/interim/cluster-quartiles",
+    "appdata_file": "data/processed/app-data"
+}

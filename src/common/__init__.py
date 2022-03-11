@@ -3,6 +3,7 @@ import json
 import os
 import pickle
 from dataclasses import dataclass
+
 from functools import cache
 from pathlib import Path
 from subprocess import check_output
@@ -96,14 +97,14 @@ def split_dataset(player_vectors: NDArray, split: str, has_total: bool = False, 
 
 
 @dataclass
-class PlayerData:
+class PlayerResults:
     """ Stats and clustering results for a player. """
     username: str
     clusterids: Dict[str, int]  # resulting cluster ID for each split of the dataset
     stats: List[int]
 
 
-def playerdata_to_mongodoc(player: PlayerData) -> Dict[str, Any]:
+def player_results_to_mongodoc(player: PlayerResults) -> Dict[str, Any]:
     return {
         '_id': player.username.lower(),
         'username': player.username,
@@ -112,8 +113,8 @@ def playerdata_to_mongodoc(player: PlayerData) -> Dict[str, Any]:
     }
 
 
-def mongodoc_to_playerdata(doc: Dict[str, Any]) -> PlayerData:
-    return PlayerData(
+def mongodoc_to_player_results(doc: Dict[str, Any]) -> PlayerResults:
+    return PlayerResults(
         username=doc['username'],
         clusterids=doc['clusterids'],
         stats=doc['stats']
@@ -124,7 +125,7 @@ def connect_mongo(url: str) -> Database:
     """ Connect to MongoDB instance at the given URL.
 
     :param url: connect to instance running at this URL
-    :return: database containing player collection
+    :return: database containing project collection(s)
     """
     is_local = url.startswith("0.0.0.0") or url.startswith("localhost")
     mongo = MongoClient(url, tlsCAFile=None if is_local else certifi.where())
@@ -180,3 +181,19 @@ def line_count(file: str) -> int:
 
 def global_db_name() -> str:
     return 'osrs-hiscores'
+
+
+@cache
+def osrs_minigames() -> List[str]:
+    return ["bounty_hunter_hunter", "bounty_hunter_rogue", "clue_scrolls_all", "clue_scrolls_beginner",
+            "clue_scrolls_easy", "clue_scrolls_medium", "clue_scrolls_hard", "clue_scrolls_elite",
+            "clue_scrolls_master", "lms_rank", "soul_wars_zeal", "abyssal_sire", "alchemical_hydra",
+            "barrows_chests", "bryophyta", "callisto", "cerberus", "chambers_of_xeric",
+            "chambers_of_xeric_challenge_mode", "chaos_elemental", "chaos_fanatic", "commander_zilyana",
+            "corporeal_beast", "crazy_archaeologist", "dagannoth_prime", "dagannoth_rex", "dagannoth_supreme",
+            "deranged_archaeologist", "general_graardor", "giant_mole", "grotesque_guardians", "hespori",
+            "kalphite_queen", "king_black_dragon", "kraken", "kreearra", "kril_tsutsaroth", "mimic", "nex",
+            "nightmare", "phosanis_nightmare", "obor", "sarachnis", "scorpia", "skotizo", "tempoross",
+            "the_gauntlet", "the_corrupted_gauntlet", "theatre_of_blood", "theatre_of_blood_hard_mode",
+            "thermonuclear_smoke_devil", "tzkal_zuk", "tztok_jad", "venenatis", "vetion", "vorkath",
+            "wintertodt", "zalcano", "zulrah"]

@@ -1,3 +1,39 @@
+from pathlib import Path
+from typing import List
+
+import aiohttp
+import pytest
+
+from src.common import env_var, connect_mongo
+from src.scrape import RankData, PlayerData, get_hiscores_page, get_player_stats
+
+test_dir = Path(__file__).resolve().parent
+mongo_url = env_var("OSRS_MONGO_URI")
+
+
+@pytest.mark.asyncio
+async def test_scrape_stats():
+    with aiohttp.ClientSession() as sess:
+        front_page: List[RankData] = await get_hiscores_page(sess, page_num=1)
+        lynx_titan = RankData(rank=1, username="Lynx Titan", total_level=2277, total_xp=4_600_000_000)
+        assert front_page[0] == lynx_titan
+
+        top_player = await get_player_stats(sess, username="Lynx Titan")
+        # todo: assert top player is Lynx Titan and has level 99/200m xp in all stats
+        # todo: store each player in mongodb like:
+        """
+        {
+            "username": str
+            "skill_ranks": int[24]  # total followed by 23 skills
+            "skill_levels": int[24]
+            "skill_xp": int[24]
+            "minigames_ranks": int[59]  # clues (7), minigames (4), bosses (48)
+            "minigames_scores": int[59]
+        """
+        # todo: continue writing unit tests
+
+
+
 # from pymongo import MongoClient
 #
 # from src.common import line_count, mongodoc_to_playerdata, osrs_statnames, load_splits

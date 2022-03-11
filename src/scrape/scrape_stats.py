@@ -14,7 +14,7 @@ import sys
 
 from tqdm import tqdm
 
-from src.scrape import UserNotFound, HiscoresApiError, request_stats, run_workers
+from src.scrape import UserNotFound, HiscoresApiError, run_workers, get_player_stats
 
 
 async def process_stats(session, job_queue, out_file, file_lock, pbar):
@@ -26,7 +26,7 @@ async def process_stats(session, job_queue, out_file, file_lock, pbar):
                 return
 
             try:
-                stats_csv = await request_stats(session, username)
+                stats_csv = await get_player_stats(session, username)
             except UserNotFound as e:
                 # Make a row representing the missing data.
                 print(f"user '{e}' not found")
@@ -44,7 +44,7 @@ async def process_stats(session, job_queue, out_file, file_lock, pbar):
             file_lock.release()
 
 
-def main(in_file: str, out_file: str):
+def main(out_file: str):
     print("scraping player stats...")
 
     # Read user rankings file to see which usernames need to be processed.

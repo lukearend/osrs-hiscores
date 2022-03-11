@@ -1,24 +1,31 @@
 import asyncio
-from typing import Callable, Iterable, Any, Dict
+from collections import namedtuple
+from dataclasses import dataclass
+from typing import List
 
 import aiohttp
 from bs4 import BeautifulSoup
-from tqdm import tqdm
+
+from src.common import osrs_skills, osrs_minigames
+
+REQUEST_MAX_ATTEMPTS = 5
 
 
-class PageParseError(Exception):
-    pass
+class PageParseError(Exception): pass
+class HiscoresApiError(Exception): pass
+class UserNotFound(Exception): pass
 
 
-class HiscoresApiError(Exception):
-    pass
+@dataclass
+class RankData:
+    """ Represents a row on the overall ranking pages of the OSRS hiscores. """
+    rank: int
+    username: str
+    total_level: int
+    total_xp: int
 
 
-class UserNotFound(Exception):
-    pass
-
-
-def parse_page(page_html: str) -> Dict[str, Any]:
+def parse_page_html(page_html: str) -> List[RankData]:
     """
     Parse username info out of the raw HTML for a front page of the OSRS hiscores.
 
@@ -38,37 +45,28 @@ def parse_page(page_html: str) -> Dict[str, Any]:
     except IndexError as e:
         raise PageParseError(f"could not parse page body:\n{page_body}")
 
-    result = {}
+    page_rows = []
     for row in player_rows:
         try:
-            rank, username, total_level = row.find_all('td')[:3]
+            rank, username, total, xp = row.find_all('td')[:4]
         except IndexError as e:
             raise PageParseError("could not parse row: {}".format(e))
 
         rank = int(rank.string.strip().replace(',', ''))
         username = username.a.string.replace('\xa0', ' ')
-        total_level = int(total_level.string.strip().replace(',', ''))
+        total = int(total.string.strip().replace(',', ''))
+        xp = int(xp.string.strip().replace(',', ''))
 
-        result[rank] = {
-            'username': username,
-            'totlevel': total_level
-        }
+        player_data = RankData(rank=rank, username=username, total_level=total, total_xp=xp)
+        page_rows.append(player_data)
 
-    return result
+    return page_rows
 
 
-async def request_page(session, page_num, max_attempts=5) -> str:
-    """
-    Fetch a front page of the OSRS hiscores by page number.
-
-    :param session: HTTP client session
-    :param page_num: integer between 1 and 80000
-    :param max_attempts: number of times to try before giving up
-    :return: requested page as raw HTML
-    """
-    for _ in range(max_attempts):
+async def request_hiscores_page(session, page_num) -> str:
+    for _ in range(REQUEST_MAX_ATTEMPTS):
         async with session.get(
-            'https://secure.runescape.com/m=hiscore_oldschool/overall',
+            "https://secure.runescape.com/m=hiscore_oldschool/overall",
             headers={
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept'
@@ -84,21 +82,57 @@ async def request_page(session, page_num, max_attempts=5) -> str:
 
     else:
         error = await response.text()
-        raise HiscoresApiError("could not get page after {} tries: {}".format(max_attempts, error))
+        raise HiscoresApiError(f"could not get page after {REQUEST_MAX_ATTEMPTS} tries: {error}")
 
 
-async def request_stats(session, username, max_attempts=5) -> str:
+async def get_hiscores_page(session, page_num: int) -> List[RankData]:
     """
-    Request stats for a player from the OSRS hiscores CSV API.
+    Fetch a front page of the OSRS hiscores by page number.
+
+    :param session: HTTP client session
+    :param page_num: integer between 1 and 80000
+    :return: list of player rankings from one page of the hiscores
+    """
+    page_html = await request_hiscores_page(session, page_num)
+    return parse_page_html(page_html)
+
+
+SkillStats = namedtuple('SkillStats', osrs_skills())
+MinigameStats = namedtuple('MinigameStats', osrs_minigames())
+
+@dataclass
+class PlayerData:
+    rank: int
+    username: str
+    total_level: int
+    total_xp: int
+    skill_ranks: SkillStats
+    skill_levels: SkillStats
+    skill_xp: SkillStats
+    minigame_ranks: MinigameStats
+    minigame_scores: MinigameStats
+
+
+def parse_stats_csv(stats_csv: str) -> PlayerData:
+    pass
+
+
+async def get_player_stats(session, username) -> PlayerData:
+    stats_csv = await request_player_stats(session, username)
+    return parse_stats_csv(stats_csv)
+
+
+async def request_player_stats(session, username) -> str:
+    """
+    Fetch stats for a player from the OSRS hiscores.
 
     :param session: HTTP client session
     :param username: username for player to fetch
-    :param max_attempts: number of times to try before giving up
-    :return: player stats as CSV
+    :return: player stats as
     """
-    for _ in range(max_attempts):
+    for _ in range(REQUEST_MAX_ATTEMPTS):
         async with session.get(
-            'http://services.runescape.com/m=hiscore_oldschool/index_lite.ws',
+            "http://services.runescape.com/m=hiscore_oldschool/index_lite.ws",
             headers={
                 'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Headers': 'Origin, X-Requested-With, Content-Type, Accept'
@@ -121,7 +155,7 @@ async def request_stats(session, username, max_attempts=5) -> str:
 
     else:
         error = await response.text()
-        raise HiscoresApiError(f"could not get page after {max_attempts} tries: {error}")
+        raise HiscoresApiError(f"could not get page after {REQUEST_MAX_ATTEMPTS} tries: {error}")
 
 
 async def run_workers(workerfn: Callable, jobs: Iterable[Any], out_file: str, pbar: tqdm, nworkers: int):

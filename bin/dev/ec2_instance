@@ -23,7 +23,7 @@ then
 	ssh -i "$OSRS_EC2_PEM" "ec2-user@$ip_addr"
 elif [ "$arg" == 'setup' ] # setup script once logged into instance
 then
-  cd bin && ./ec2_setup
+  cd bin/dev && ./ec2_setup
 else
   echo
   exit 1

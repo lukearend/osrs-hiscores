@@ -2,12 +2,12 @@ import asyncio
 import aiohttp
 import numpy as np
 
-from src.scrape import request_page, parse_page, request_stats
+from src.scrape import request_hiscores_page, parse_page_html, request_stats
 
 
 async def scrape_page(sess, num):
-    page_html = await request_page(sess, page_num=num)
-    page_data = parse_page(page_html)
+    page_html = await request_hiscores_page(sess, page_num=num)
+    page_data = parse_page_html(page_html)
 
     usernames = []
     stats = np.zeros(

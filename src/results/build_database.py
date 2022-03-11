@@ -2,7 +2,7 @@
 import argparse
 import sys
 
-from src.common import PlayerData, playerdata_to_mongodoc, connect_mongo, global_db_name
+from src.common import PlayerResults, playerdata_to_mongodoc, connect_mongo, global_db_name
 from tqdm import tqdm
 
 from src.common import line_count
@@ -41,7 +41,7 @@ def main(stats_file: str, clusters_file: str, url: str, coll_name: str, drop: bo
     for i, username in enumerate(tqdm(usernames)):
         player_stats = [int(v) for v in stats[i, :]]
         ids_per_split = {split: int(clusterids[i, j]) for j, split in enumerate(splits)}
-        playerdata = PlayerData(
+        playerdata = PlayerResults(
             username=username,
             clusterids=ids_per_split,
             stats=player_stats

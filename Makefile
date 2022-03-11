@@ -9,15 +9,13 @@ run: start-mongo                        ## Run main application.
 # Setup -------------------------------------------------------------------------------------------
 
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-DATA_DIR:="$(ROOT_DIR)/data"
-raw_stats_file="$(DATA_DIR)/raw/stats-raw"
-stats_file="$(DATA_DIR)/processed/player-stats"
-centroids_file="$(DATA_DIR)/processed/cluster-centroids"
-clusterids_file="$(DATA_DIR)/processed/player-clusters"
-clust_xyz_file="$(DATA_DIR)/interim/clusters-xyz"
-clust_quartiles_file="$(DATA_DIR)/interim/cluster-quartiles"
-appdata_file="$(DATA_DIR)/processed/app-data"
-mongo_collection="$(ROOT_DIR)/players"
+get_config="$(ROOT_DIR)/bin/config_var"
+stats_file:=$(shell $(get_config) STATS_FILE)
+centroids_file=$(shell $(get_config) CENTROIDS_FILE)
+clusterids_file=$(shell $(get_config) CLUSTERIDS_FILE)
+clust_xyz_file=$(shell $(get_config) CLUST_XYZ_FILE)
+clust_quartiles_file=$(shell $(get_config) CLUST_QUARTILES_FILE)
+appdata_file=$(shell $(get_config) APPDATA_FILE)
 
 init: env pull-mongo
 
@@ -34,18 +32,18 @@ pull-mongo:
 
 # Data scraping -----------------------------------------------------------------------------------
 
-scrape: scrape-stats cleanup-stats stats-csv-to-pkl ## Scrape stats for the top 2 million OSRS accounts.
+scrape: start-mongo scrape-hiscores write-stats-file ## Scrape stats for the top 2 million OSRS accounts.
 
-scrape-stats:
+scrape-hiscores:
 	source env/bin/activate && cd src/scrape && \
 	if ! python -m check_complete ; then \
-		python -m scrape_stats $(raw_stats_file).csv --start 1 --end 80000 --random
+		python -m scrape_stats --start 1 --end 4 --random \
+		--url $(OSRS_MONGO_URI) --collection 'stats-raw'
 
-cleanup-stats: $(raw_stats_file).csv
+write-stats-file:
 	source env/bin/activate && cd src/scrape && \
-	python -m cleanup_stats $< $(stats_file).pkl
+	python -m write_stats_file $< $(stats_file).pkl
 
-$(raw_stats_file).csv: scrape-stats
 $(stats_file).pkl: cleanup-stats
 $(stats_file).csv: stats-pkl-to-csv
 .PHONY: $(raw_stats_file).csv
@@ -93,9 +91,9 @@ build-app-data: $(centroids_file) $(clust_xyz_file) $(clust_quartiles_file)
 
 build-database:
 	source env/bin/activate && cd src/app && \
-	if ! python check_collection $(clusterids_file) $(MONGO_COLLECTION) ; then \
+	if ! python check_collection $(clusterids_file) $(APPDATA_COLLECTION) ; then \
   		python -m build_database $(stats_file) $(clusterids_file) \
-  		--url $(OSRS_MONGO_URI) --collection $(MONGO_COLLECTION)
+  		--url $(OSRS_MONGO_URI) --collection $(APPDATA_COLLECTION)
 
 start-mongo:
 	cd bin && ./start_mongo

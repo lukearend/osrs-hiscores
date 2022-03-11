@@ -16,7 +16,7 @@ from collections import defaultdict
 
 from tqdm import tqdm
 
-from src.scrape import request_page, parse_page, run_workers
+from src.scrape import request_hiscores_page, parse_page_html, run_workers
 
 
 async def process_pages(session, job_queue, out_file, file_lock, pbar):
@@ -27,8 +27,8 @@ async def process_pages(session, job_queue, out_file, file_lock, pbar):
             except asyncio.QueueEmpty:
                 return
 
-            page = await request_page(session, page_number)
-            result = parse_page(page)
+            page = await request_hiscores_page(session, page_number)
+            result = parse_page_html(page)
 
             await file_lock.acquire()
             for rank, player in result.items():
