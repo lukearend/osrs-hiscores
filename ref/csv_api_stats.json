@@ -1,7 +1,7 @@
 [
-    "overall_rank",
-    "overall_level",
-    "overall_xp",
+    "total_rank",
+    "total_level",
+    "total_xp",
     "attack_rank",
     "attack_level",
     "attack_xp",
@@ -71,6 +71,7 @@
     "construction_rank",
     "construction_level",
     "construction_xp",
+    "unknown_rank","unknown_score",
     "bounty_hunter_hunter_rank",
     "bounty_hunter_hunter_score",
     "bounty_hunter_rogue_rank",

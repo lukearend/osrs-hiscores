@@ -1,37 +1,73 @@
+import asyncio
+import random
 from pathlib import Path
-from typing import List
+from typing import Dict, Any
 
 import aiohttp
 import pytest
 
-from src.common import env_var, connect_mongo
-from src.scrape import RankData, PlayerData, get_hiscores_page, get_player_stats
+from src.common import env_var, connect_mongo, osrs_skills, osrs_csv_api_stats
+from src.scrape import (PlayerRecord, get_page_usernames, get_player_stats,
+                        player_to_mongodoc, mongodoc_to_player)
 
 test_dir = Path(__file__).resolve().parent
 mongo_url = env_var("OSRS_MONGO_URI")
 
 
 @pytest.mark.asyncio
-async def test_scrape_stats():
-    with aiohttp.ClientSession() as sess:
-        front_page: List[RankData] = await get_hiscores_page(sess, page_num=1)
-        lynx_titan = RankData(rank=1, username="Lynx Titan", total_level=2277, total_xp=4_600_000_000)
-        assert front_page[0] == lynx_titan
+async def test_get_page_usernames():
+    async with aiohttp.ClientSession() as sess:
+        for _ in range(3):
+            random_page = random.randint(1, 80000)
+            usernames = await get_page_usernames(sess, random_page)
+            assert len(set(usernames)) == 25
 
-        top_player = await get_player_stats(sess, username="Lynx Titan")
-        # todo: assert top player is Lynx Titan and has level 99/200m xp in all stats
-        # todo: store each player in mongodb like:
-        """
-        {
-            "username": str
-            "skill_ranks": int[24]  # total followed by 23 skills
-            "skill_levels": int[24]
-            "skill_xp": int[24]
-            "minigames_ranks": int[59]  # clues (7), minigames (4), bosses (48)
-            "minigames_scores": int[59]
-        """
-        # todo: continue writing unit tests
 
+@pytest.mark.asyncio
+async def test_get_player_stats():
+    async with aiohttp.ClientSession() as sess:
+        front_page = await get_page_usernames(sess, page_num=1)
+        top_player_name = front_page[0]  # setup: get "Lynx Titan", or whatever he may change his name to
+
+        top_player: PlayerRecord = await get_player_stats(sess, username=top_player_name)
+        assert top_player.rank == 1
+        assert top_player.total_level == 2277
+        assert top_player.total_xp == 4_600_000_000
+
+        # Lynx Titan is 200m all, so his individual stat rankings are fixed forever.
+        expected_ranks = {
+            'attack': 15, 'defence': 28, 'strength': 18, 'hitpoints': 7, 'ranged': 8, 'prayer': 11,
+            'magic': 32, 'cooking': 160, 'woodcutting': 15, 'fletching': 12, 'fishing': 9,
+            'firemaking': 48, 'crafting': 4, 'smithing': 3, 'mining': 25, 'herblore': 5, 'agility': 23,
+            'thieving': 12, 'slayer': 2, 'farming': 19, 'runecraft': 7, 'hunter': 4, 'construction': 4
+        }
+        for skill in osrs_skills():
+            rank_i = osrs_csv_api_stats().index(f"{skill}_rank")
+            lvl_i = osrs_csv_api_stats().index(f"{skill}_level")
+            xp_i = osrs_csv_api_stats().index(f"{skill}_xp")
+            assert top_player.stats[rank_i] == expected_ranks[skill]
+            assert top_player.stats[lvl_i] == 99
+            assert top_player.stats[xp_i] == 200_000_000
+
+
+def test_read_write_scrape_records():
+    db = connect_mongo(mongo_url)
+    coll = db['scrape-test']
+    coll.drop()
+    async def get_player():
+        async with aiohttp.ClientSession() as sess:
+            return await get_player_stats(sess, username="snakeylime")
+    before_player = asyncio.run(get_player())
+
+    before_doc: Dict[str, Any] = player_to_mongodoc(before_player)
+    coll.insert_one(before_doc)
+    after_doc = coll.find_one({"username": "snakeylime"})
+    del before_doc['_id']  # strangely, '_id' is added to before_doc after insertion
+    del after_doc['_id']
+    assert before_doc == after_doc
+
+    after_player: PlayerRecord = mongodoc_to_player(after_doc)
+    assert before_player == after_player
 
 
 # from pymongo import MongoClient

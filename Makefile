@@ -3,21 +3,21 @@ export SHELL:=/bin/bash
 
 all: init scrape cluster analytics app  ## Scrape data, process it and build final application data.
 build: init download test analytics app ## Build application data from downloaded, pre-scraped data.
-run: start-mongo                        ## Run main application.
+run: mongo-start                        ## Run main application.
 	source env/bin/activate && python3 app
 
 # Setup -------------------------------------------------------------------------------------------
 
+include ref/paths.txt
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-get_config="$(ROOT_DIR)/bin/config_var"
-stats_file:=$(shell $(get_config) STATS_FILE)
-centroids_file=$(shell $(get_config) CENTROIDS_FILE)
-clusterids_file=$(shell $(get_config) CLUSTERIDS_FILE)
-clust_xyz_file=$(shell $(get_config) CLUST_XYZ_FILE)
-clust_quartiles_file=$(shell $(get_config) CLUST_QUARTILES_FILE)
-appdata_file=$(shell $(get_config) APPDATA_FILE)
+stats_file=$(ROOT_DIR)/$(STATS_FILE)
+centroids_file=$(ROOT_DIR)/$(CENTROIDS_FILE)
+clusterids_file=$(ROOT_DIR)/$(CLUSTERIDS_FILE)
+clust_xyz_file=$(ROOT_DIR)/$(CLUST_XYZ_FILE)
+clust_quartiles_file=$(ROOT_DIR)/$(CLUST_QUARTILES_FILE)
+appdata_file=$(ROOT_DIR)/$(APPDATA_FILE)
 
-init: env pull-mongo
+init: env mongo-pull
 
 env:
 	echo "building virtual environment..."
@@ -27,12 +27,12 @@ env:
 	pip3 install -r requirements.txt && \
 	rm -rf *.egg-info
 
-pull-mongo:
+mongo-pull:
 	docker pull mongo
 
 # Data scraping -----------------------------------------------------------------------------------
 
-scrape: start-mongo scrape-hiscores write-stats-file ## Scrape stats for the top 2 million OSRS accounts.
+scrape: mongo-start scrape-hiscores write-stats-file ## Scrape stats for the top 2 million OSRS accounts.
 
 scrape-hiscores:
 	source env/bin/activate && cd src/scrape && \
@@ -83,7 +83,7 @@ $(clust_quartiles_file): compute-quartiles
 
 # Application -------------------------------------------------------------------------------------
 
-app: build-app-data start-mongo build-database ## Build data file and database for application to use.
+app: build-app-data mongo-start build-database ## Build data file and database for application to use.
 
 build-app-data: $(centroids_file) $(clust_xyz_file) $(clust_quartiles_file)
 	source env/bin/activate && cd src/results && \
@@ -95,7 +95,7 @@ build-database:
   		python -m build_database $(stats_file) $(clusterids_file) \
   		--url $(OSRS_MONGO_URI) --collection $(APPDATA_COLLECTION)
 
-start-mongo:
+mongo-start:
 	cd bin && ./start_mongo
 
 # Data upload/download ----------------------------------------------------------------------------

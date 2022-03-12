@@ -104,3 +104,28 @@ def compute_stat_quartiles(player_vectors: NDArray) -> NDArray:
              skill for the 0, 25, 50, 75, and 100th percentiles
     """
     return np.nanpercentile(player_vectors, axis=0, q=[0, 25, 50, 75, 100])
+
+
+@dataclass
+class PlayerResults:
+    """ Stats and clustering results for a player. """
+    username: str
+    clusterids: Dict[str, int]  # resulting cluster ID for each split of the dataset
+    stats: List[int]
+
+
+def player_results_to_mongodoc(player: PlayerResults) -> Dict[str, Any]:
+    return {
+        '_id': player.username.lower(),
+        'username': player.username,
+        'clusterids': player.clusterids,
+        'stats': player.stats
+    }
+
+
+def mongodoc_to_player_results(doc: Dict[str, Any]) -> PlayerResults:
+    return PlayerResults(
+        username=doc['username'],
+        clusterids=doc['clusterids'],
+        stats=doc['stats']
+    )

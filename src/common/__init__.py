@@ -22,19 +22,26 @@ from pymongo.errors import ServerSelectionTimeoutError
 @cache
 def osrs_skills(include_total: bool = False) -> List[str]:
     """
-    Load the list of OSRS skill names in a canonical ordering for use throughout
-    this project. The ordering here is the same as that of the data returned by
-    the CSV hiscores API.
-
-    :return: list of OSRS stat names, e.g. ['attack', 'defence', ...]
+    Load the list of OSRS skill names in an ordering for use throughout the project.
+    :return: OSRS skills names, e.g. ['attack', 'defence', ...]
     """
-    skills = ['attack', 'defence', 'strength', 'hitpoints', 'ranged', 'prayer', 'magic',
-              'cooking', 'woodcutting', 'fletching', 'fishing', 'firemaking', 'crafting',
-              'smithing', 'mining', 'herblore', 'agility', 'thieving', 'slayer', 'farming',
-              'runecraft', 'hunter', 'construction']
+    file = Path(__file__).resolve().parents[2] / "ref" / "osrs_skills.json"
+    with open(file, 'r') as f:
+        skills = json.load(f)
     if include_total:
         skills.insert(0, 'total')
     return skills
+
+
+@cache
+def osrs_csv_api_stats() -> List[str]:
+    """
+    Load the list of header fields returned from the OSRS hiscores CSV API.
+    :return: header fields, e.g. ['total_rank', 'total_level', 'total_xp', ...]
+    """
+    ref_file = Path(__file__).resolve().parents[2] / "ref" / "csv_api_stats.json"
+    with open(ref_file, 'r') as f:
+        return json.load(f)
 
 
 @dataclass
@@ -94,31 +101,6 @@ def split_dataset(player_vectors: NDArray, split: str, has_total: bool = False, 
 
     player_vectors = player_vectors[:, keep_cols]
     return player_vectors.copy()  # copy to make array C-contiguous which is needed by faiss
-
-
-@dataclass
-class PlayerResults:
-    """ Stats and clustering results for a player. """
-    username: str
-    clusterids: Dict[str, int]  # resulting cluster ID for each split of the dataset
-    stats: List[int]
-
-
-def player_results_to_mongodoc(player: PlayerResults) -> Dict[str, Any]:
-    return {
-        '_id': player.username.lower(),
-        'username': player.username,
-        'clusterids': player.clusterids,
-        'stats': player.stats
-    }
-
-
-def mongodoc_to_player_results(doc: Dict[str, Any]) -> PlayerResults:
-    return PlayerResults(
-        username=doc['username'],
-        clusterids=doc['clusterids'],
-        stats=doc['stats']
-    )
 
 
 def connect_mongo(url: str) -> Database:
@@ -181,19 +163,3 @@ def line_count(file: str) -> int:
 
 def global_db_name() -> str:
     return 'osrs-hiscores'
-
-
-@cache
-def osrs_minigames() -> List[str]:
-    return ["bounty_hunter_hunter", "bounty_hunter_rogue", "clue_scrolls_all", "clue_scrolls_beginner",
-            "clue_scrolls_easy", "clue_scrolls_medium", "clue_scrolls_hard", "clue_scrolls_elite",
-            "clue_scrolls_master", "lms_rank", "soul_wars_zeal", "abyssal_sire", "alchemical_hydra",
-            "barrows_chests", "bryophyta", "callisto", "cerberus", "chambers_of_xeric",
-            "chambers_of_xeric_challenge_mode", "chaos_elemental", "chaos_fanatic", "commander_zilyana",
-            "corporeal_beast", "crazy_archaeologist", "dagannoth_prime", "dagannoth_rex", "dagannoth_supreme",
-            "deranged_archaeologist", "general_graardor", "giant_mole", "grotesque_guardians", "hespori",
-            "kalphite_queen", "king_black_dragon", "kraken", "kreearra", "kril_tsutsaroth", "mimic", "nex",
-            "nightmare", "phosanis_nightmare", "obor", "sarachnis", "scorpia", "skotizo", "tempoross",
-            "the_gauntlet", "the_corrupted_gauntlet", "theatre_of_blood", "theatre_of_blood_hard_mode",
-            "thermonuclear_smoke_devil", "tzkal_zuk", "tztok_jad", "venenatis", "vetion", "vorkath",
-            "wintertodt", "zalcano", "zulrah"]
