@@ -1,33 +1,13 @@
 #!/usr/bin/env bash
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)/.."
-DATA_DIR="$ROOT_DIR/test/data"
+cd "$ROOT_DIR" && source env/bin/activate && source ref/paths.txt
+(cd test && mkdir -p data && cd data && mkdir -p raw interim processed)
+stats_file="$ROOT_DIR/test/$STATS_FILE-test.pkl"
 
-export OSRS_SPLITS_FILE="$ROOT_DIR/test/data_splits.json"
-stats_file="$DATA_DIR/player-stats-small.csv"
+bin/drop_collection "scrape-test" --url "localhost:27017"
+cd "$ROOT_DIR/src/scrape" || exit 1
+python -m scrape_hiscores --mongo-url "localhost:27017" --mongo-coll "scrape-test" --start 1 --end 110 && \
+python -m export_collection --mongo-url "localhost:27017" --coll "scrape-test" --outfile "$stats_file" && \
+test $(tail +2 "$stats_file" | wc -l) -eq 110 || echo -e "\nscraping stage failed" && exit 1
 
-centroids_file="$DATA_DIR/cluster-centroids-k=20.csv"
-clusterids_file="$DATA_DIR/player-clusters-k=20.csv"
-clust_xyz_file="$DATA_DIR/clusters_xyz-k=20.pkl"
-clust_analytics_file="$DATA_DIR/cluster_analytics-k=20.pkl"
-
-kmeans_params="$ROOT_DIR/test/kmeans_params_test.json"
-umap_params="$ROOT_DIR/test/umap_params_test.json"
-
-appdata_file="$DATA_DIR/app_data-k=20.pkl"
-
-echo -e "testing pipeline...\n"
-if cd "$ROOT_DIR" && source env/bin/activate && \
-python src/models/fit_clusters.py "$stats_file" "$centroids_file" --params $kmeans_params && \
-python src/models/cluster_players.py "$stats_file" "$centroids_file" "$clusterids_file" && \
-python src/models/dim_reduce_clusters.py "$centroids_file" "$clust_xyz_file" --params $umap_params && \
-python src/results/postprocess_clusters.py "$stats_file" "$clusterids_file" "$clust_analytics_file" && \
-python src/results/build_app_data.py "$centroids_file" "$clust_analytics_file" "$clust_xyz_file" "$appdata_file" && \
-bin/dev/mongo_local pull && \
-bin/dev/mongo_local start && \
-python src/results/build_database.py "$stats_file" "$clusterids_file" \
-  --url localhost:27017 --coll 'players-test' --drop
-then
-  echo -e "\npipeline test passed"
-else
-  echo -e "\npipeline test failed"
-fi
+echo -e "\npipeline test passed"
