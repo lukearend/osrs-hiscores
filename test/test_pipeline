@@ -6,7 +6,7 @@ stats_file="$ROOT_DIR/test/$STATS_FILE-test.pkl"
 
 bin/drop_collection "scrape-test" --url "localhost:27017"
 cd "$ROOT_DIR/src/scrape" || exit 1
-python -m scrape_hiscores --mongo-url "localhost:27017" --mongo-coll "scrape-test" --start 1 --end 110 && \
+python -m scrape_hiscores --mongo-url "localhost:27017" --mongo-coll "scrape-test" --start-rank 1 --end-rank 110 && \
 python -m export_collection --mongo-url "localhost:27017" --coll "scrape-test" --outfile "$stats_file" && \
 test $(tail +2 "$stats_file" | wc -l) -eq 110 || echo -e "\nscraping stage failed" && exit 1
 

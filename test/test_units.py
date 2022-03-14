@@ -9,9 +9,10 @@ import pytest
 from src.common import env_var, connect_mongo, osrs_skills, osrs_csv_api_stats
 from src.scrape import (PlayerRecord, get_page_usernames, get_player_stats,
                         player_to_mongodoc, mongodoc_to_player)
+from src.scrape.scrape_hiscores import build_pagejobs_list
 
 test_dir = Path(__file__).resolve().parent
-mongo_url = env_var("OSRS_MONGO_URI")
+mongo_url = "localhost:27017"
 
 
 @pytest.mark.asyncio
@@ -68,6 +69,35 @@ def test_read_write_scrape_records():
 
     after_player: PlayerRecord = mongodoc_to_player(after_doc)
     assert before_player == after_player
+
+
+def test_build_page_jobs():
+    with pytest.raises(ValueError):
+        pages = build_pagejobs_list(start_rank=26, end_rank=25)
+
+    pages = build_pagejobs_list(start_rank=1, end_rank=25)
+    assert len(pages) == 1
+    assert pages[0].startind == 0
+    assert pages[0].endind == 25
+
+    pages = build_pagejobs_list(start_rank=5, end_rank=55)
+    assert len(pages) == 3
+    assert pages[0].startind == 4
+    assert pages[0].endind == 25
+    assert pages[1].startind == 0
+    assert pages[1].endind == 25
+    assert pages[2].startind == 0
+    assert pages[2].endind == 5
+
+    pages = build_pagejobs_list(start_rank=1, end_rank=2_000_000)
+    assert len(pages) == 80_000
+    assert pages[0].startind == 0
+    assert pages[-1].endind == 25
+
+
+
+if __name__ == '__main__':
+    test_build_page_jobs()
 
 
 # from pymongo import MongoClient

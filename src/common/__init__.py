@@ -6,6 +6,7 @@ from dataclasses import dataclass
 
 from functools import cache
 from pathlib import Path
+import shlex
 from subprocess import check_output
 from typing import List, Dict, Any
 
@@ -157,8 +158,9 @@ def unpickle(file: str) -> Any:
         return pickle.load(f)
 
 
-def line_count(file: str) -> int:
-    return int(check_output(['wc', '-l', file]).split()[0])
+def count_csv_records(file: str) -> int:
+    cmd = f"tail +2 {file} | wc -l"
+    return int(check_output(shlex.split(cmd)))
 
 
 def global_db_name() -> str:

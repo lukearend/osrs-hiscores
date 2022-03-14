@@ -32,21 +32,18 @@ mongo-pull:
 
 # Data scraping -----------------------------------------------------------------------------------
 
-scrape: mongo-start scrape-hiscores write-stats-file ## Scrape stats for the top 2 million OSRS accounts.
+scrape: mongo-start scrape-hiscores export-scraped-stats ## Scrape stats for the top 2 million OSRS accounts.
 
 scrape-hiscores:
 	source env/bin/activate && cd src/scrape && \
-	if ! python -m check_complete ; then \
-		python -m scrape_stats --start 1 --end 4 --random \
-		--url $(OSRS_MONGO_URI) --collection 'stats-raw'
+	python -m scrape_hiscores --mongo-url $(OSRS_MONGO_URI) --collection $(SCRAPE_COLLECTION) --start 1 --end 2000000
 
-write-stats-file:
+export-scraped-stats:
 	source env/bin/activate && cd src/scrape && \
-	python -m write_stats_file $< $(stats_file).pkl
+	python -m export_collection $< $(stats_file).csv
 
-$(stats_file).pkl: cleanup-stats
-$(stats_file).csv: stats-pkl-to-csv
-.PHONY: $(raw_stats_file).csv
+$(stats_file).csv: export-scraped-stats
+$(stats_file).pkl: stats-csv-to-pkl
 
 # Player clustering -------------------------------------------------------------------------------
 

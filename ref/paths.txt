@@ -4,3 +4,5 @@ CLUSTERIDS_FILE=data/processed/player-clusters
 CLUST_XYZ_FILE=data/interim/clusters-xyz
 CLUST_QUARTILES_FILE=data/interim/cluster-quartiles
 APPDATA_FILE=data/processed/app-data
+SCRAPE_COLLECTION=scrape
+APP_COLLECTION=players
