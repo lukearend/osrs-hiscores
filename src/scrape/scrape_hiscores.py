@@ -9,18 +9,21 @@ from typing import List
 from codetiming import Timer
 from pymongo.collection import Collection
 
-
 import aiohttp
 import motor.motor_asyncio
 from tqdm.asyncio import tqdm
 
 from src.common import global_db_name
-from src.scrape import get_page_usernames, get_player_stats, player_to_mongodoc, \
+from src.scrape import get_page_usernames, get_player_stats, playerrecord_to_mongodoc, \
     PageRequestFailed, UserRequestFailed, UserNotFound, IPAddressBlocked
+
+
+UNAME_BUFSIZE = 500
 
 
 class ResetVPN(Exception):
     pass
+
 
 class DoneScraping(Exception):
     pass
@@ -33,65 +36,65 @@ class PageJob:
     endind: int = 25   # end index of the usernames wanted from this page
 
 
+async def download_pages(sess, page_jobs: PriorityQueue, username_buffer: PriorityQueue):
+    while True:
+        if username_buffer.qsize() > UNAME_BUFSIZE:
+            await asyncio.sleep(0.1)
+            continue
+
+        priority, page = await page_jobs.get()
+        try:
+            unames = await get_page_usernames(sess, page.pagenum)
+            unames = unames[page.startind:page.endind]
+            for i, uname in enumerate(unames):
+                username_buffer.put_nowait((i, uname))
+        except (asyncio.CancelledError, PageRequestFailed, IPAddressBlocked):
+            page_jobs.put_nowait((priority, page))
+            raise ResetVPN
+
+        if username_buffer.qsize() < UNAME_BUFSIZE:  # fill buffer more slowly to avoid throttling
+            await asyncio.sleep(0.25)
+
+
 async def download_stats(sess, username_jobs: PriorityQueue, out_queue: PriorityQueue):
     while True:
-        job = await username_jobs.get()
+        priority, username = await username_jobs.get()
         try:
-            _, username = job
             playerdata = await get_player_stats(sess, username)
-        except asyncio.CancelledError:
-            username_jobs.put_nowait(job)
-            raise
-        except (UserRequestFailed, IPAddressBlocked):
-            username_jobs.put_nowait(job)
-            raise ResetVPN
+            await out_queue.put((priority, playerdata))
         except UserNotFound:
             continue
-        else:
-            await out_queue.put((playerdata.rank, playerdata))
+        except (asyncio.CancelledError, UserRequestFailed, IPAddressBlocked):
+            username_jobs.put_nowait((priority, username))
+            raise ResetVPN
 
 
 async def export_results(export_jobs: PriorityQueue, mongo_coll: Collection, progress_bar: tqdm):
     while True:
-        _, playerdata = await export_jobs.get()
-        playerdoc = player_to_mongodoc(playerdata)
-        try:
-            await mongo_coll.insert_one(playerdoc)
-            progress_bar.update(1)
-        except asyncio.CancelledError:
-            await mongo_coll.insert_one(playerdoc)
-            progress_bar.update(1)
-            raise
-
-
-async def download_pages(sess, page_jobs: PriorityQueue, username_buffer: PriorityQueue):
-    while True:
-        job = await page_jobs.get()
-        try:
-            while username_buffer.qsize() > 1000:
-                await asyncio.sleep(0.1)
-            if username_buffer.qsize() < 975:
-                await asyncio.sleep(0.25)
-            _, page = job
-            usernames = await get_page_usernames(sess, page.pagenum)
-            usernames = usernames[page.startind:page.endind]
-            for username_job in enumerate(usernames):
-                username_buffer.put_nowait(username_job)
-        except (asyncio.CancelledError, PageRequestFailed, IPAddressBlocked):
-            page_jobs.put_nowait(job)
-            raise
+        docs = []
+        while True:
+            try:
+                _, playerdata = export_jobs.get_nowait()
+                docs.append(playerrecord_to_mongodoc(playerdata))
+            except asyncio.QueueEmpty:
+                break
+        if not docs:
+            await asyncio.sleep(0.1)
+        else:
+            await mongo_coll.insert_many(docs)
+            progress_bar.update(len(docs))
 
 
 async def watch_done(page_queue: PriorityQueue, uname_queue: PriorityQueue, out_queue: PriorityQueue):
     while True:
-        await asyncio.sleep(2)
+        await asyncio.sleep(1)
         if page_queue.qsize() == 0 and uname_queue.qsize() == 0 and out_queue.qsize() == 0:
             try:
-                item = await asyncio.wait_for(out_queue.get(), timeout=2)
+                nextjob = await asyncio.wait_for(out_queue.get(), timeout=1)
             except asyncio.TimeoutError:
                 raise DoneScraping
             else:
-                await out_queue.put(item)
+                await out_queue.put(nextjob)
 
 
 def get_page_joblist(start_rank: int, end_rank: int) -> List[PageJob]:
@@ -120,7 +123,7 @@ def reset_vpn():
 async def stop_tasks(tasks):
     for task in tasks:
         task.cancel()
-    await asyncio.gather(*tasks, return_exceptions=True)  # supresses CancelledErrors
+    await asyncio.gather(*tasks, return_exceptions=True)  # suppress CancelledErrors
 
 
 async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int, nworkers: int, drop: bool = False):
@@ -139,39 +142,35 @@ async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
     username_job_queue = asyncio.PriorityQueue()
     export_queue = asyncio.PriorityQueue(maxsize=200)
 
-    # reset_vpn()
-
     t = Timer(text="done ({minutes:.1f} minutes)")
     t.start()
     with tqdm(total=stop_rank - start_rank + 1) as pbar:
         async with aiohttp.ClientSession() as sess:
 
             def start_tasks() -> List[asyncio.Task]:
-                T = [asyncio.create_task(watch_done(page_job_queue, username_job_queue, export_queue))]
+                T = [asyncio.create_task(export_results(export_queue, mongo_coll=coll, progress_bar=pbar)),
+                     asyncio.create_task(watch_done(page_job_queue, username_job_queue, export_queue))]
+                for _ in range(4):
+                    T.append(asyncio.create_task(
+                        download_pages(sess, page_jobs=page_job_queue, username_buffer=username_job_queue)))
                 for _ in range(nworkers):
                     T.append(asyncio.create_task(
                         download_stats(sess, username_jobs=username_job_queue, out_queue=export_queue)))
-                for _ in range(2):
-                    T.append(asyncio.create_task(
-                        download_pages(sess, page_jobs=page_job_queue, username_buffer=username_job_queue)))
-                for _ in range(1):
-                    T.append(asyncio.create_task(
-                        export_results(export_jobs=export_queue, mongo_coll=coll, progress_bar=pbar)))
                 return T
 
+            reset_vpn()
             while True:
                 tasks = start_tasks()
                 try:
                     await asyncio.gather(*tasks)
                 except ResetVPN:
-                    await stop_tasks(tasks)
                     reset_vpn()
                 except DoneScraping:
-                    await stop_tasks(tasks)
                     break
                 except Exception:
-                    await stop_tasks(tasks)
                     raise
+                finally:
+                    await stop_tasks(tasks)
     t.stop()
 
 
@@ -181,7 +180,7 @@ if __name__ == "__main__":
     parser.add_argument('--mongo-coll', required=True, help="put scraped data into this collection")
     parser.add_argument('--start-rank', required=True, type=int, help="start data collection at this player rank")
     parser.add_argument('--stop-rank', required=True, type=int, help="stop data collection at this rank")
-    parser.add_argument('--num-workers', default=32, type=int, help="number of concurrent scraping threads")
+    parser.add_argument('--num-workers', default=64, type=int, help="number of concurrent scraping threads")
     parser.add_argument('--drop', action='store_true', help="if set, will drop collection before scrape begins")
     args = parser.parse_args()
     asyncio.run(main(args.mongo_url, args.mongo_coll, args.start_rank, args.stop_rank, args.num_workers, args.drop))

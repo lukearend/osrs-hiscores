@@ -1,31 +1,33 @@
+import asyncio
 import dataclasses
+import re
 from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Any, Dict
 
-import aiohttp
-from aiohttp.client_exceptions import ClientConnectionError
+from aiohttp.client_exceptions import ClientConnectionError, ClientOSError
 from bs4 import BeautifulSoup
 
 from src.common import osrs_csv_api_stats
 
 
-REQUEST_MAX_ATTEMPTS = 5
-
-
 class PageRequestFailed(Exception):
     pass
 
-class PageParseError(Exception):
-    pass
 
 class UserRequestFailed(Exception):
     pass
 
+
 class UserNotFound(Exception):
     pass
 
+
 class IPAddressBlocked(Exception):
+    pass
+
+
+class ParserFailed(Exception):
     pass
 
 
@@ -44,6 +46,11 @@ async def get_page_usernames(sess, page_num: int) -> List[str]:
     """
     Fetch a front page of the OSRS hiscores by page number.
 
+    Raises:
+        IPAddressBlocked if client has been blocked by hiscores server
+        PageRequestFailed if page could not be downloaded for some other reason
+        ParserFailed if downloaded page HTML could not be correctly parsed
+
     :param session: HTTP client session
     :param page_num: integer between 1 and 80000
     :return: list of the usernames on one page of the hiscores
@@ -56,6 +63,12 @@ async def get_player_stats(sess, username) -> PlayerRecord:
     """
     Fetch stats for a player by username.
 
+    Raises:
+        IPAddressBlocked if client has been blocked by hiscores server
+        UserNotFound if data could not be fetched because user does not exist
+        UserRequestFailed if user data could not be fetched for some other reason
+        ParserFailed if the expected format does not match the data received
+
     :param session: HTTP client session
     :param username: username for player to fetch
     :return: object containing player stats data
@@ -64,62 +77,67 @@ async def get_player_stats(sess, username) -> PlayerRecord:
     return parse_stats_csv(username, stats_csv)
 
 
-_http_headers = {"Access-Control-Allow-Origin": "*",
-                 "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept"}
+_req_headers = {"Access-Control-Allow-Origin": "*",
+                "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept"}
+
 
 async def request_hiscores_page(sess, page_num: int) -> str:
-    for _ in range(REQUEST_MAX_ATTEMPTS):
-        request = sess.get("https://secure.runescape.com/m=hiscore_oldschool/overall",
-                               headers=_http_headers, params={'table': 0, 'page': page_num})
-        try:
-            async with request as response:
-                if response.status != 200:
-                    continue
-                return await response.text()
-        except ClientConnectionError:
-            raise IPAddressBlocked
-    else:
-        error = await response.text()
-        raise PageRequestFailed(f"could not get page after {REQUEST_MAX_ATTEMPTS} tries: {error}")
+    req = sess.get("https://secure.runescape.com/m=hiscore_oldschool/overall",
+                   headers=_req_headers, params={'table': 0, 'page': page_num})
+    try:
+        async with req as resp:
+            if resp.status == 503:
+                raise IPAddressBlocked
+            elif resp.status != 200:
+                try:
+                    error = await resp.text()
+                except ClientConnectionError:
+                    raise IPAddressBlocked
+                raise PageRequestFailed(f"{resp.status}: {error}")
+            return await resp.text()
+    except ClientOSError:  # operation timed out
+        raise IPAddressBlocked
+
+
+async def request_player_stats(sess, username: str) -> str:
+    req = sess.get("http://services.runescape.com/m=hiscore_oldschool/index_lite.ws",
+                   headers=_req_headers, params={'player': username})
+    try:
+        async with req as resp:
+            if resp.status == 404:
+                raise UserNotFound(username)
+            elif resp.status == 503:
+                raise IPAddressBlocked
+            elif resp.status != 200:
+                try:
+                    error = await resp.text()
+                except ClientConnectionError:
+                    raise IPAddressBlocked
+                raise UserRequestFailed(f"{resp.status}: {error}")
+            return await resp.text()
+    except ClientOSError:
+        raise IPAddressBlocked
 
 
 def parse_page_usernames(page_html: str) -> List[str]:
+    soup = BeautifulSoup(page_html, 'html.parser')
     try:
-        soup = BeautifulSoup(page_html, 'html.parser')
-        page_body = soup.html.body
-        main_div = page_body.find_all('div')[4]
-        hiscores_div = main_div.find_all('div')[7]
-        stats_table = hiscores_div.find_all('div')[4]
+        main_div = soup.html.body.find_all('div')[4]
+        center_div = main_div.find_all('div')[7]
+        stats_table = center_div.find_all('div')[4]
         personal_hiscores = stats_table.div.find_all('div')[1]
-        table_rows = personal_hiscores.div.table.tbody
-        player_rows = table_rows.find_all('tr')[1:]
+        player_rows = personal_hiscores.div.table.tbody.find_all('tr')[1:]
         usernames = []
         for row in player_rows:
             username = row.find_all('td')[1]
             username = username.a.string.replace('\xa0', ' ')
             usernames.append(username)
     except IndexError as e:
-        print(f"\npage HTML: {page_html}\n")
-        raise PageParseError(f"failed to parse page: {e}")
+        for p in soup.find_all('p'):
+            if re.match(p.string.lower(), "your ip has been [a-z ]* blocked"):
+                raise IPAddressBlocked
+        raise ParserFailed(f"failed to parse page: {e}. html:\n\n{page_html}")
     return usernames
-
-
-async def request_player_stats(sess, username: str) -> str:
-    for _ in range(REQUEST_MAX_ATTEMPTS):
-        request = sess.get("http://services.runescape.com/m=hiscore_oldschool/index_lite.ws",
-                               headers=_http_headers, params={'player': username})
-        try:
-            async with request as response:
-                if response.status == 404:
-                    raise UserNotFound(username)
-                elif response.status != 200:
-                    continue
-                return await response.text()
-        except ClientConnectionError:
-            raise IPAddressBlocked
-    else:
-        error = await response.text()
-        raise UserRequestFailed(f"could not get player '{username}' after {REQUEST_MAX_ATTEMPTS} tries: {error}")
 
 
 _rank_col = osrs_csv_api_stats().index('total_rank')
@@ -130,8 +148,8 @@ def parse_stats_csv(username: str, raw_csv: str) -> PlayerRecord:
     stats_csv = raw_csv.strip().replace('\n', ',')  # stat groups are separated by newlines
     stats = [int(i) for i in stats_csv.split(',')]
     stats = [None if i < 0 else i for i in stats]
-    assert len(stats) == len(osrs_csv_api_stats()), (
-        "the CSV API returned an unexpected number of stats (was a new skill or activity recently added?)")
+    if len(stats) != len(osrs_csv_api_stats()):
+        raise ParserFailed("the CSV API returned an unexpected number of stat columns")
 
     ts = datetime.utcnow()
     ts = ts.replace(microsecond=ts.microsecond - ts.microsecond % 1000)  # mongo only has millisecond precision
@@ -145,7 +163,7 @@ def parse_stats_csv(username: str, raw_csv: str) -> PlayerRecord:
     )
 
 
-def mongodoc_to_player(doc: Dict[str, Any]) -> PlayerRecord:
+def mongodoc_to_playerrecord(doc: Dict[str, Any]) -> PlayerRecord:
     return PlayerRecord(
         ts=doc['ts'],
         rank=doc['rank'],
@@ -156,5 +174,5 @@ def mongodoc_to_player(doc: Dict[str, Any]) -> PlayerRecord:
     )
 
 
-def player_to_mongodoc(record: PlayerRecord) -> Dict[str, Any]:
+def playerrecord_to_mongodoc(record: PlayerRecord) -> Dict[str, Any]:
     return dataclasses.asdict(record)
