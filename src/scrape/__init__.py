@@ -35,7 +35,7 @@ class PlayerRecord:
     total_xp: int
     username: str
     stats: List[int]
-    ts: datetime  # time scraped
+    ts: datetime  # time record was scraped
 
 
 async def get_page_usernames(sess, page_num: int) -> List[str]:
@@ -99,24 +99,25 @@ async def http_request(sess, server_url: str, query_params: Dict[str, Any], requ
 
 
 def parse_page_usernames(page_html: str) -> List[str]:
-    soup = BeautifulSoup(page_html, 'html.parser')
-    try:
-        main_div = soup.html.body.find_all('div')[4]
-        center_div = main_div.find_all('div')[7]
-        stats_table = center_div.find_all('div')[4]
-        personal_hiscores = stats_table.div.find_all('div')[1]
-        player_rows = personal_hiscores.div.table.tbody.find_all('tr')[1:]
-        usernames = []
-        for row in player_rows:
-            username = row.find_all('td')[1]
-            username = username.a.string.replace('\xa0', ' ')
-            usernames.append(username)
-    except IndexError as e:
-        for p in soup.html.body.find_all():
-            if p.string and re.match(p.string.lower(), "your ip has been [a-z ]* blocked"):
-                raise IPAddressBlocked(p.string)
-        raise ParsingFailed(f"failed to parse page: {e}. html:\n\n{page_html}")
-    return usernames
+    page_text = BeautifulSoup(page_html, 'html.parser').text
+
+    i_start = page_text.find('Overall\nHiscores')
+    i_end = page_text.find('Search by name')
+    if i_start == -1 or i_end == -1:
+        if "your IP has been temporarily blocked" in page_text:
+            raise IPAddressBlocked("blocked temporarily due to high usage")
+        raise ParsingFailed(f"could not find main rankings table. Page text: {page_text}")
+
+    raw = page_text[i_start:i_end]
+    rawlist = [s for s in raw.split('\n') if s]
+    assert rawlist[:5] == ['Overall', 'Hiscores', 'Rank', 'Name', 'LevelXP'], (
+        f"unexpected HTML formatting for the main rankings table. Page text: {page_text}")
+    rawlist = rawlist[5:]  # remove headers from table
+    assert len(rawlist) == 100, f"unexpected number of items in main rankings table: {rawlist} "
+
+    # rawlist is now a flat list of rank, name, total level, xp for each of 25 players.
+    names = [s.replace('\xa0', ' ') for s in rawlist[1::4]]  # \xa0 is a space hex char
+    return names
 
 
 _rank_col = osrs_csv_api_stats().index('total_rank')
@@ -127,8 +128,7 @@ def parse_stats_csv(username: str, raw_csv: str) -> PlayerRecord:
     stats_csv = raw_csv.strip().replace('\n', ',')  # stat groups are separated by newlines
     stats = [int(i) for i in stats_csv.split(',')]
     stats = [None if i < 0 else i for i in stats]
-    if len(stats) != len(osrs_csv_api_stats()):
-        raise ParsingFailed("the CSV API returned an unexpected number of stat columns")
+    assert len(stats) == len(osrs_csv_api_stats()), f"the API returned an unexpected number of stats: {stats}"
 
     ts = datetime.utcnow()
     ts = ts.replace(microsecond=ts.microsecond - ts.microsecond % 1000)  # mongo only has millisecond precision
