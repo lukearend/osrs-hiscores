@@ -1,4 +1,4 @@
 #!/usr/bin/env bash
 echo "resetting vpn connection..."
-loc=$(expresso locations | grep -- '- USA -' | sed 's/^.*(//;s/)$//' | shuf -n 1)
+loc=$(expresso locations | grep -- '- UK - London' | sed 's/^.*(//;s/)$//' | shuf -n 1)
 expresso connect --change "$loc"

@@ -8,7 +8,11 @@ run: mongo-start                        ## Run main application.
 
 # Setup -------------------------------------------------------------------------------------------
 
-include ref/paths.txt
+include ref/makepaths
+ifneq (,$(wildcard ./.env))
+    include .env
+    export
+endif
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 stats_file=$(ROOT_DIR)/$(STATS_FILE)
 centroids_file=$(ROOT_DIR)/$(CENTROIDS_FILE)
@@ -36,7 +40,8 @@ scrape: mongo-start scrape-hiscores export-scraped-stats ## Scrape stats for the
 
 scrape-hiscores:
 	source env/bin/activate && cd src/scrape && \
-	python -m scrape_hiscores --mongo-url $(OSRS_MONGO_URI) --collection $(SCRAPE_COLLECTION) --start 1 --end 2000000
+	python -m scrape_hiscores --mongo-url $(OSRS_MONGO_URI) --mongo-coll $(SCRAPE_COLLECTION) \
+	--start-rank 1 --stop-rank 2000000 --num-workers 28
 
 export-scraped-stats:
 	source env/bin/activate && cd src/scrape && \

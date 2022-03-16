@@ -11,11 +11,7 @@ from bs4 import BeautifulSoup
 from src.common import osrs_csv_api_stats
 
 
-class PageRequestFailed(Exception):
-    pass
-
-
-class UserRequestFailed(Exception):
+class IPAddressBlocked(Exception):
     pass
 
 
@@ -23,11 +19,11 @@ class UserNotFound(Exception):
     pass
 
 
-class IPAddressBlocked(Exception):
+class RequestFailed(Exception):
     pass
 
 
-class ParserFailed(Exception):
+class ParsingFailed(Exception):
     pass
 
 
@@ -48,14 +44,16 @@ async def get_page_usernames(sess, page_num: int) -> List[str]:
 
     Raises:
         IPAddressBlocked if client has been blocked by hiscores server
-        PageRequestFailed if page could not be downloaded for some other reason
-        ParserFailed if downloaded page HTML could not be correctly parsed
+        RequestFailed if page could not be downloaded for some other reason
+        ParsingFailed if downloaded page HTML could not be correctly parsed
 
     :param session: HTTP client session
     :param page_num: integer between 1 and 80000
     :return: list of the usernames on one page of the hiscores
     """
-    page_html = await request_hiscores_page(sess, page_num)
+    url = "https://secure.runescape.com/m=hiscore_oldschool/overall"
+    params = {'table': 0, 'page': page_num}
+    page_html = await http_request(sess, url, params, request_type='page')
     return parse_page_usernames(page_html)
 
 
@@ -66,57 +64,38 @@ async def get_player_stats(sess, username) -> PlayerRecord:
     Raises:
         IPAddressBlocked if client has been blocked by hiscores server
         UserNotFound if data could not be fetched because user does not exist
-        UserRequestFailed if user data could not be fetched for some other reason
-        ParserFailed if the expected format does not match the data received
+        RequestFailed if user data could not be fetched for some other reason
+        ParsingFailed if the expected format does not match the data received
 
     :param session: HTTP client session
     :param username: username for player to fetch
     :return: object containing player stats data
     """
-    stats_csv = await request_player_stats(sess, username)
+    url = "http://services.runescape.com/m=hiscore_oldschool/index_lite.ws"
+    params = {'player': username}
+    stats_csv = await http_request(sess, url, params, request_type='stats')
     return parse_stats_csv(username, stats_csv)
 
 
-_req_headers = {"Access-Control-Allow-Origin": "*",
-                "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept"}
-
-
-async def request_hiscores_page(sess, page_num: int) -> str:
-    req = sess.get("https://secure.runescape.com/m=hiscore_oldschool/overall",
-                   headers=_req_headers, params={'table': 0, 'page': page_num})
+async def http_request(sess, server_url: str, query_params: Dict[str, Any], request_type: str):
+    headers = {"Access-Control-Allow-Origin": "*",
+               "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept"}
     try:
-        async with req as resp:
-            if resp.status == 503:
-                raise IPAddressBlocked
-            elif resp.status != 200:
-                try:
-                    error = await resp.text()
-                except ClientConnectionError:
-                    raise IPAddressBlocked
-                raise PageRequestFailed(f"{resp.status}: {error}")
-            return await resp.text()
-    except ClientOSError:  # operation timed out
-        raise IPAddressBlocked
-
-
-async def request_player_stats(sess, username: str) -> str:
-    req = sess.get("http://services.runescape.com/m=hiscore_oldschool/index_lite.ws",
-                   headers=_req_headers, params={'player': username})
-    try:
-        async with req as resp:
+        async with sess.get(server_url, headers=headers, params=query_params) as resp:
             if resp.status == 404:
-                raise UserNotFound(username)
+                assert request_type == 'stats', "404 responses are only expected from the stats CSV API"
+                raise UserNotFound(query_params['player'])
             elif resp.status == 503:
-                raise IPAddressBlocked
+                raise IPAddressBlocked("server too busy")
             elif resp.status != 200:
                 try:
                     error = await resp.text()
                 except ClientConnectionError:
-                    raise IPAddressBlocked
-                raise UserRequestFailed(f"{resp.status}: {error}")
+                    raise IPAddressBlocked("server blocked connection")
+                raise RequestFailed(f"{resp.status}: {error}")
             return await resp.text()
     except ClientOSError:
-        raise IPAddressBlocked
+        raise IPAddressBlocked("timed out while trying to connect to server")
 
 
 def parse_page_usernames(page_html: str) -> List[str]:
@@ -133,10 +112,10 @@ def parse_page_usernames(page_html: str) -> List[str]:
             username = username.a.string.replace('\xa0', ' ')
             usernames.append(username)
     except IndexError as e:
-        for p in soup.find_all('p'):
-            if re.match(p.string.lower(), "your ip has been [a-z ]* blocked"):
-                raise IPAddressBlocked
-        raise ParserFailed(f"failed to parse page: {e}. html:\n\n{page_html}")
+        for p in soup.html.body.find_all():
+            if p.string and re.match(p.string.lower(), "your ip has been [a-z ]* blocked"):
+                raise IPAddressBlocked(p.string)
+        raise ParsingFailed(f"failed to parse page: {e}. html:\n\n{page_html}")
     return usernames
 
 
@@ -149,7 +128,7 @@ def parse_stats_csv(username: str, raw_csv: str) -> PlayerRecord:
     stats = [int(i) for i in stats_csv.split(',')]
     stats = [None if i < 0 else i for i in stats]
     if len(stats) != len(osrs_csv_api_stats()):
-        raise ParserFailed("the CSV API returned an unexpected number of stat columns")
+        raise ParsingFailed("the CSV API returned an unexpected number of stat columns")
 
     ts = datetime.utcnow()
     ts = ts.replace(microsecond=ts.microsecond - ts.microsecond % 1000)  # mongo only has millisecond precision
