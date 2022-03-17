@@ -1,11 +1,11 @@
 import argparse
 import asyncio
-import subprocess
-from asyncio import PriorityQueue, Lock
+import heapq
+from asyncio import PriorityQueue, Queue
 from dataclasses import dataclass
-from pathlib import Path
-from typing import List
+from typing import List, Any
 
+from aiohttp import ClientSession
 from codetiming import Timer
 from pymongo.collection import Collection
 
@@ -15,17 +15,14 @@ from tqdm.asyncio import tqdm
 
 from src.common import global_db_name
 from src.scrape import get_page_usernames, get_player_stats, playerrecord_to_mongodoc, \
-    RequestFailed, UserNotFound, IPAddressBlocked
+    RequestFailed, UserNotFound, IPAddressBlocked, get_page_range, reset_vpn
+
+N_PAGE_WORKERS = 4
+UNAME_BUFSIZE = 100
+SORT_BUFSIZE = 1000
 
 
-UNAME_BUFSIZE = 500
-
-
-class ResetVPN(Exception):
-    pass
-
-
-class VPNFailure(Exception):
+class SortingError(RuntimeError):
     pass
 
 
@@ -35,100 +32,114 @@ class DoneScraping(Exception):
 
 @dataclass(order=True)
 class PageJob:
-    pagenum: int
     startind: int = 0  # start index of the usernames wanted from this page
     endind: int = 25   # end index of the usernames wanted from this page
 
 
-async def page_worker(sess, job_queue: PriorityQueue, username_buffer: PriorityQueue, out_lock: Lock, delay: int = 0):
+class PageCounter:     # used by page workers to enqueue pages in the correct order
+    bufferlock = asyncio.Lock()
+    pagefinished = asyncio.Event()
+    currentpage = 0
+
+
+async def page_worker(sess: ClientSession, pc: PageCounter, job_queue: PriorityQueue,
+                      out_buffer: PriorityQueue, delay: int = 0):
     await asyncio.sleep(delay)
     while True:
-        priority, job = await job_queue.get()
+        pagenum, job = await job_queue.get()
+        page_start_rank = (pagenum - 1) * 25 + 1
+        ranks = [page_start_rank + i for i in range(job.startind, job.endind)]
         try:
-            page_unames = await get_page_usernames(sess, job.pagenum)
+            # download and parse the assigned page
+            page_unames = await get_page_usernames(sess, pagenum)
             unames = page_unames[job.startind:job.endind]
 
-            await out_lock.acquire()
-            while username_buffer.qsize() > UNAME_BUFSIZE - 25:
-                await asyncio.sleep(0.1)
-            for i, uname in enumerate(unames):
-                username_buffer.put_nowait((job.pagenum * 25 + i, uname))
-            out_lock.release()
+            # start todo:
+            # wait until it is my turn, then enqueue my page
+            while pc.currentpage < pagenum:
+                await pc.pagefinished.wait()
+
+            pc.pagefinished.clear()
+            async with pc.bufferlock:
+                for rank, uname in zip(ranks, unames):
+                    await out_buffer.put((rank, uname))
+            pc.currentpage = pagenum + 1
+            pc.pagefinished.set()
+            # end todo
 
         except Exception:
-            job_queue.put_nowait((priority, job))
+            job_queue.put_nowait((pagenum, job))
             raise
 
 
-async def stats_worker(sess, username_jobs: PriorityQueue, out_queue: PriorityQueue, delay: float):
+async def stats_worker(sess, username_jobs: PriorityQueue, out_buffer: PriorityQueue, delay: float):
     await asyncio.sleep(delay)
     while True:
-        priority, username = await username_jobs.get()
+        rank, username = await username_jobs.get()
         try:
             playerdata = await get_player_stats(sess, username)
-            await out_queue.put((priority, playerdata))
+            await out_buffer.put((playerdata.rank, playerdata))
         except UserNotFound:
-            print(f"player with username '{username}' not found, ")
+            print(f"player with username '{username}' not found")
             continue
         except Exception:
-            username_jobs.put_nowait((priority, username))
+            username_jobs.put_nowait((rank, username))
             raise
 
 
-async def export_results(export_jobs: PriorityQueue, mongo_coll: Collection, progress_bar: tqdm):
+async def sort_results(in_queue: PriorityQueue, out_queue: Queue):
+
+    def raise_error(in_rank, out_rank, last_out_rank, heap):
+        bufdump = ""
+        for i in range(SORT_BUFSIZE):
+            player = heapq.heappop(heap)
+            bufdump += f"{i}: rank {player.rank}\n"
+        raise SortingError(
+            f"Rank {out_rank} was about to exit the sort buffer, but the previous item "
+            f"that exited was rank {last_out_rank}. Since the scrape workers are currently "
+            f"around rank {in_rank}, it's likely rank {last_out_rank + 1} was missed."
+            f"Sort buffer:\n{bufdump}")
+
+    assert SORT_BUFSIZE > 0
+    heap = []
+
+    print("buffering results to be sorted...")
+    for _ in tqdm(range(SORT_BUFSIZE)):
+        _, player = await in_queue.get()
+        heapq.heappush(heap, player)
+        print(f"LA: {player.rank}")
+
+    print("exporting results...")
+    last_out_rank = player.rank
     while True:
-        await asyncio.sleep(0.25)
+        _, in_player = await in_queue.get()
+        out_player = heapq.heappushpop(heap, in_player)
+        if out_player.rank != last_out_rank + 1:
+            raise_error(in_player.rank, out_player.rank, last_out_rank, heap)
+        await out_queue.put(out_player)
+        last_out_rank = out_player.rank
+        print(f"LA: {in_player.rank}, {out_player.rank}")
+
+
+async def export_results(export_jobs: PriorityQueue, mongo_coll: Collection, start_rank: tqdm, done_rank: int):
+
+    def flush_queue() -> List[Any]:
         docs = []
-        try:
-            while True:
-                _, playerdata = export_jobs.get_nowait()
-                docs.append(playerrecord_to_mongodoc(playerdata))
-        except asyncio.QueueEmpty:
-            if docs:
-                await asyncio.shield(mongo_coll.insert_many(docs))
-                progress_bar.update(len(docs))
-
-
-async def watch_for_done(page_queue: PriorityQueue, uname_queue: PriorityQueue, out_queue: PriorityQueue):
-    while True:
-        await asyncio.sleep(1)
-        if page_queue.qsize() == 0 and uname_queue.qsize() == 0 and out_queue.qsize() == 0:
+        while True:
             try:
-                await out_queue.put(await asyncio.wait_for(out_queue.get(), timeout=1))
-            except asyncio.TimeoutError:
+                playerdata = export_jobs.get_nowait()
+                docs.append(playerrecord_to_mongodoc(playerdata))
+            except asyncio.QueueEmpty:
+                return docs
+
+    with tqdm(total=done_rank - start_rank + 1) as pbar:
+        await asyncio.sleep(0.25)
+        docs = flush_queue()
+        if docs:
+            await mongo_coll.insert_many(docs)
+            pbar.update(len(docs))
+            if docs[-1]['rank'] == done_rank:
                 raise DoneScraping
-
-
-def get_page_joblist(start_rank: int, end_rank: int) -> List[PageJob]:
-    if start_rank > end_rank:
-        raise ValueError(f"start rank ({start_rank}) cannot be greater than end rank ({end_rank})")
-
-    first_page = (start_rank - 1) // 25 + 1
-    last_page = (end_rank - 1) // 25 + 1
-    first_page_startind = (start_rank - 1) % 25
-    last_page_endind = (end_rank - 1) % 25 + 1
-
-    jobs = []
-    for pagenum in range(first_page, last_page + 1):
-        startind = first_page_startind if pagenum == first_page else 0
-        endind = last_page_endind if pagenum == last_page else 25
-        page = PageJob(pagenum, startind, endind)
-        jobs.append(page)
-    return jobs
-
-
-def reset_vpn():
-    vpn_script = Path(__file__).resolve().parents[2] / "bin" / "reset_vpn"
-    try:
-        subprocess.run(vpn_script).check_returncode()
-    except subprocess.CalledProcessError as e:
-        raise VPNFailure(f"failed to reset VPN: {e}")
-
-
-async def stop_tasks(tasks):
-    for task in tasks:
-        task.cancel()
-    await asyncio.gather(*tasks, return_exceptions=True)  # suppress CancelledErrors
 
 
 async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
@@ -139,54 +150,62 @@ async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
         await coll.drop()
         print(f"dropped collection '{mongo_coll}'")
 
-    top_player = await coll.find_one({}, {'rank': 1}, sort=[('rank', -1)])
-    if top_player:
-        highest_rank = top_player['rank']
-        start_rank = max(highest_rank - 2 * UNAME_BUFSIZE + 1, start_rank)
-        print(f"found an existing record at rank {highest_rank}, starting from {start_rank}")
+    # Resume from any existing progress.
+    existing_top_player = await coll.find_one({}, {'rank': 1}, sort=[('rank', -1)])
+    if existing_top_player:
+        start_rank = existing_top_player['rank'] + 1
+        print(f"found an existing record at rank {existing_top_player['rank']}, starting from {start_rank}")
 
-    # Make a job queue containing the pages to scrape for usernames.
+    # Make a job queue containing the pages to scrape.
     page_job_queue = asyncio.PriorityQueue()
-    for i, page in enumerate(get_page_joblist(start_rank, stop_rank)):
-        page_job_queue.put_nowait((i, page))
+    firstpage, startind, lastpage, endind = get_page_range(start_rank, stop_rank)
+    for pagenum in range(firstpage, lastpage + 1):
+        job = PageJob(startind=startind if pagenum == firstpage else 0,
+                      endind=endind if pagenum == lastpage else 25)
+        page_job_queue.put_nowait((pagenum, job))
 
-    # Make queues for the usernames in line for query and the stat records being exported to database.
-    username_job_queue = asyncio.PriorityQueue()
-    export_queue = asyncio.PriorityQueue()
+    page_counter = PageCounter()
+    page_counter.currentpage = firstpage
 
-    with tqdm(total=stop_rank - start_rank + 1) as pbar:
-        async with aiohttp.ClientSession() as sess:
+    # Make queues for querying usernames, sorting by rank and exporting results to database.
+    username_job_queue = asyncio.PriorityQueue(maxsize=UNAME_BUFSIZE)
+    results_buffer = asyncio.Queue(maxsize=SORT_BUFSIZE)
+    export_queue = asyncio.Queue()
+    asyncio.create_task(sort_results(results_buffer, export_queue))
 
-            def start_workers() -> List[asyncio.Task]:
-                T = [
-                    asyncio.create_task(export_results(export_queue, mongo_coll=coll, progress_bar=pbar)),
-                    asyncio.create_task(watch_for_done(page_job_queue, username_job_queue, export_queue))
-                ]
-                queue_lock = asyncio.Lock()
-                for i in range(2):
-                    T.append(asyncio.create_task(
-                        page_worker(sess, page_job_queue, username_job_queue, queue_lock, delay=i * 0.25)))
-                for i in range(nworkers):
-                    T.append(asyncio.create_task(
-                        stats_worker(sess, username_job_queue, export_queue, delay=i * 0.1)))
-                return T
+    async with aiohttp.ClientSession() as sess:
 
-            t = Timer(text="done ({minutes:.1f} minutes)")
-            t.start()
-            while True:
-                if use_vpn:
-                    reset_vpn()
-                tasks = start_workers()
-                try:
-                    await asyncio.gather(*tasks)
-                except (RequestFailed, IPAddressBlocked) as e:
-                    print(e)
-                    continue
-                except DoneScraping:
-                    break
-                finally:
-                    await stop_tasks(tasks)
-            t.stop()
+        def start_workers() -> List[asyncio.Task]:
+            T = [asyncio.create_task(export_results(export_queue, coll, start_rank, stop_rank))]
+            for i in range(N_PAGE_WORKERS):
+                T.append(asyncio.create_task(
+                    page_worker(sess, page_counter, page_job_queue, username_job_queue, delay=i * 0.25)))
+            for i in range(nworkers):
+                T.append(asyncio.create_task(
+                    stats_worker(sess, username_job_queue, results_buffer, delay=i * 0.1)))
+            return T
+
+        async def stop_workers(tasks):
+            for task in tasks:
+                task.cancel()
+            await asyncio.gather(*tasks, return_exceptions=True)  # suppress CancelledErrors
+
+        t = Timer(text="done ({minutes:.1f} minutes)")
+        t.start()
+        while True:
+            if use_vpn:
+                reset_vpn()
+            tasks = start_workers()
+            try:
+                await asyncio.gather(*tasks)
+            except (RequestFailed, IPAddressBlocked) as e:
+                print(e)
+                continue
+            except DoneScraping:
+                break
+            finally:
+                await stop_workers(tasks)
+        t.stop()
 
 
 if __name__ == "__main__":

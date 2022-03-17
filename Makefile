@@ -8,18 +8,20 @@ run: mongo-start                        ## Run main application.
 
 # Setup -------------------------------------------------------------------------------------------
 
-include ref/makepaths
+ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+allstats_file=$
+stats_file=$(ROOT_DIR)/data/processed/player-stats
+centroids_file=$(ROOT_DIR)/data/processed/cluster-centroids
+clusterids_file=$(ROOT_DIR)/data/processed/player-clusters
+clust_xyz_file=$(ROOT_DIR)/data/interim/clusters-xyz
+clust_quartiles_file=$(ROOT_DIR)/data/interim/cluster-quartiles
+appdata_file=$(ROOT_DIR)/data/processed/app-data
+scrape_collection=scrape-20220315
+app_collection=players
 ifneq (,$(wildcard ./.env))
     include .env
     export
 endif
-ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-stats_file=$(ROOT_DIR)/$(STATS_FILE)
-centroids_file=$(ROOT_DIR)/$(CENTROIDS_FILE)
-clusterids_file=$(ROOT_DIR)/$(CLUSTERIDS_FILE)
-clust_xyz_file=$(ROOT_DIR)/$(CLUST_XYZ_FILE)
-clust_quartiles_file=$(ROOT_DIR)/$(CLUST_QUARTILES_FILE)
-appdata_file=$(ROOT_DIR)/$(APPDATA_FILE)
 
 init: env mongo-pull
 

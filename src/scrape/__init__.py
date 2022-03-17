@@ -1,9 +1,10 @@
-import asyncio
 import dataclasses
-import re
+import subprocess
+import time
 from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Any, Dict
+from pathlib import Path
+from typing import List, Any, Dict, Tuple
 
 from aiohttp.client_exceptions import ClientConnectionError, ClientOSError
 from bs4 import BeautifulSoup
@@ -12,6 +13,14 @@ from src.common import osrs_csv_api_stats
 
 
 class IPAddressBlocked(Exception):
+    pass
+
+
+class ResetVPN(Exception):
+    pass
+
+
+class VPNFailure(Exception):
     pass
 
 
@@ -90,34 +99,35 @@ async def http_request(sess, server_url: str, query_params: Dict[str, Any], requ
             elif resp.status != 200:
                 try:
                     error = await resp.text()
-                except ClientConnectionError:
-                    raise IPAddressBlocked("server blocked connection")
+                except ClientConnectionError as e:
+                    raise IPAddressBlocked(f"client connection error: {e}")
                 raise RequestFailed(f"{resp.status}: {error}")
             return await resp.text()
-    except ClientOSError:
-        raise IPAddressBlocked("timed out while trying to connect to server")
+    except ClientOSError as e:
+        raise IPAddressBlocked(f"client OS error: {e}")
 
 
 def parse_page_usernames(page_html: str) -> List[str]:
     page_text = BeautifulSoup(page_html, 'html.parser').text
 
-    i_start = page_text.find('Overall\nHiscores')
-    i_end = page_text.find('Search by name')
-    if i_start == -1 or i_end == -1:
+    table_start = page_text.find('Overall\nHiscores')
+    table_end = page_text.find('Search by name')
+    if table_start == -1 or table_end == -1:
         if "your IP has been temporarily blocked" in page_text:
             raise IPAddressBlocked("blocked temporarily due to high usage")
         raise ParsingFailed(f"could not find main rankings table. Page text: {page_text}")
 
-    raw = page_text[i_start:i_end]
-    rawlist = [s for s in raw.split('\n') if s]
-    assert rawlist[:5] == ['Overall', 'Hiscores', 'Rank', 'Name', 'LevelXP'], (
+    table_raw = page_text[table_start:table_end]
+    table_flat = [s for s in table_raw.split('\n') if s]  # all items comprising the page's hiscores table
+    assert table_flat[:5] == ['Overall', 'Hiscores', 'Rank', 'Name', 'LevelXP'], (
         f"unexpected HTML formatting for the main rankings table. Page text: {page_text}")
-    rawlist = rawlist[5:]  # remove headers from table
-    assert len(rawlist) == 100, f"unexpected number of items in main rankings table: {rawlist} "
+    table_flat = table_flat[5:]  # remove front matter from table
 
-    # rawlist is now a flat list of rank, name, total level, xp for each of 25 players.
-    names = [s.replace('\xa0', ' ') for s in rawlist[1::4]]  # \xa0 is a space hex char
-    return names
+    # The table contains rank, name, total_level, xp for each of 25 players.
+    assert len(table_flat) == 100, f"unexpected number of items in main rankings table. Items:\n{table_flat}"
+    unames = table_flat[1::4]
+    unames = [s.replace('\xa0', ' ') for s in unames]  # some usernames contain hex char A0, "non-breaking space"
+    return unames
 
 
 _rank_col = osrs_csv_api_stats().index('total_rank')
@@ -140,6 +150,35 @@ def parse_stats_csv(username: str, raw_csv: str) -> PlayerRecord:
         total_xp=stats[_txp_col],
         stats=stats
     )
+
+
+def get_page_range(start_rank: int, end_rank: int) -> Tuple[int, int, int, int]:
+    """
+    todo: write docstring
+    :param start_rank:
+    :param end_rank:
+    :return:
+    """
+    if start_rank > end_rank:
+        raise ValueError(f"start rank ({start_rank}) cannot be greater than end rank ({end_rank})")
+    firstpage = (start_rank - 1) // 25 + 1  # first page containing rankings within range
+    lastpage = (end_rank - 1) // 25 + 1     # last page containing rankings within range
+    startind = (start_rank - 1) % 25        # index of first row in first page to start taking from
+    endind = (end_rank - 1) % 25 + 1        # index of last row in last page to keep
+    return firstpage, startind, lastpage, endind
+
+
+def reset_vpn(ntries=3):
+    vpn_script = Path(__file__).resolve().parents[2] / "bin" / "reset_vpn"
+    for n in range(1, ntries + 1):
+        try:
+            subprocess.run(vpn_script).check_returncode()
+            break
+        except subprocess.CalledProcessError as e:
+            if n == ntries:
+                raise VPNFailure(f"failed to reset VPN: code: {e.returncode}, stdout: {e.stdout}, stderr: {e.stderr}")
+            print("failed to reset VPN. Trying again in 5 seconds...")
+            time.sleep(5)
 
 
 def mongodoc_to_playerrecord(doc: Dict[str, Any]) -> PlayerRecord:

@@ -1,8 +1,0 @@
-STATS_FILE=data/processed/player-stats
-CENTROIDS_FILE=data/processed/cluster-centroids
-CLUSTERIDS_FILE=data/processed/player-clusters
-CLUST_XYZ_FILE=data/interim/clusters-xyz
-CLUST_QUARTILES_FILE=data/interim/cluster-quartiles
-APPDATA_FILE=data/processed/app-data
-SCRAPE_COLLECTION=scrape-20220315
-APP_COLLECTION=players
