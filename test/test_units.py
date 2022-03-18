@@ -7,7 +7,7 @@ import aiohttp
 import pytest
 
 from src.common import env_var, connect_mongo, osrs_skills, osrs_csv_api_stats
-from src.scrape import (PlayerRecord, get_page_usernames, get_player_stats,
+from src.scrape import (PlayerRecord, get_hiscores_page, get_player_stats,
                         player_to_mongodoc, mongodoc_to_player)
 from src.scrape.scrape_hiscores import build_pagejobs_list
 
@@ -20,14 +20,14 @@ async def test_get_page_usernames():
     async with aiohttp.ClientSession() as sess:
         for _ in range(3):
             random_page = random.randint(1, 80000)
-            usernames = await get_page_usernames(sess, random_page)
+            usernames = await get_hiscores_page(sess, random_page)
             assert len(set(usernames)) == 25
 
 
 @pytest.mark.asyncio
 async def test_get_player_stats():
     async with aiohttp.ClientSession() as sess:
-        front_page = await get_page_usernames(sess, page_num=1)
+        front_page = await get_hiscores_page(sess, page_num=1)
         top_player_name = front_page[0]  # setup: get "Lynx Titan", or whatever he may change his name to
 
         top_player: PlayerRecord = await get_player_stats(sess, username=top_player_name)

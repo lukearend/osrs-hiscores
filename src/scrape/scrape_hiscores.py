@@ -1,25 +1,29 @@
 import argparse
 import asyncio
 import heapq
+import logging
 from asyncio import PriorityQueue, Queue
 from dataclasses import dataclass
-from typing import List, Any
+from typing import List, Any, Tuple
 
 from aiohttp import ClientSession
 from codetiming import Timer
-from pymongo.collection import Collection
 
 import aiohttp
 import motor.motor_asyncio
+from motor.motor_asyncio import AsyncIOMotorCollection
 from tqdm.asyncio import tqdm
 
 from src.common import global_db_name
-from src.scrape import get_page_usernames, get_player_stats, playerrecord_to_mongodoc, \
-    RequestFailed, UserNotFound, IPAddressBlocked, get_page_range, reset_vpn
+from src.scrape import get_hiscores_page, get_player_stats, player_to_mongodoc, RequestFailed, UserNotFound, \
+    IPAddressBlocked, get_page_range, reset_vpn, mongodoc_to_player, player_to_mongodoc, PlayerRecord, UsernameJob, \
+    PageJob
 
-N_PAGE_WORKERS = 4
+N_PAGE_WORKERS = 2
 UNAME_BUFSIZE = 100
 SORT_BUFSIZE = 1000
+
+currentpage = None          # global var for page currently being enqueued
 
 
 class SortingError(RuntimeError):
@@ -30,65 +34,21 @@ class DoneScraping(Exception):
     pass
 
 
-@dataclass(order=True)
-class PageJob:
-    startind: int = 0  # start index of the usernames wanted from this page
-    endind: int = 25   # end index of the usernames wanted from this page
-
-
-class PageCounter:     # used by page workers to enqueue pages in the correct order
-    bufferlock = asyncio.Lock()
-    pagefinished = asyncio.Event()
-    currentpage = 0
+@dataclass
+class PageCounter:
+    currentpage: int = 0
 
 
 async def page_worker(sess: ClientSession, pc: PageCounter, job_queue: PriorityQueue,
                       out_buffer: PriorityQueue, delay: int = 0):
     await asyncio.sleep(delay)
-    while True:
-        pagenum, job = await job_queue.get()
-        page_start_rank = (pagenum - 1) * 25 + 1
-        ranks = [page_start_rank + i for i in range(job.startind, job.endind)]
-        try:
-            # download and parse the assigned page
-            page_unames = await get_page_usernames(sess, pagenum)
-            unames = page_unames[job.startind:job.endind]
-
-            # start todo:
-            # wait until it is my turn, then enqueue my page
-            while pc.currentpage < pagenum:
-                await pc.pagefinished.wait()
-
-            pc.pagefinished.clear()
-            async with pc.bufferlock:
-                for rank, uname in zip(ranks, unames):
-                    await out_buffer.put((rank, uname))
-            pc.currentpage = pagenum + 1
-            pc.pagefinished.set()
-            # end todo
-
-        except Exception:
-            job_queue.put_nowait((pagenum, job))
-            raise
 
 
 async def stats_worker(sess, username_jobs: PriorityQueue, out_buffer: PriorityQueue, delay: float):
     await asyncio.sleep(delay)
-    while True:
-        rank, username = await username_jobs.get()
-        try:
-            playerdata = await get_player_stats(sess, username)
-            await out_buffer.put((playerdata.rank, playerdata))
-        except UserNotFound:
-            print(f"player with username '{username}' not found")
-            continue
-        except Exception:
-            username_jobs.put_nowait((rank, username))
-            raise
 
 
 async def sort_results(in_queue: PriorityQueue, out_queue: Queue):
-
     def raise_error(in_rank, out_rank, last_out_rank, heap):
         bufdump = ""
         for i in range(SORT_BUFSIZE):
@@ -100,46 +60,86 @@ async def sort_results(in_queue: PriorityQueue, out_queue: Queue):
             f"around rank {in_rank}, it's likely rank {last_out_rank + 1} was missed."
             f"Sort buffer:\n{bufdump}")
 
-    assert SORT_BUFSIZE > 0
-    heap = []
-
-    print("buffering results to be sorted...")
-    for _ in tqdm(range(SORT_BUFSIZE)):
-        _, player = await in_queue.get()
-        heapq.heappush(heap, player)
-        print(f"LA: {player.rank}")
-
-    print("exporting results...")
-    last_out_rank = player.rank
-    while True:
-        _, in_player = await in_queue.get()
-        out_player = heapq.heappushpop(heap, in_player)
-        if out_player.rank != last_out_rank + 1:
-            raise_error(in_player.rank, out_player.rank, last_out_rank, heap)
-        await out_queue.put(out_player)
-        last_out_rank = out_player.rank
-        print(f"LA: {in_player.rank}, {out_player.rank}")
-
-
 async def export_results(export_jobs: PriorityQueue, mongo_coll: Collection, start_rank: tqdm, done_rank: int):
-
-    def flush_queue() -> List[Any]:
-        docs = []
-        while True:
-            try:
-                playerdata = export_jobs.get_nowait()
-                docs.append(playerrecord_to_mongodoc(playerdata))
-            except asyncio.QueueEmpty:
-                return docs
-
     with tqdm(total=done_rank - start_rank + 1) as pbar:
         await asyncio.sleep(0.25)
-        docs = flush_queue()
-        if docs:
-            await mongo_coll.insert_many(docs)
-            pbar.update(len(docs))
-            if docs[-1]['rank'] == done_rank:
-                raise DoneScraping
+
+
+#####
+
+
+async def process_page_fn(sess: ClientSession, pc: PageCounter, page_queue: PriorityQueue, out_queue: PriorityQueue):
+    job: PageJob = await page_queue.get()
+    try:
+        ranks, unames = await get_hiscores_page(sess, job.pagenum)
+        ranks = ranks[job.startind:job.endind]
+        unames = unames[job.startind:job.endind]
+        uname_jobs = [UsernameJob(rank=r, username=u) for r, u in zip(ranks, unames)]
+        while pc.currentpage < job.pagenum:
+            await asyncio.sleep(0.25)
+        for outjob in uname_jobs:
+            out_queue.put_nowait(outjob)
+        pc.currentpage += 1
+    except Exception:
+        page_queue.put_nowait(job)
+        raise
+
+
+async def process_username_fn(uname_queue: PriorityQueue, out_queue: PriorityQueue, sess: ClientSession):
+    job: UsernameJob = await uname_queue.get()
+    try:
+        player: PlayerRecord = await get_player_stats(sess, job.username)
+        await out_queue.put(player)
+    except UserNotFound:
+        logging.info(f"player with username '{job.username}' not found, skipping")
+    except Exception:
+        uname_queue.put_nowait(job)
+        raise
+
+
+async def export_fn(in_queue: Queue, coll: AsyncIOMotorCollection, pbar: tqdm, donerank: int):
+    batch = []
+    while True:
+        try:
+            batch.append(in_queue.get_nowait())
+        except asyncio.QueueEmpty:
+            break
+    if batch:
+        docs = [player_to_mongodoc(p) for p in batch]
+        await coll.insert_many(docs)
+        pbar.update(len(docs))
+
+        if batch[-1].rank == donerank:
+            raise DoneScraping
+
+
+async def sort_buffer(in_queue: asyncio.Queue, out_queue: asyncio.Queue, bufsize: int):
+    heap = []
+    while True:
+        in_item = await in_queue.get()
+        if len(heap) < bufsize:
+            heapq.heappush(in_item)
+        else:
+            out_item = heapq.heappushpop(in_item)
+            await out_queue.put(out_item)
+
+
+async def get_prev_progress(coll: Collection) -> int:
+    doc = await coll.find_one({}, {'rank': 1}, sort=[('rank', -1)])
+    if doc is None:
+        return None
+    top_player = mongodoc_to_player(doc)
+    return top_player.rank
+
+
+def build_page_jobqueue(start_rank: int, stop_rank: int) -> Tuple[int, PriorityQueue]:
+    queue = asyncio.PriorityQueue()
+    firstpage, startind, lastpage, endind = get_page_range(start_rank, stop_rank)
+    for pagenum in range(firstpage, lastpage + 1):
+        job = PageJob(startind=startind if pagenum == firstpage else 0,
+                      endind=endind if pagenum == lastpage else 25)
+        queue.put_nowait((pagenum, job))
+    return firstpage, queue
 
 
 async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
@@ -150,39 +150,29 @@ async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
         await coll.drop()
         print(f"dropped collection '{mongo_coll}'")
 
-    # Resume from any existing progress.
-    existing_top_player = await coll.find_one({}, {'rank': 1}, sort=[('rank', -1)])
-    if existing_top_player:
-        start_rank = existing_top_player['rank'] + 1
-        print(f"found an existing record at rank {existing_top_player['rank']}, starting from {start_rank}")
+    prev_progress = get_prev_progress(coll)
+    if prev_progress and prev_progress >= start_rank:
+        start_rank = prev_progress + 1
+        print(f"found an existing record at rank {prev_progress}, starting from {start_rank}")
 
-    # Make a job queue containing the pages to scrape.
-    page_job_queue = asyncio.PriorityQueue()
-    firstpage, startind, lastpage, endind = get_page_range(start_rank, stop_rank)
-    for pagenum in range(firstpage, lastpage + 1):
-        job = PageJob(startind=startind if pagenum == firstpage else 0,
-                      endind=endind if pagenum == lastpage else 25)
-        page_job_queue.put_nowait((pagenum, job))
+    firstpage, page_jobqueue = build_page_jobqueue(start_rank, stop_rank)
+    uname_jobqueue = asyncio.PriorityQueue()
+    results_queue = asyncio.PriorityQueue()
+    export_queue = asyncio.PriorityQueue()
+    pc = PageCounter(currentpage=firstpage)
 
-    page_counter = PageCounter()
-    page_counter.currentpage = firstpage
-
-    # Make queues for querying usernames, sorting by rank and exporting results to database.
-    username_job_queue = asyncio.PriorityQueue(maxsize=UNAME_BUFSIZE)
-    results_buffer = asyncio.Queue(maxsize=SORT_BUFSIZE)
-    export_queue = asyncio.Queue()
-    asyncio.create_task(sort_results(results_buffer, export_queue))
-
+    asyncio.create_task(sort_buffer(uname_jobqueue, export_queue, bufsize=UNAME_BUFSIZE))
+    asyncio.create_task(sort_buffer(export_queue,
     async with aiohttp.ClientSession() as sess:
 
         def start_workers() -> List[asyncio.Task]:
             T = [asyncio.create_task(export_results(export_queue, coll, start_rank, stop_rank))]
             for i in range(N_PAGE_WORKERS):
                 T.append(asyncio.create_task(
-                    page_worker(sess, page_counter, page_job_queue, username_job_queue, delay=i * 0.25)))
+                    page_worker(sess, pc, page_jobqueue, uname_jobqueue, delay=i * 0.25)))
             for i in range(nworkers):
                 T.append(asyncio.create_task(
-                    stats_worker(sess, username_job_queue, results_buffer, delay=i * 0.1)))
+                    stats_worker(sess, uname_jobqueue, results_queue, delay=i * 0.1)))
             return T
 
         async def stop_workers(tasks):

@@ -1,7 +1,7 @@
 import dataclasses
 import subprocess
 import time
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
 from typing import List, Any, Dict, Tuple
@@ -12,20 +12,28 @@ from bs4 import BeautifulSoup
 from src.common import osrs_csv_api_stats
 
 
-class IPAddressBlocked(Exception):
-    pass
+@dataclass(order=True)
+class PageJob:
+    pagenum: int                                     # page on the OSRS hiscores (between 1 and 80000)
+    startind: int = field(default=0, compare=False)  # start index of the usernames wanted from this page
+    endind: int = field(default=25, compare=False)   # end index of the usernames wanted from this page
 
 
-class ResetVPN(Exception):
-    pass
+@dataclass(order=True)
+class UsernameJob:
+    rank: int
+    username: str = field(compare=False)
 
 
-class VPNFailure(Exception):
-    pass
-
-
-class UserNotFound(Exception):
-    pass
+@dataclass(order=True)
+class PlayerRecord:
+    """ Represents a player data record scraped from the hiscores. """
+    rank: int
+    total_level: int
+    total_xp: int
+    ts: datetime  # time record was scraped
+    username: str = field(compare=False)
+    stats: List[int] = field(compare=False)
 
 
 class RequestFailed(Exception):
@@ -36,18 +44,19 @@ class ParsingFailed(Exception):
     pass
 
 
-@dataclass(order=True)
-class PlayerRecord:
-    """ Represents a player data record scraped from the hiscores. """
-    rank: int
-    total_level: int
-    total_xp: int
-    username: str
-    stats: List[int]
-    ts: datetime  # time record was scraped
+class UserNotFound(Exception):
+    pass
 
 
-async def get_page_usernames(sess, page_num: int) -> List[str]:
+class IPAddressBlocked(Exception):
+    pass
+
+
+class ResetVPN(Exception):
+    pass
+
+
+async def get_hiscores_page(sess, page_num: int) -> Tuple[List[int], List[str]]:
     """
     Fetch a front page of the OSRS hiscores by page number.
 
@@ -58,12 +67,14 @@ async def get_page_usernames(sess, page_num: int) -> List[str]:
 
     :param session: HTTP client session
     :param page_num: integer between 1 and 80000
-    :return: list of the usernames on one page of the hiscores
+    :return:
+        - list of the 25 rank numbers on one page of the hiscores
+        - list of the 25 usernames corresponding to those ranks
     """
     url = "https://secure.runescape.com/m=hiscore_oldschool/overall"
     params = {'table': 0, 'page': page_num}
     page_html = await http_request(sess, url, params, request_type='page')
-    return parse_page_usernames(page_html)
+    return parse_hiscores_page(page_html)
 
 
 async def get_player_stats(sess, username) -> PlayerRecord:
@@ -107,7 +118,7 @@ async def http_request(sess, server_url: str, query_params: Dict[str, Any], requ
         raise IPAddressBlocked(f"client OS error: {e}")
 
 
-def parse_page_usernames(page_html: str) -> List[str]:
+def parse_hiscores_page(page_html: str) -> Tuple[List[int], List[str]]:
     page_text = BeautifulSoup(page_html, 'html.parser').text
 
     table_start = page_text.find('Overall\nHiscores')
@@ -125,9 +136,10 @@ def parse_page_usernames(page_html: str) -> List[str]:
 
     # The table contains rank, name, total_level, xp for each of 25 players.
     assert len(table_flat) == 100, f"unexpected number of items in main rankings table. Items:\n{table_flat}"
+    ranks = [int(i) for i in table_flat[::4]]
     unames = table_flat[1::4]
     unames = [s.replace('\xa0', ' ') for s in unames]  # some usernames contain hex char A0, "non-breaking space"
-    return unames
+    return ranks, unames
 
 
 _rank_col = osrs_csv_api_stats().index('total_rank')
@@ -181,7 +193,7 @@ def reset_vpn(ntries=3):
             time.sleep(5)
 
 
-def mongodoc_to_playerrecord(doc: Dict[str, Any]) -> PlayerRecord:
+def mongodoc_to_player(doc: Dict[str, Any]) -> PlayerRecord:
     return PlayerRecord(
         ts=doc['ts'],
         rank=doc['rank'],
@@ -192,5 +204,5 @@ def mongodoc_to_playerrecord(doc: Dict[str, Any]) -> PlayerRecord:
     )
 
 
-def playerrecord_to_mongodoc(record: PlayerRecord) -> Dict[str, Any]:
+def player_to_mongodoc(record: PlayerRecord) -> Dict[str, Any]:
     return dataclasses.asdict(record)
