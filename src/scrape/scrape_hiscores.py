@@ -2,10 +2,8 @@ import argparse
 import asyncio
 import heapq
 import logging
-import sys
 import time
 from asyncio import PriorityQueue, Queue
-from itertools import count
 from typing import List
 
 import aiohttp
@@ -25,169 +23,142 @@ N_PAGE_WORKERS = 2
 UNAME_BUFSIZE = 100
 SORT_BUFSIZE = 1000
 
+uname_qlock = asyncio.Condition()
 currentpage = 0
 nprocessed = 0
 
 
 class DoneScraping(Exception):
-    pass
+    """ Raise when all scraping is done to indicate script should exit. """
 
 
-async def page_worker(sess: ClientSession, page_queue: PriorityQueue, out_queue: PriorityQueue, delay: float = 0):
-    """ Fetch an OSRS hiscores page and parse out the 25 rank/username pairs.
+async def page_worker(sess: ClientSession, page_queue: PriorityQueue, out_queue: PriorityQueue, workernum: int = 0):
+    name = f"page worker {workernum}"
 
-    :param sess: aiohttp client session
-    :param page_queue: get page jobs from this queue
-    :param out_queue: place usernames (as username jobs) on this queue
-    """
-    await asyncio.sleep(delay)
-    workernum = int(delay / 0.25)  # LA: debug
+    def putback(job):
+        job.startind += enqueued
+        job.nfailed += 1
+        page_queue.put_nowait(job)
+        logging.info(f"{name}: put back page {job.pagenum} (startind: {job.startind}, endind: {job.endind})")
+        page_queue.task_done()
+        logging.info(f"{name}: job {job.pagenum} has now failed {job.nfailed} times")
+
+    await asyncio.sleep(workernum * 0.25)
+    global currentpage
     while True:
-        global currentpage
         job: PageJob = await page_queue.get()
-        logging.debug(f"page worker {workernum}: got page {job.pagenum} (ranks {(job.pagenum - 1) * 25 + 1}-{job.pagenum * 25}) from page queue)")
+        logging.debug(f"{name}: got page job {job.pagenum} from queue")
+        enqueued = 0
         try:
+            logging.debug(f"{name}: requesting page {job.pagenum}...")
+            t0 = time.time()
             ranks, unames = await get_hiscores_page(sess, job.pagenum)
-            ranks = ranks[job.startind:job.endind]
-            unames = unames[job.startind:job.endind]
-            uname_jobs = [UsernameJob(rank=r, username=u) for r, u in zip(ranks, unames)]
-            # todo: find a more robust way to manage these. they need to go in order, and to respect the queue lock.
-            # it might be best to switch to using a shared lock, a fixed size queue, and blocking puts instead.
-            while currentpage < job.pagenum:
-                await asyncio.sleep(0.25)
-            for outjob in uname_jobs:
-                out_queue.put_nowait(outjob)
-            logging.debug(f"page worker {workernum}: enqueued page {job.pagenum} (ranks {(job.pagenum - 1) * 25 + 1}-{job.pagenum * 25})")
+            logging.debug(f"{name}: got page {job.pagenum} from OSRS hiscores, {time.time() - t0:.2f} sec")
+
+            async with uname_qlock:
+                while currentpage != job.pagenum:
+                    logging.debug(f"{name}: current page is {currentpage} (I have {job.pagenum}), waiting for my turn...")
+                    await uname_qlock.wait()
+                for rank, uname in list(zip(ranks, unames))[job.startind:job.endind]:
+                    outjob = UsernameJob(rank, uname)
+                    await out_queue.put(outjob)
+                    logging.debug(f"{name}: enqueued ({outjob.rank}, '{outjob.username}')")
+                    enqueued += 1
+
         except asyncio.CancelledError:
-            job.nfailed += 1
-            page_queue.put_nowait(job)
-            page_queue.task_done()
-            logging.debug(f"page worker {workernum}: cancelled, put page job {job.pagenum} back on page queue")
-            logging.debug(f"job has now failed {job.nfailed} time{'s' if job.nfailed > 1 else ''}")
+            logging.info(f"{name}: cancelled")
+            putback(job)
             raise
         except Exception as e:
-            job.nfailed += 1
-            page_queue.put_nowait(job)
-            page_queue.task_done()
-            logging.debug(f"page worker {workernum}: cancelled, put page job {job.pagenum} back on page queue")
-            logging.debug(f"job has now failed {job.nfailed} time{'s' if job.nfailed > 1 else ''}")
+            logging.error(f"{name}: caught exception: {e}")
+            putback(job)
+            logging.error(f"{name}: raising {type(e).__name__}")
             raise
-        page_queue.task_done()
-        logging.debug(f"page worker {workernum}: finished page {job.pagenum}")
+
         currentpage += 1
+        page_queue.task_done()
+        logging.debug(f"{name}: finished page {job.pagenum}")
 
 
-async def stats_worker(sess: ClientSession, uname_queue: PriorityQueue, out_queue: Queue, delay: float = 0):
-    """ Given a player's username, fetch their stats from the OSRS hiscores.
+async def stats_worker(sess: ClientSession, uname_queue: PriorityQueue, out_queue: Queue, workernum: int = 0):
+    name = f"stats worker {workernum}"
 
-    :params sess: aiohttp client session
-    :params uname_queue: get player username jobs from this queue
-    :params out_queue: place processed results on this queue
-    """
-    await asyncio.sleep(delay)
-    workernum = int(delay / 0.1)  # LA: debug
+    def putback(job):
+        job.nfailed += 1
+        uname_queue.put_nowait(job)
+        logging.info(f"{name}: put ({job.rank}, {job.username}) back on username queue...")
+        logging.info(f"{name}: job ({job.rank}, {job.username}) has now failed {job.nfailed} times")
+        uname_queue.task_done()
+
+    await asyncio.sleep(workernum * 0.1)
     while True:
         job: UsernameJob = await uname_queue.get()
-        logging.debug(f"stats worker {workernum}: got ({job.rank}, {job.username}) from uname_queue)")
+        logging.debug(f"{name}: got ({job.rank}, {job.username}) from queue)")
         try:
-            t0 = time.time()  # LA: debug
+            logging.debug(f"{name}: requesting stats for ({job.rank}, '{job.username}')...")
+            t0 = time.time()
             player: PlayerRecord = await get_player_stats(sess, job.username)
-            if (dt := time.time() - t0) > 1:
-                logging.debug(f"stats worker {workernum}: stats request took {dt} sec")
+            logging.debug(f"{name}: got stats for ({job.rank}, '{job.username}'), {time.time() - t0:.2f} sec")
             await out_queue.put(player)
         except UserNotFound:
             print(f"player with username '{job.username}' (rank {job.rank}) not found, skipping")
+            logging.warning(f"{name}: player with username '{job.username}' (rank {job.rank}) not found, skipping")
+
         except asyncio.CancelledError:
-            job.nfailed += 1
-            uname_queue.task_done()
-            uname_queue.put_nowait(job)
-            logging.debug(f"stats worker {workernum}: cancelled, put ({job.rank}, {job.username}) back on username queue...")
-            logging.debug(f"job has now failed {job.nfailed} time{'s' if job.nfailed > 1 else ''}")
+            logging.info(f"{name}: cancelled")
+            putback(job)
             raise
         except Exception as e:
-            job.nfailed += 1
-            uname_queue.task_done()
-            uname_queue.put_nowait(job)
-            logging.debug(f"stats worker {workernum}: exception: {e}, put ({job.rank}, {job.username}) back on username queue...")
-            logging.debug(f"job has now failed {job.nfailed} time{'s' if job.nfailed > 1 else ''}")
+            logging.error(f"{name}: caught exception: {e}")
+            putback(job)
+            logging.error(f"{name}: raising {type(e).__name__}")
             raise
 
-        uname_queue.task_done()
-        logging.debug(f"stats worker {workernum}: finished ({job.rank}, {job.username})")
         global nprocessed
         nprocessed += 1
+        uname_queue.task_done()
+        logging.debug(f"{name}: finished ({job.rank}, {job.username})")
 
 
-async def sort_buffer(in_queue: asyncio.PriorityQueue, out_queue: asyncio.Queue, ntotal: int):
-    """ Sort records using a fixed-size heap.
-
-    :param in_queue: read records from this queue
-    :param out_queue: place sorted records into this queue
-    :ntotal: total number of items expected to pass through this buffer,
-             the buffer is flushed once this many items have been received
-    """
+async def sort_buffer(in_queue: asyncio.PriorityQueue, out_queue: asyncio.Queue, start_rank: int):
     heap = []
-    lastout = None  # LA: debug
+    lastout = start_rank - 1
     while True:
-        in_item: PlayerRecord = await in_queue.get()
-        if len(heap) < SORT_BUFSIZE:
-            heapq.heappush(heap, in_item)
-        else:
-            out_item = heapq.heappushpop(heap, in_item)
-            # if lastout and lastout.rank != out_item.rank - 1:  # LA: debug - dump queues
-            #     while True:
-            #         try:
-            #             r: PlayerRecord = out_queue.get_nowait()
-            #             print(r.rank, r.username)
-            #         except asyncio.QueueEmpty:
-            #             break
-            #     while len(heap) > 0:
-            #         r: PlayerRecord = heapq.heappop(heap)
-            #         print(r.rank, r.username)
-            #     while True:
-            #         try:
-            #             r: PlayerRecord = in_queue.get_nowait()
-            #             print(r.rank, r.username)
-            #         except asyncio.QueueEmpty:
-            #             break
-            #     await asyncio.sleep(1)
-            #     print(f"skipped a record. out_item rank: {out_item.rank}, last out_item rank: {lastout.rank}")
-            #     sys.exit(1)
-            await out_queue.put(out_item)
+        item = await in_queue.get()
+        heapq.heappush(heap, item)
+        logging.debug(f"sort buffer: added ({item.rank}, {item.username}) to heap (size {len(heap)}, heap[0] = {heap[0].rank}, lastout = {lastout})")
+        while heap[0].rank == lastout + 1:
+            out = heapq.heappop(heap)
+            logging.debug(f"sort buffer: removed ({out.rank}, {out.username}) from heap (size {len(heap)})")
+            await out_queue.put(out)
+            lastout = out.rank
+            logging.debug(f"sort buffer: placed ({out.rank}, {out.username}) on export queue")
             in_queue.task_done()
-            lastout = out_item  # LA: debug
-        if nprocessed >= ntotal:
-            for item in heap:
-                out_queue.put_nowait(item)
-                in_queue.task_done()
-            break
+            if not heap:
+                break
 
 
 async def export_records(in_queue: Queue, coll: AsyncIOMotorCollection):
-    """ Batch export records to database.
 
-    :param in_queue: read records from this queue
-    :param coll: export documents to this collection in batches
-    """
-    last_batch_last = None
-    while True:
-        await asyncio.sleep(0.25)
-        batch = []
-        while True:
+    async def getbatch() -> List[PlayerRecord]:
+        players = []
+        while len(players) < 100:
             try:
-                nextrecord: PlayerRecord = in_queue.get_nowait()
-                batch.append(nextrecord)
-            except asyncio.QueueEmpty:
-                break
-        if batch:
-            if last_batch_last:  # LA: debug
-                assert last_batch_last == batch[0].rank - 1
-            last_batch_last = batch[-1].rank
-            docs = [player_to_mongodoc(p) for p in batch]
-            await coll.insert_many(docs)
-            for _ in range(len(docs)):
-                in_queue.task_done()
-            logging.debug(f"exported {len(docs)} documents: (ranks {batch[0].rank}-{batch[-1].rank})")  # LA: debug
+                next = await asyncio.wait_for(in_queue.get(), timeout=0.25)
+                players.append(next)
+            except asyncio.TimeoutError:
+                return players
+
+    async def export(players):
+        await coll.insert_many([player_to_mongodoc(p) for p in players])
+        for _ in range(len(players)):
+            in_queue.task_done()
+        logging.debug(f"exported {len(players)} documents: (ranks {players[0].rank}-{players[-1].rank})")
+
+    while True:
+        players = await getbatch()
+        if players:
+            await export(players)
 
 
 async def track_progress(ntotal: int):
@@ -200,17 +171,18 @@ async def track_progress(ntotal: int):
 
 async def detect_finished(page_queue, uname_queue, results_queue, export_queue):
     await page_queue.join()
+    logging.debug("page queue joined")
     await uname_queue.join()
+    logging.debug("username queue joined")
+    logging.debug(f"nprocessed: {nprocessed}")
     await results_queue.join()
+    logging.debug("results queue joined")
     await export_queue.join()
+    logging.debug("export queue joined")
     raise DoneScraping
 
 
 async def get_prev_progress(coll: Collection) -> int:
-    """ Detect previous progress by finding the highest-ranked existing document.
-
-    :param coll: search in this collection
-    """
     doc = await coll.find_one({}, sort=[('rank', -1)])
     if doc is None:
         return None
@@ -219,11 +191,6 @@ async def get_prev_progress(coll: Collection) -> int:
 
 
 def build_page_jobqueue(start_rank: int, stop_rank: int) -> PriorityQueue:
-    """ Build a queue of jobs representing pages to be queried.
-
-    :param start_rank: start data collection from this rank
-    :param stop_rank: stop data collection at this rank
-    """
     queue = asyncio.PriorityQueue()
     firstpage, startind, lastpage, endind = get_page_range(start_rank, stop_rank)
     global currentpage
@@ -239,7 +206,8 @@ def build_page_jobqueue(start_rank: int, stop_rank: int) -> PriorityQueue:
 async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
                nworkers: int = 28, use_vpn: bool = True, drop: bool = False):
     logging.basicConfig(format="%(asctime)s.%(msecs)03d:%(levelname)s:%(message)s",
-                        datefmt="%H:%M:%S", level=logging.DEBUG)
+                        datefmt="%H:%M:%S", level=logging.DEBUG,
+                        filename='scrape_hiscores.log', filemode='w')
 
     mongo = motor.motor_asyncio.AsyncIOMotorClient(mongo_url)
     coll = mongo[global_db_name()][mongo_coll]
@@ -249,12 +217,13 @@ async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
 
     prev_progress = await get_prev_progress(coll)
     if prev_progress:
+        print(f"found an existing record at rank {prev_progress}, ", end='')
         if prev_progress >= stop_rank:
-            print(f"found an existing record at rank {prev_progress}, nothing to do")
+            print("nothing to do")
             return
         elif prev_progress >= start_rank:
             start_rank = prev_progress + 1
-            print(f"found an existing record at rank {prev_progress}, starting from {start_rank}")
+            print(f"starting from {start_rank}")
 
     n_to_process = stop_rank - start_rank + 1
     page_jobqueue = build_page_jobqueue(start_rank, stop_rank)
@@ -262,19 +231,19 @@ async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
     results_queue = asyncio.PriorityQueue()
     export_queue = asyncio.Queue()
 
-    asyncio.create_task(sort_buffer(results_queue, export_queue, ntotal=n_to_process))
+    asyncio.create_task(sort_buffer(results_queue, export_queue, start_rank))
     asyncio.create_task(export_records(export_queue, coll))
+    asyncio.create_task(track_progress(ntotal=n_to_process))
     async with aiohttp.ClientSession() as sess:
 
         def start_workers() -> List[asyncio.Task]:
-            T = [asyncio.create_task(track_progress(ntotal=n_to_process)),
-                 asyncio.create_task(detect_finished(page_jobqueue, uname_jobqueue, results_queue, export_queue))]
+            T = [asyncio.create_task(detect_finished(page_jobqueue, uname_jobqueue, results_queue, export_queue))]
             for i in range(N_PAGE_WORKERS):
                 T.append(asyncio.create_task(
-                    page_worker(sess, page_jobqueue, uname_jobqueue, delay=i * 0.25)))
+                    page_worker(sess, page_jobqueue, uname_jobqueue, workernum=i)))
             for i in range(nworkers):
                 T.append(asyncio.create_task(
-                    stats_worker(sess, uname_jobqueue, results_queue, delay=i * 0.1)))
+                    stats_worker(sess, uname_jobqueue, results_queue, workernum=i)))
             return T
 
         async def stop_workers(tasks):
@@ -292,10 +261,15 @@ async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
                 await asyncio.gather(*tasks)
             except (RequestFailed, IPAddressBlocked) as e:
                 print(e)
+                logging.debug(f"main: caught {e}")
                 continue
             except DoneScraping:
                 break
+            except Exception as e:
+                logging.debug(f"main: caught {e}")
+                raise
             finally:
+                logging.debug(f"main: cancelling workers...")
                 await stop_workers(tasks)
         t.stop()
 

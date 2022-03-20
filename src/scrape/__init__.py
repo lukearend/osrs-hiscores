@@ -43,10 +43,9 @@ class PlayerRecord:
 
 
 class RequestFailed(Exception):
-    def __init__(self, code, msg):
+    def __init__(self, message, code):
         self.code = code
-        self.msg = msg
-
+        super().__init__(f"{code}: {message}")
 
 class UserNotFound(Exception):
     pass
@@ -76,7 +75,7 @@ async def get_hiscores_page(sess: ClientSession, page_num: int) -> Tuple[List[in
     """
     url = "https://secure.runescape.com/m=hiscore_oldschool/overall"
     params = {'table': 0, 'page': page_num}
-    page_html = await http_request(sess, url, params, timeout=10)
+    page_html = await http_request(sess, url, params, timeout=15)
     return parse_hiscores_page(page_html)
 
 
@@ -116,7 +115,7 @@ async def http_request(sess: ClientSession, server_url: str, query_params: Dict[
                     error = await resp.text()
                 except ClientConnectionError as e:
                     raise IPAddressBlocked(f"client connection error: {e}")
-                raise RequestFailed(resp.status, error)
+                raise RequestFailed(error, resp.status)
             return await resp.text()
     except asyncio.TimeoutError:
         raise IPAddressBlocked(f"timed out while trying to connect")
