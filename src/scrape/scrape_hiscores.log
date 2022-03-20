@@ -1,0 +1,826 @@
+01:54:49.309:DEBUG:page worker 0: got page job 1 from queue
+01:54:49.310:DEBUG:page worker 0: requesting page 1...
+01:54:49.560:DEBUG:page worker 1: got page job 2 from queue
+01:54:49.560:DEBUG:page worker 1: requesting page 2...
+01:54:50.478:DEBUG:page worker 0: got page 1 from OSRS hiscores, 1.17 sec
+01:54:50.478:DEBUG:page worker 0: enqueued (1, 'Lynx Titan')
+01:54:50.478:DEBUG:page worker 0: enqueued (2, 'Hey Jase')
+01:54:50.478:DEBUG:page worker 0: enqueued (3, 'ShawnBay')
+01:54:50.478:DEBUG:page worker 0: enqueued (4, 'senZe')
+01:54:50.478:DEBUG:page worker 0: enqueued (5, 'Tomdabom')
+01:54:50.478:DEBUG:page worker 0: enqueued (6, 'Karma')
+01:54:50.478:DEBUG:page worker 0: enqueued (7, 'Harmony')
+01:54:50.479:DEBUG:page worker 0: enqueued (8, 'DedWilson')
+01:54:50.479:DEBUG:page worker 0: enqueued (9, 'GodTormentor')
+01:54:50.479:DEBUG:page worker 0: enqueued (10, 'Vinny')
+01:54:50.479:DEBUG:page worker 0: enqueued (11, 'borsi')
+01:54:50.479:DEBUG:page worker 0: enqueued (12, 'Brundeen')
+01:54:50.479:DEBUG:page worker 0: enqueued (13, 'Aziz')
+01:54:50.479:DEBUG:page worker 0: enqueued (14, 'Eeli')
+01:54:50.479:DEBUG:page worker 0: enqueued (15, 'baile y')
+01:54:50.479:DEBUG:page worker 0: enqueued (16, 'ptalex 22')
+01:54:50.479:DEBUG:page worker 0: enqueued (17, 'Dan Gleesac')
+01:54:50.479:DEBUG:page worker 0: enqueued (18, 'blind idiot')
+01:54:50.479:DEBUG:page worker 0: enqueued (19, 'he box jonge')
+01:54:50.479:DEBUG:page worker 0: enqueued (20, 'Gustav')
+01:54:50.479:DEBUG:page worker 0: enqueued (21, 'moksi')
+01:54:50.479:DEBUG:page worker 0: enqueued (22, 'Randalicious')
+01:54:50.479:DEBUG:page worker 0: enqueued (23, 'Killzone')
+01:54:50.479:DEBUG:page worker 0: enqueued (24, 'Hiddy')
+01:54:50.479:DEBUG:page worker 0: enqueued (25, 'Kudos')
+01:54:50.479:DEBUG:page worker 0: finished page 1
+01:54:50.480:DEBUG:page worker 0: got page job 3 from queue
+01:54:50.480:DEBUG:page worker 0: requesting page 3...
+01:54:50.481:DEBUG:stats worker 0: got (1, Lynx Titan) from queue)
+01:54:50.481:DEBUG:stats worker 0: requesting stats for (1, 'Lynx Titan')...
+01:54:50.481:DEBUG:stats worker 1: got (2, Hey Jase) from queue)
+01:54:50.481:DEBUG:stats worker 1: requesting stats for (2, 'Hey Jase')...
+01:54:50.482:DEBUG:stats worker 2: got (3, ShawnBay) from queue)
+01:54:50.482:DEBUG:stats worker 2: requesting stats for (3, 'ShawnBay')...
+01:54:50.482:DEBUG:stats worker 3: got (4, senZe) from queue)
+01:54:50.482:DEBUG:stats worker 3: requesting stats for (4, 'senZe')...
+01:54:50.483:DEBUG:stats worker 4: got (5, Tomdabom) from queue)
+01:54:50.483:DEBUG:stats worker 4: requesting stats for (5, 'Tomdabom')...
+01:54:50.483:DEBUG:stats worker 5: got (6, Karma) from queue)
+01:54:50.483:DEBUG:stats worker 5: requesting stats for (6, 'Karma')...
+01:54:50.484:DEBUG:stats worker 6: got (7, Harmony) from queue)
+01:54:50.484:DEBUG:stats worker 6: requesting stats for (7, 'Harmony')...
+01:54:50.484:DEBUG:stats worker 7: got (8, DedWilson) from queue)
+01:54:50.484:DEBUG:stats worker 7: requesting stats for (8, 'DedWilson')...
+01:54:50.484:DEBUG:stats worker 8: got (9, GodTormentor) from queue)
+01:54:50.484:DEBUG:stats worker 8: requesting stats for (9, 'GodTormentor')...
+01:54:50.485:DEBUG:stats worker 9: got (10, Vinny) from queue)
+01:54:50.485:DEBUG:stats worker 9: requesting stats for (10, 'Vinny')...
+01:54:50.485:DEBUG:stats worker 10: got (11, borsi) from queue)
+01:54:50.485:DEBUG:stats worker 10: requesting stats for (11, 'borsi')...
+01:54:50.486:DEBUG:stats worker 11: got (12, Brundeen) from queue)
+01:54:50.486:DEBUG:stats worker 11: requesting stats for (12, 'Brundeen')...
+01:54:50.529:DEBUG:page worker 1: got page 2 from OSRS hiscores, 0.97 sec
+01:54:50.529:DEBUG:page worker 1: enqueued (26, 'karibola')
+01:54:50.529:DEBUG:page worker 1: enqueued (27, 'Capt King')
+01:54:50.529:DEBUG:page worker 1: enqueued (28, 'Oskar')
+01:54:50.529:DEBUG:page worker 1: enqueued (29, 'eerx')
+01:54:50.529:DEBUG:page worker 1: enqueued (30, 'Joonas')
+01:54:50.529:DEBUG:page worker 1: enqueued (31, 'Ooktism')
+01:54:50.529:DEBUG:page worker 1: enqueued (32, 'Rodney Farva')
+01:54:50.529:DEBUG:page worker 1: enqueued (33, 'Kyaandere')
+01:54:50.529:DEBUG:page worker 1: enqueued (34, 'Pacellino')
+01:54:50.529:DEBUG:page worker 1: enqueued (35, 'Henee')
+01:54:50.529:DEBUG:page worker 1: enqueued (36, 'Saltia')
+01:54:50.529:DEBUG:page worker 1: enqueued (37, 'Yeroen')
+01:54:50.529:DEBUG:page worker 1: enqueued (38, 'Iron Hyger')
+01:54:50.529:DEBUG:page worker 1: enqueued (39, 'Balou')
+01:54:50.529:DEBUG:page worker 1: enqueued (40, 'Nagyung')
+01:54:50.529:DEBUG:page worker 1: enqueued (41, 'dids')
+01:54:50.529:DEBUG:page worker 1: enqueued (42, 'Larie')
+01:54:50.529:DEBUG:page worker 1: enqueued (43, 'Skipper996')
+01:54:50.529:DEBUG:page worker 1: enqueued (44, 'Razor Beast')
+01:54:50.529:DEBUG:page worker 1: enqueued (45, 'abra238')
+01:54:50.529:DEBUG:page worker 1: enqueued (46, 'Xeem')
+01:54:50.529:DEBUG:page worker 1: enqueued (47, 'MarkoOSRS')
+01:54:50.529:DEBUG:page worker 1: enqueued (48, 'Ajeh')
+01:54:50.529:DEBUG:page worker 1: enqueued (49, 'Paul Labile')
+01:54:50.530:DEBUG:page worker 1: enqueued (50, 'Sarah Hagan')
+01:54:50.530:DEBUG:page worker 1: finished page 2
+01:54:50.530:DEBUG:page worker 1: got page job 4 from queue
+01:54:50.530:DEBUG:page worker 1: requesting page 4...
+01:54:50.530:DEBUG:stats worker 12: got (13, Aziz) from queue)
+01:54:50.530:DEBUG:stats worker 12: requesting stats for (13, 'Aziz')...
+01:54:50.610:DEBUG:stats worker 13: got (14, Eeli) from queue)
+01:54:50.610:DEBUG:stats worker 13: requesting stats for (14, 'Eeli')...
+01:54:50.710:DEBUG:stats worker 14: got (15, baile y) from queue)
+01:54:50.711:DEBUG:stats worker 14: requesting stats for (15, 'baile y')...
+01:54:50.810:DEBUG:stats worker 15: got (16, ptalex 22) from queue)
+01:54:50.810:DEBUG:stats worker 15: requesting stats for (16, 'ptalex 22')...
+01:54:50.911:DEBUG:stats worker 16: got (17, Dan Gleesac) from queue)
+01:54:50.911:DEBUG:stats worker 16: requesting stats for (17, 'Dan Gleesac')...
+01:54:50.978:DEBUG:page worker 0: got page 3 from OSRS hiscores, 0.50 sec
+01:54:50.979:DEBUG:page worker 0: enqueued (51, 'Hampus')
+01:54:50.979:DEBUG:page worker 0: enqueued (52, 'SalBobo')
+01:54:50.979:DEBUG:page worker 0: enqueued (53, 'S ebbe')
+01:54:50.979:DEBUG:page worker 0: enqueued (54, 'Wee')
+01:54:50.979:DEBUG:page worker 0: enqueued (55, 'Shop')
+01:54:50.979:DEBUG:page worker 0: enqueued (56, 'Hordalad')
+01:54:50.979:DEBUG:page worker 0: enqueued (57, 'AndrewWigins')
+01:54:50.979:DEBUG:page worker 0: enqueued (58, 'Pufffml')
+01:54:50.979:DEBUG:page worker 0: enqueued (59, 'Zunkrah')
+01:54:50.979:DEBUG:page worker 0: enqueued (60, 'ErBr')
+01:54:50.979:DEBUG:page worker 0: enqueued (61, 'H D M P')
+01:54:50.979:DEBUG:page worker 0: enqueued (62, 'Cairo')
+01:54:50.979:DEBUG:page worker 0: enqueued (63, 'Balla')
+01:54:50.979:DEBUG:page worker 0: enqueued (64, 'Nerd')
+01:54:50.979:DEBUG:page worker 0: enqueued (65, 'Rousey')
+01:54:50.979:DEBUG:page worker 0: enqueued (66, 'Zulu')
+01:54:50.979:DEBUG:page worker 0: enqueued (67, 'Fumin')
+01:54:50.979:DEBUG:page worker 0: enqueued (68, 'SteSkillalt')
+01:54:50.979:DEBUG:page worker 0: enqueued (69, 'Angler')
+01:54:50.980:DEBUG:page worker 0: enqueued (70, 'JENNY DEATH')
+01:54:50.980:DEBUG:page worker 0: enqueued (71, 'Chrisha')
+01:54:50.980:DEBUG:page worker 0: enqueued (72, 'dear sleeper')
+01:54:50.980:DEBUG:page worker 0: enqueued (73, 'Ozzys')
+01:54:50.980:DEBUG:page worker 0: enqueued (74, 'rithvik')
+01:54:50.980:DEBUG:page worker 0: enqueued (75, 'Jiqonix')
+01:54:50.980:DEBUG:page worker 0: finished page 3
+01:54:51.010:DEBUG:stats worker 17: got (18, blind idiot) from queue)
+01:54:51.010:DEBUG:stats worker 17: requesting stats for (18, 'blind idiot')...
+01:54:51.067:DEBUG:page worker 1: got page 4 from OSRS hiscores, 0.54 sec
+01:54:51.067:DEBUG:page worker 1: enqueued (76, 'Bront')
+01:54:51.067:DEBUG:page worker 1: enqueued (77, 'Avatar Evan')
+01:54:51.067:DEBUG:page worker 1: enqueued (78, 'Noexi')
+01:54:51.067:DEBUG:page worker 1: enqueued (79, 'Darkseance')
+01:54:51.067:DEBUG:page worker 1: enqueued (80, 'Flakey')
+01:54:51.067:DEBUG:page worker 1: enqueued (81, 'DKHo')
+01:54:51.067:DEBUG:page worker 1: enqueued (82, '9JR')
+01:54:51.067:DEBUG:page worker 1: enqueued (83, 'Animos')
+01:54:51.067:DEBUG:page worker 1: enqueued (84, '568385648654')
+01:54:51.068:DEBUG:page worker 1: enqueued (85, 'yyttam')
+01:54:51.068:DEBUG:page worker 1: enqueued (86, 'Heuvel Reus')
+01:54:51.068:DEBUG:page worker 1: enqueued (87, 'JayMaster')
+01:54:51.068:DEBUG:page worker 1: enqueued (88, 'iNewton')
+01:54:51.068:DEBUG:page worker 1: enqueued (89, 'Gibberish')
+01:54:51.068:DEBUG:page worker 1: enqueued (90, 'Rigondeaux')
+01:54:51.068:DEBUG:page worker 1: enqueued (91, 'Hanno Tauber')
+01:54:51.068:DEBUG:page worker 1: enqueued (92, '5th hcim LUL')
+01:54:51.068:DEBUG:page worker 1: enqueued (93, 'X Mars')
+01:54:51.068:DEBUG:page worker 1: enqueued (94, 'Tmm')
+01:54:51.068:DEBUG:page worker 1: enqueued (95, 'Tails')
+01:54:51.068:DEBUG:page worker 1: enqueued (96, 'Windows10')
+01:54:51.068:DEBUG:page worker 1: enqueued (97, 'fe-ma-le')
+01:54:51.068:DEBUG:page worker 1: enqueued (98, 'Pano')
+01:54:51.068:DEBUG:page worker 1: enqueued (99, 'VVona')
+01:54:51.068:DEBUG:page worker 1: enqueued (100, 'Mikael')
+01:54:51.068:DEBUG:page worker 1: finished page 4
+01:54:51.068:DEBUG:page queue joined
+01:54:51.110:DEBUG:stats worker 18: got (19, he box jonge) from queue)
+01:54:51.110:DEBUG:stats worker 18: requesting stats for (19, 'he box jonge')...
+01:54:51.210:DEBUG:stats worker 19: got (20, Gustav) from queue)
+01:54:51.211:DEBUG:stats worker 19: requesting stats for (20, 'Gustav')...
+01:54:51.310:DEBUG:stats worker 20: got (21, moksi) from queue)
+01:54:51.310:DEBUG:stats worker 20: requesting stats for (21, 'moksi')...
+01:54:51.339:DEBUG:stats worker 0: got stats for (1, 'Lynx Titan'), 0.86 sec
+01:54:51.340:DEBUG:stats worker 0: finished (1, Lynx Titan)
+01:54:51.340:DEBUG:stats worker 0: got (22, Randalicious) from queue)
+01:54:51.340:DEBUG:stats worker 0: requesting stats for (22, 'Randalicious')...
+01:54:51.341:DEBUG:sort buffer: added (1, Lynx Titan) to heap (size 1, heap[0] = 1, lastout = 0)
+01:54:51.342:DEBUG:sort buffer: removed (1, Lynx Titan) from heap (size 0)
+01:54:51.342:DEBUG:sort buffer: placed (1, Lynx Titan) on export queue
+01:54:51.410:DEBUG:stats worker 21: got (23, Killzone) from queue)
+01:54:51.410:DEBUG:stats worker 21: requesting stats for (23, 'Killzone')...
+01:54:51.463:DEBUG:stats worker 14: got stats for (15, 'baile y'), 0.75 sec
+01:54:51.463:DEBUG:stats worker 14: finished (15, baile y)
+01:54:51.463:DEBUG:stats worker 14: got (24, Hiddy) from queue)
+01:54:51.463:DEBUG:stats worker 14: requesting stats for (24, 'Hiddy')...
+01:54:51.464:DEBUG:sort buffer: added (15, baile y) to heap (size 1, heap[0] = 15, lastout = 1)
+01:54:51.510:DEBUG:stats worker 22: got (25, Kudos) from queue)
+01:54:51.511:DEBUG:stats worker 22: requesting stats for (25, 'Kudos')...
+01:54:51.567:DEBUG:stats worker 4: got stats for (5, 'Tomdabom'), 1.08 sec
+01:54:51.568:DEBUG:stats worker 4: finished (5, Tomdabom)
+01:54:51.568:DEBUG:stats worker 4: got (26, karibola) from queue)
+01:54:51.568:DEBUG:stats worker 4: requesting stats for (26, 'karibola')...
+01:54:51.569:DEBUG:sort buffer: added (5, Tomdabom) to heap (size 2, heap[0] = 5, lastout = 1)
+01:54:51.610:DEBUG:stats worker 23: got (27, Capt King) from queue)
+01:54:51.610:DEBUG:stats worker 23: requesting stats for (27, 'Capt King')...
+01:54:51.617:DEBUG:stats worker 2: got stats for (3, 'ShawnBay'), 1.13 sec
+01:54:51.617:DEBUG:stats worker 2: finished (3, ShawnBay)
+01:54:51.617:DEBUG:stats worker 2: got (28, Oskar) from queue)
+01:54:51.617:DEBUG:stats worker 2: requesting stats for (28, 'Oskar')...
+01:54:51.619:DEBUG:sort buffer: added (3, ShawnBay) to heap (size 3, heap[0] = 3, lastout = 1)
+01:54:51.620:DEBUG:stats worker 3: got stats for (4, 'senZe'), 1.14 sec
+01:54:51.620:DEBUG:stats worker 3: finished (4, senZe)
+01:54:51.620:DEBUG:stats worker 3: got (29, eerx) from queue)
+01:54:51.620:DEBUG:stats worker 3: requesting stats for (29, 'eerx')...
+01:54:51.621:DEBUG:sort buffer: added (4, senZe) to heap (size 4, heap[0] = 3, lastout = 1)
+01:54:51.622:DEBUG:stats worker 11: got stats for (12, 'Brundeen'), 1.14 sec
+01:54:51.622:DEBUG:stats worker 11: finished (12, Brundeen)
+01:54:51.622:DEBUG:stats worker 11: got (30, Joonas) from queue)
+01:54:51.622:DEBUG:stats worker 11: requesting stats for (30, 'Joonas')...
+01:54:51.623:DEBUG:stats worker 1: got stats for (2, 'Hey Jase'), 1.14 sec
+01:54:51.624:DEBUG:stats worker 1: finished (2, Hey Jase)
+01:54:51.624:DEBUG:stats worker 1: got (31, Ooktism) from queue)
+01:54:51.624:DEBUG:stats worker 1: requesting stats for (31, 'Ooktism')...
+01:54:51.625:DEBUG:sort buffer: added (2, Hey Jase) to heap (size 5, heap[0] = 2, lastout = 1)
+01:54:51.625:DEBUG:sort buffer: removed (2, Hey Jase) from heap (size 4)
+01:54:51.625:DEBUG:sort buffer: placed (2, Hey Jase) on export queue
+01:54:51.625:DEBUG:sort buffer: removed (3, ShawnBay) from heap (size 3)
+01:54:51.625:DEBUG:sort buffer: placed (3, ShawnBay) on export queue
+01:54:51.625:DEBUG:sort buffer: removed (4, senZe) from heap (size 2)
+01:54:51.625:DEBUG:sort buffer: placed (4, senZe) on export queue
+01:54:51.625:DEBUG:sort buffer: removed (5, Tomdabom) from heap (size 1)
+01:54:51.625:DEBUG:sort buffer: placed (5, Tomdabom) on export queue
+01:54:51.625:DEBUG:sort buffer: added (12, Brundeen) to heap (size 2, heap[0] = 12, lastout = 5)
+01:54:51.626:DEBUG:exported 1 documents: (ranks 1-1)
+01:54:51.670:DEBUG:stats worker 19: got stats for (20, 'Gustav'), 0.46 sec
+01:54:51.670:DEBUG:stats worker 19: finished (20, Gustav)
+01:54:51.670:DEBUG:stats worker 19: got (32, Rodney Farva) from queue)
+01:54:51.670:DEBUG:stats worker 19: requesting stats for (32, 'Rodney Farva')...
+01:54:51.671:DEBUG:sort buffer: added (20, Gustav) to heap (size 3, heap[0] = 12, lastout = 5)
+01:54:51.710:DEBUG:stats worker 24: got (33, Kyaandere) from queue)
+01:54:51.710:DEBUG:stats worker 24: requesting stats for (33, 'Kyaandere')...
+01:54:51.766:DEBUG:stats worker 17: got stats for (18, 'blind idiot'), 0.76 sec
+01:54:51.766:DEBUG:stats worker 17: finished (18, blind idiot)
+01:54:51.766:DEBUG:stats worker 17: got (34, Pacellino) from queue)
+01:54:51.766:DEBUG:stats worker 17: requesting stats for (34, 'Pacellino')...
+01:54:51.768:DEBUG:stats worker 15: got stats for (16, 'ptalex 22'), 0.96 sec
+01:54:51.768:DEBUG:stats worker 15: finished (16, ptalex 22)
+01:54:51.768:DEBUG:stats worker 15: got (35, Henee) from queue)
+01:54:51.768:DEBUG:stats worker 15: requesting stats for (35, 'Henee')...
+01:54:51.770:DEBUG:sort buffer: added (16, ptalex 22) to heap (size 4, heap[0] = 12, lastout = 5)
+01:54:51.770:DEBUG:sort buffer: added (18, blind idiot) to heap (size 5, heap[0] = 12, lastout = 5)
+01:54:51.812:DEBUG:stats worker 0: got stats for (22, 'Randalicious'), 0.47 sec
+01:54:51.812:DEBUG:stats worker 0: finished (22, Randalicious)
+01:54:51.812:DEBUG:stats worker 0: got (36, Saltia) from queue)
+01:54:51.812:DEBUG:stats worker 0: requesting stats for (36, 'Saltia')...
+01:54:51.814:DEBUG:stats worker 25: got (37, Yeroen) from queue)
+01:54:51.814:DEBUG:stats worker 25: requesting stats for (37, 'Yeroen')...
+01:54:51.815:DEBUG:sort buffer: added (22, Randalicious) to heap (size 6, heap[0] = 12, lastout = 5)
+01:54:51.817:DEBUG:stats worker 16: got stats for (17, 'Dan Gleesac'), 0.91 sec
+01:54:51.817:DEBUG:stats worker 16: finished (17, Dan Gleesac)
+01:54:51.817:DEBUG:stats worker 16: got (38, Iron Hyger) from queue)
+01:54:51.817:DEBUG:stats worker 16: requesting stats for (38, 'Iron Hyger')...
+01:54:51.818:DEBUG:sort buffer: added (17, Dan Gleesac) to heap (size 7, heap[0] = 12, lastout = 5)
+01:54:51.886:DEBUG:exported 4 documents: (ranks 2-5)
+01:54:51.911:DEBUG:stats worker 26: got (39, Balou) from queue)
+01:54:51.911:DEBUG:stats worker 26: requesting stats for (39, 'Balou')...
+01:54:51.914:DEBUG:stats worker 18: got stats for (19, 'he box jonge'), 0.80 sec
+01:54:51.914:DEBUG:stats worker 18: finished (19, he box jonge)
+01:54:51.914:DEBUG:stats worker 18: got (40, Nagyung) from queue)
+01:54:51.914:DEBUG:stats worker 18: requesting stats for (40, 'Nagyung')...
+01:54:51.915:DEBUG:sort buffer: added (19, he box jonge) to heap (size 8, heap[0] = 12, lastout = 5)
+01:54:51.975:DEBUG:stats worker 14: got stats for (24, 'Hiddy'), 0.51 sec
+01:54:51.975:DEBUG:stats worker 14: finished (24, Hiddy)
+01:54:51.975:DEBUG:stats worker 14: got (41, dids) from queue)
+01:54:51.975:DEBUG:stats worker 14: requesting stats for (41, 'dids')...
+01:54:51.977:DEBUG:sort buffer: added (24, Hiddy) to heap (size 9, heap[0] = 12, lastout = 5)
+01:54:52.010:DEBUG:stats worker 27: got (42, Larie) from queue)
+01:54:52.011:DEBUG:stats worker 27: requesting stats for (42, 'Larie')...
+01:54:52.017:DEBUG:stats worker 4: got stats for (26, 'karibola'), 0.45 sec
+01:54:52.018:DEBUG:stats worker 4: finished (26, karibola)
+01:54:52.018:DEBUG:stats worker 4: got (43, Skipper996) from queue)
+01:54:52.018:DEBUG:stats worker 4: requesting stats for (43, 'Skipper996')...
+01:54:52.019:DEBUG:sort buffer: added (26, karibola) to heap (size 10, heap[0] = 12, lastout = 5)
+01:54:52.021:DEBUG:stats worker 7: got stats for (8, 'DedWilson'), 1.54 sec
+01:54:52.021:DEBUG:stats worker 7: finished (8, DedWilson)
+01:54:52.021:DEBUG:stats worker 7: got (44, Razor Beast) from queue)
+01:54:52.021:DEBUG:stats worker 7: requesting stats for (44, 'Razor Beast')...
+01:54:52.022:DEBUG:sort buffer: added (8, DedWilson) to heap (size 11, heap[0] = 8, lastout = 5)
+01:54:52.065:DEBUG:stats worker 1: got stats for (31, 'Ooktism'), 0.44 sec
+01:54:52.065:DEBUG:stats worker 1: finished (31, Ooktism)
+01:54:52.065:DEBUG:stats worker 1: got (45, abra238) from queue)
+01:54:52.065:DEBUG:stats worker 1: requesting stats for (45, 'abra238')...
+01:54:52.067:DEBUG:sort buffer: added (31, Ooktism) to heap (size 12, heap[0] = 8, lastout = 5)
+01:54:52.115:DEBUG:stats worker 23: got stats for (27, 'Capt King'), 0.50 sec
+01:54:52.115:DEBUG:stats worker 23: finished (27, Capt King)
+01:54:52.115:DEBUG:stats worker 23: got (46, Xeem) from queue)
+01:54:52.115:DEBUG:stats worker 23: requesting stats for (46, 'Xeem')...
+01:54:52.117:DEBUG:sort buffer: added (27, Capt King) to heap (size 13, heap[0] = 8, lastout = 5)
+01:54:52.118:DEBUG:stats worker 20: got stats for (21, 'moksi'), 0.81 sec
+01:54:52.118:DEBUG:stats worker 20: finished (21, moksi)
+01:54:52.118:DEBUG:stats worker 20: got (47, MarkoOSRS) from queue)
+01:54:52.119:DEBUG:stats worker 20: requesting stats for (47, 'MarkoOSRS')...
+01:54:52.120:DEBUG:stats worker 11: got stats for (30, 'Joonas'), 0.50 sec
+01:54:52.120:DEBUG:stats worker 11: finished (30, Joonas)
+01:54:52.120:DEBUG:stats worker 11: got (48, Ajeh) from queue)
+01:54:52.120:DEBUG:stats worker 11: requesting stats for (48, 'Ajeh')...
+01:54:52.122:DEBUG:sort buffer: added (21, moksi) to heap (size 14, heap[0] = 8, lastout = 5)
+01:54:52.122:DEBUG:sort buffer: added (30, Joonas) to heap (size 15, heap[0] = 8, lastout = 5)
+01:54:52.123:DEBUG:stats worker 2: got stats for (28, 'Oskar'), 0.51 sec
+01:54:52.123:DEBUG:stats worker 2: finished (28, Oskar)
+01:54:52.123:DEBUG:stats worker 2: got (49, Paul Labile) from queue)
+01:54:52.123:DEBUG:stats worker 2: requesting stats for (49, 'Paul Labile')...
+01:54:52.125:DEBUG:stats worker 3: got stats for (29, 'eerx'), 0.50 sec
+01:54:52.125:DEBUG:stats worker 3: finished (29, eerx)
+01:54:52.125:DEBUG:stats worker 3: got (50, Sarah Hagan) from queue)
+01:54:52.125:DEBUG:stats worker 3: requesting stats for (50, 'Sarah Hagan')...
+01:54:52.126:DEBUG:sort buffer: added (28, Oskar) to heap (size 16, heap[0] = 8, lastout = 5)
+01:54:52.126:DEBUG:sort buffer: added (29, eerx) to heap (size 17, heap[0] = 8, lastout = 5)
+01:54:52.170:DEBUG:stats worker 19: got stats for (32, 'Rodney Farva'), 0.50 sec
+01:54:52.170:DEBUG:stats worker 19: finished (32, Rodney Farva)
+01:54:52.170:DEBUG:stats worker 19: got (51, Hampus) from queue)
+01:54:52.170:DEBUG:stats worker 19: requesting stats for (51, 'Hampus')...
+01:54:52.172:DEBUG:sort buffer: added (32, Rodney Farva) to heap (size 18, heap[0] = 8, lastout = 5)
+01:54:52.215:DEBUG:stats worker 24: got stats for (33, 'Kyaandere'), 0.51 sec
+01:54:52.216:DEBUG:stats worker 24: finished (33, Kyaandere)
+01:54:52.216:DEBUG:stats worker 24: got (52, SalBobo) from queue)
+01:54:52.216:DEBUG:stats worker 24: requesting stats for (52, 'SalBobo')...
+01:54:52.217:DEBUG:sort buffer: added (33, Kyaandere) to heap (size 19, heap[0] = 8, lastout = 5)
+01:54:52.241:DEBUG:stats worker 21: got stats for (23, 'Killzone'), 0.83 sec
+01:54:52.241:DEBUG:stats worker 21: finished (23, Killzone)
+01:54:52.241:DEBUG:stats worker 21: got (53, S ebbe) from queue)
+01:54:52.241:DEBUG:stats worker 21: requesting stats for (53, 'S ebbe')...
+01:54:52.246:DEBUG:sort buffer: added (23, Killzone) to heap (size 20, heap[0] = 8, lastout = 5)
+01:54:52.268:DEBUG:stats worker 0: got stats for (36, 'Saltia'), 0.46 sec
+01:54:52.269:DEBUG:stats worker 0: finished (36, Saltia)
+01:54:52.269:DEBUG:stats worker 0: got (54, Wee) from queue)
+01:54:52.269:DEBUG:stats worker 0: requesting stats for (54, 'Wee')...
+01:54:52.270:DEBUG:sort buffer: added (36, Saltia) to heap (size 21, heap[0] = 8, lastout = 5)
+01:54:52.316:DEBUG:stats worker 5: got stats for (6, 'Karma'), 1.83 sec
+01:54:52.317:DEBUG:stats worker 5: finished (6, Karma)
+01:54:52.317:DEBUG:stats worker 5: got (55, Shop) from queue)
+01:54:52.317:DEBUG:stats worker 5: requesting stats for (55, 'Shop')...
+01:54:52.318:DEBUG:sort buffer: added (6, Karma) to heap (size 22, heap[0] = 6, lastout = 5)
+01:54:52.318:DEBUG:sort buffer: removed (6, Karma) from heap (size 21)
+01:54:52.318:DEBUG:sort buffer: placed (6, Karma) on export queue
+01:54:52.364:DEBUG:stats worker 13: got stats for (14, 'Eeli'), 1.75 sec
+01:54:52.365:DEBUG:stats worker 13: finished (14, Eeli)
+01:54:52.365:DEBUG:stats worker 13: got (56, Hordalad) from queue)
+01:54:52.365:DEBUG:stats worker 13: requesting stats for (56, 'Hordalad')...
+01:54:52.367:DEBUG:sort buffer: added (14, Eeli) to heap (size 22, heap[0] = 8, lastout = 6)
+01:54:52.368:DEBUG:stats worker 8: got stats for (9, 'GodTormentor'), 1.88 sec
+01:54:52.368:DEBUG:stats worker 8: finished (9, GodTormentor)
+01:54:52.368:DEBUG:stats worker 8: got (57, AndrewWigins) from queue)
+01:54:52.368:DEBUG:stats worker 8: requesting stats for (57, 'AndrewWigins')...
+01:54:52.370:DEBUG:sort buffer: added (9, GodTormentor) to heap (size 23, heap[0] = 8, lastout = 6)
+01:54:52.371:DEBUG:stats worker 22: got stats for (25, 'Kudos'), 0.86 sec
+01:54:52.371:DEBUG:stats worker 22: finished (25, Kudos)
+01:54:52.371:DEBUG:stats worker 22: got (58, Pufffml) from queue)
+01:54:52.372:DEBUG:stats worker 22: requesting stats for (58, 'Pufffml')...
+01:54:52.374:DEBUG:stats worker 10: got stats for (11, 'borsi'), 1.89 sec
+01:54:52.374:DEBUG:stats worker 10: finished (11, borsi)
+01:54:52.374:DEBUG:stats worker 10: got (59, Zunkrah) from queue)
+01:54:52.374:DEBUG:stats worker 10: requesting stats for (59, 'Zunkrah')...
+01:54:52.375:DEBUG:stats worker 9: got stats for (10, 'Vinny'), 1.89 sec
+01:54:52.375:DEBUG:stats worker 9: finished (10, Vinny)
+01:54:52.375:DEBUG:stats worker 9: got (60, ErBr) from queue)
+01:54:52.375:DEBUG:stats worker 9: requesting stats for (60, 'ErBr')...
+01:54:52.376:DEBUG:stats worker 12: got stats for (13, 'Aziz'), 1.85 sec
+01:54:52.377:DEBUG:stats worker 12: finished (13, Aziz)
+01:54:52.377:DEBUG:stats worker 12: got (61, H D M P) from queue)
+01:54:52.377:DEBUG:stats worker 12: requesting stats for (61, 'H D M P')...
+01:54:52.378:DEBUG:sort buffer: added (10, Vinny) to heap (size 24, heap[0] = 8, lastout = 6)
+01:54:52.378:DEBUG:sort buffer: added (11, borsi) to heap (size 25, heap[0] = 8, lastout = 6)
+01:54:52.378:DEBUG:sort buffer: added (13, Aziz) to heap (size 26, heap[0] = 8, lastout = 6)
+01:54:52.378:DEBUG:sort buffer: added (25, Kudos) to heap (size 27, heap[0] = 8, lastout = 6)
+01:54:52.379:DEBUG:stats worker 6: got stats for (7, 'Harmony'), 1.90 sec
+01:54:52.379:DEBUG:stats worker 6: finished (7, Harmony)
+01:54:52.379:DEBUG:stats worker 6: got (62, Cairo) from queue)
+01:54:52.379:DEBUG:stats worker 6: requesting stats for (62, 'Cairo')...
+01:54:52.380:DEBUG:sort buffer: added (7, Harmony) to heap (size 28, heap[0] = 7, lastout = 6)
+01:54:52.380:DEBUG:sort buffer: removed (7, Harmony) from heap (size 27)
+01:54:52.380:DEBUG:sort buffer: placed (7, Harmony) on export queue
+01:54:52.380:DEBUG:sort buffer: removed (8, DedWilson) from heap (size 26)
+01:54:52.380:DEBUG:sort buffer: placed (8, DedWilson) on export queue
+01:54:52.380:DEBUG:sort buffer: removed (9, GodTormentor) from heap (size 25)
+01:54:52.380:DEBUG:sort buffer: placed (9, GodTormentor) on export queue
+01:54:52.380:DEBUG:sort buffer: removed (10, Vinny) from heap (size 24)
+01:54:52.380:DEBUG:sort buffer: placed (10, Vinny) on export queue
+01:54:52.380:DEBUG:sort buffer: removed (11, borsi) from heap (size 23)
+01:54:52.380:DEBUG:sort buffer: placed (11, borsi) on export queue
+01:54:52.381:DEBUG:sort buffer: removed (12, Brundeen) from heap (size 22)
+01:54:52.381:DEBUG:sort buffer: placed (12, Brundeen) on export queue
+01:54:52.381:DEBUG:sort buffer: removed (13, Aziz) from heap (size 21)
+01:54:52.381:DEBUG:sort buffer: placed (13, Aziz) on export queue
+01:54:52.381:DEBUG:sort buffer: removed (14, Eeli) from heap (size 20)
+01:54:52.381:DEBUG:sort buffer: placed (14, Eeli) on export queue
+01:54:52.381:DEBUG:sort buffer: removed (15, baile y) from heap (size 19)
+01:54:52.381:DEBUG:sort buffer: placed (15, baile y) on export queue
+01:54:52.381:DEBUG:sort buffer: removed (16, ptalex 22) from heap (size 18)
+01:54:52.381:DEBUG:sort buffer: placed (16, ptalex 22) on export queue
+01:54:52.381:DEBUG:sort buffer: removed (17, Dan Gleesac) from heap (size 17)
+01:54:52.381:DEBUG:sort buffer: placed (17, Dan Gleesac) on export queue
+01:54:52.381:DEBUG:sort buffer: removed (18, blind idiot) from heap (size 16)
+01:54:52.381:DEBUG:sort buffer: placed (18, blind idiot) on export queue
+01:54:52.382:DEBUG:sort buffer: removed (19, he box jonge) from heap (size 15)
+01:54:52.382:DEBUG:sort buffer: placed (19, he box jonge) on export queue
+01:54:52.382:DEBUG:sort buffer: removed (20, Gustav) from heap (size 14)
+01:54:52.382:DEBUG:sort buffer: placed (20, Gustav) on export queue
+01:54:52.382:DEBUG:sort buffer: removed (21, moksi) from heap (size 13)
+01:54:52.382:DEBUG:sort buffer: placed (21, moksi) on export queue
+01:54:52.382:DEBUG:sort buffer: removed (22, Randalicious) from heap (size 12)
+01:54:52.382:DEBUG:sort buffer: placed (22, Randalicious) on export queue
+01:54:52.382:DEBUG:sort buffer: removed (23, Killzone) from heap (size 11)
+01:54:52.382:DEBUG:sort buffer: placed (23, Killzone) on export queue
+01:54:52.382:DEBUG:sort buffer: removed (24, Hiddy) from heap (size 10)
+01:54:52.382:DEBUG:sort buffer: placed (24, Hiddy) on export queue
+01:54:52.382:DEBUG:sort buffer: removed (25, Kudos) from heap (size 9)
+01:54:52.382:DEBUG:sort buffer: placed (25, Kudos) on export queue
+01:54:52.382:DEBUG:sort buffer: removed (26, karibola) from heap (size 8)
+01:54:52.382:DEBUG:sort buffer: placed (26, karibola) on export queue
+01:54:52.383:DEBUG:sort buffer: removed (27, Capt King) from heap (size 7)
+01:54:52.383:DEBUG:sort buffer: placed (27, Capt King) on export queue
+01:54:52.383:DEBUG:sort buffer: removed (28, Oskar) from heap (size 6)
+01:54:52.383:DEBUG:sort buffer: placed (28, Oskar) on export queue
+01:54:52.383:DEBUG:sort buffer: removed (29, eerx) from heap (size 5)
+01:54:52.383:DEBUG:sort buffer: placed (29, eerx) on export queue
+01:54:52.383:DEBUG:sort buffer: removed (30, Joonas) from heap (size 4)
+01:54:52.383:DEBUG:sort buffer: placed (30, Joonas) on export queue
+01:54:52.383:DEBUG:sort buffer: removed (31, Ooktism) from heap (size 3)
+01:54:52.383:DEBUG:sort buffer: placed (31, Ooktism) on export queue
+01:54:52.383:DEBUG:sort buffer: removed (32, Rodney Farva) from heap (size 2)
+01:54:52.383:DEBUG:sort buffer: placed (32, Rodney Farva) on export queue
+01:54:52.383:DEBUG:sort buffer: removed (33, Kyaandere) from heap (size 1)
+01:54:52.383:DEBUG:sort buffer: placed (33, Kyaandere) on export queue
+01:54:52.412:DEBUG:stats worker 26: got stats for (39, 'Balou'), 0.50 sec
+01:54:52.412:DEBUG:stats worker 26: finished (39, Balou)
+01:54:52.412:DEBUG:stats worker 26: got (63, Balla) from queue)
+01:54:52.412:DEBUG:stats worker 26: requesting stats for (63, 'Balla')...
+01:54:52.413:DEBUG:sort buffer: added (39, Balou) to heap (size 2, heap[0] = 36, lastout = 33)
+01:54:52.414:DEBUG:stats worker 18: got stats for (40, 'Nagyung'), 0.50 sec
+01:54:52.414:DEBUG:stats worker 18: finished (40, Nagyung)
+01:54:52.414:DEBUG:stats worker 18: got (64, Nerd) from queue)
+01:54:52.414:DEBUG:stats worker 18: requesting stats for (64, 'Nerd')...
+01:54:52.415:DEBUG:sort buffer: added (40, Nagyung) to heap (size 3, heap[0] = 36, lastout = 33)
+01:54:52.464:DEBUG:stats worker 14: got stats for (41, 'dids'), 0.49 sec
+01:54:52.465:DEBUG:stats worker 14: finished (41, dids)
+01:54:52.465:DEBUG:stats worker 14: got (65, Rousey) from queue)
+01:54:52.465:DEBUG:stats worker 14: requesting stats for (65, 'Rousey')...
+01:54:52.467:DEBUG:sort buffer: added (41, dids) to heap (size 4, heap[0] = 36, lastout = 33)
+01:54:52.516:DEBUG:stats worker 4: got stats for (43, 'Skipper996'), 0.50 sec
+01:54:52.518:DEBUG:stats worker 4: finished (43, Skipper996)
+01:54:52.518:DEBUG:stats worker 4: got (66, Zulu) from queue)
+01:54:52.518:DEBUG:stats worker 4: requesting stats for (66, 'Zulu')...
+01:54:52.520:DEBUG:stats worker 7: got stats for (44, 'Razor Beast'), 0.50 sec
+01:54:52.521:DEBUG:stats worker 7: finished (44, Razor Beast)
+01:54:52.521:DEBUG:stats worker 7: got (67, Fumin) from queue)
+01:54:52.521:DEBUG:stats worker 7: requesting stats for (67, 'Fumin')...
+01:54:52.522:DEBUG:stats worker 17: got stats for (34, 'Pacellino'), 0.76 sec
+01:54:52.523:DEBUG:stats worker 17: finished (34, Pacellino)
+01:54:52.523:DEBUG:stats worker 17: got (68, SteSkillalt) from queue)
+01:54:52.523:DEBUG:stats worker 17: requesting stats for (68, 'SteSkillalt')...
+01:54:52.524:DEBUG:stats worker 27: got stats for (42, 'Larie'), 0.51 sec
+01:54:52.524:DEBUG:stats worker 27: finished (42, Larie)
+01:54:52.524:DEBUG:stats worker 27: got (69, Angler) from queue)
+01:54:52.524:DEBUG:stats worker 27: requesting stats for (69, 'Angler')...
+01:54:52.525:DEBUG:sort buffer: added (34, Pacellino) to heap (size 5, heap[0] = 34, lastout = 33)
+01:54:52.525:DEBUG:sort buffer: removed (34, Pacellino) from heap (size 4)
+01:54:52.525:DEBUG:sort buffer: placed (34, Pacellino) on export queue
+01:54:52.525:DEBUG:sort buffer: added (42, Larie) to heap (size 5, heap[0] = 36, lastout = 34)
+01:54:52.525:DEBUG:sort buffer: added (43, Skipper996) to heap (size 6, heap[0] = 36, lastout = 34)
+01:54:52.525:DEBUG:sort buffer: added (44, Razor Beast) to heap (size 7, heap[0] = 36, lastout = 34)
+01:54:52.563:DEBUG:stats worker 15: got stats for (35, 'Henee'), 0.79 sec
+01:54:52.563:DEBUG:stats worker 15: finished (35, Henee)
+01:54:52.563:DEBUG:stats worker 15: got (70, JENNY DEATH) from queue)
+01:54:52.563:DEBUG:stats worker 15: requesting stats for (70, 'JENNY DEATH')...
+01:54:52.565:DEBUG:sort buffer: added (35, Henee) to heap (size 8, heap[0] = 35, lastout = 34)
+01:54:52.565:DEBUG:sort buffer: removed (35, Henee) from heap (size 7)
+01:54:52.565:DEBUG:sort buffer: placed (35, Henee) on export queue
+01:54:52.565:DEBUG:sort buffer: removed (36, Saltia) from heap (size 6)
+01:54:52.565:DEBUG:sort buffer: placed (36, Saltia) on export queue
+01:54:52.566:DEBUG:stats worker 1: got stats for (45, 'abra238'), 0.50 sec
+01:54:52.566:DEBUG:stats worker 1: finished (45, abra238)
+01:54:52.566:DEBUG:stats worker 1: got (71, Chrisha) from queue)
+01:54:52.567:DEBUG:stats worker 1: requesting stats for (71, 'Chrisha')...
+01:54:52.567:DEBUG:sort buffer: added (45, abra238) to heap (size 7, heap[0] = 39, lastout = 36)
+01:54:52.568:DEBUG:stats worker 20: got stats for (47, 'MarkoOSRS'), 0.45 sec
+01:54:52.568:DEBUG:stats worker 20: finished (47, MarkoOSRS)
+01:54:52.568:DEBUG:stats worker 20: got (72, dear sleeper) from queue)
+01:54:52.568:DEBUG:stats worker 20: requesting stats for (72, 'dear sleeper')...
+01:54:52.569:DEBUG:sort buffer: added (47, MarkoOSRS) to heap (size 8, heap[0] = 39, lastout = 36)
+01:54:52.612:DEBUG:stats worker 25: got stats for (37, 'Yeroen'), 0.80 sec
+01:54:52.613:DEBUG:stats worker 25: finished (37, Yeroen)
+01:54:52.613:DEBUG:stats worker 25: got (73, Ozzys) from queue)
+01:54:52.613:DEBUG:stats worker 25: requesting stats for (73, 'Ozzys')...
+01:54:52.615:DEBUG:sort buffer: added (37, Yeroen) to heap (size 9, heap[0] = 37, lastout = 36)
+01:54:52.615:DEBUG:sort buffer: removed (37, Yeroen) from heap (size 8)
+01:54:52.615:DEBUG:sort buffer: placed (37, Yeroen) on export queue
+01:54:52.616:DEBUG:stats worker 2: got stats for (49, 'Paul Labile'), 0.49 sec
+01:54:52.617:DEBUG:stats worker 2: finished (49, Paul Labile)
+01:54:52.617:DEBUG:stats worker 2: got (74, rithvik) from queue)
+01:54:52.617:DEBUG:stats worker 2: requesting stats for (74, 'rithvik')...
+01:54:52.619:DEBUG:sort buffer: added (49, Paul Labile) to heap (size 9, heap[0] = 39, lastout = 37)
+01:54:52.620:DEBUG:stats worker 16: got stats for (38, 'Iron Hyger'), 0.80 sec
+01:54:52.620:DEBUG:stats worker 16: finished (38, Iron Hyger)
+01:54:52.620:DEBUG:stats worker 16: got (75, Jiqonix) from queue)
+01:54:52.620:DEBUG:stats worker 16: requesting stats for (75, 'Jiqonix')...
+01:54:52.621:DEBUG:stats worker 11: got stats for (48, 'Ajeh'), 0.50 sec
+01:54:52.621:DEBUG:stats worker 11: finished (48, Ajeh)
+01:54:52.621:DEBUG:stats worker 11: got (76, Bront) from queue)
+01:54:52.621:DEBUG:stats worker 11: requesting stats for (76, 'Bront')...
+01:54:52.622:DEBUG:stats worker 23: got stats for (46, 'Xeem'), 0.51 sec
+01:54:52.623:DEBUG:stats worker 23: finished (46, Xeem)
+01:54:52.623:DEBUG:stats worker 23: got (77, Avatar Evan) from queue)
+01:54:52.623:DEBUG:stats worker 23: requesting stats for (77, 'Avatar Evan')...
+01:54:52.623:DEBUG:sort buffer: added (38, Iron Hyger) to heap (size 10, heap[0] = 38, lastout = 37)
+01:54:52.623:DEBUG:sort buffer: removed (38, Iron Hyger) from heap (size 9)
+01:54:52.624:DEBUG:sort buffer: placed (38, Iron Hyger) on export queue
+01:54:52.624:DEBUG:sort buffer: removed (39, Balou) from heap (size 8)
+01:54:52.624:DEBUG:sort buffer: placed (39, Balou) on export queue
+01:54:52.624:DEBUG:sort buffer: removed (40, Nagyung) from heap (size 7)
+01:54:52.624:DEBUG:sort buffer: placed (40, Nagyung) on export queue
+01:54:52.624:DEBUG:sort buffer: removed (41, dids) from heap (size 6)
+01:54:52.624:DEBUG:sort buffer: placed (41, dids) on export queue
+01:54:52.624:DEBUG:sort buffer: removed (42, Larie) from heap (size 5)
+01:54:52.624:DEBUG:sort buffer: placed (42, Larie) on export queue
+01:54:52.624:DEBUG:sort buffer: removed (43, Skipper996) from heap (size 4)
+01:54:52.624:DEBUG:sort buffer: placed (43, Skipper996) on export queue
+01:54:52.624:DEBUG:sort buffer: removed (44, Razor Beast) from heap (size 3)
+01:54:52.624:DEBUG:sort buffer: placed (44, Razor Beast) on export queue
+01:54:52.624:DEBUG:sort buffer: removed (45, abra238) from heap (size 2)
+01:54:52.624:DEBUG:sort buffer: placed (45, abra238) on export queue
+01:54:52.625:DEBUG:sort buffer: added (46, Xeem) to heap (size 3, heap[0] = 46, lastout = 45)
+01:54:52.625:DEBUG:sort buffer: removed (46, Xeem) from heap (size 2)
+01:54:52.625:DEBUG:sort buffer: placed (46, Xeem) on export queue
+01:54:52.625:DEBUG:sort buffer: removed (47, MarkoOSRS) from heap (size 1)
+01:54:52.625:DEBUG:sort buffer: placed (47, MarkoOSRS) on export queue
+01:54:52.625:DEBUG:sort buffer: added (48, Ajeh) to heap (size 2, heap[0] = 48, lastout = 47)
+01:54:52.625:DEBUG:sort buffer: removed (48, Ajeh) from heap (size 1)
+01:54:52.625:DEBUG:sort buffer: placed (48, Ajeh) on export queue
+01:54:52.625:DEBUG:sort buffer: removed (49, Paul Labile) from heap (size 0)
+01:54:52.625:DEBUG:sort buffer: placed (49, Paul Labile) on export queue
+01:54:52.664:DEBUG:stats worker 3: got stats for (50, 'Sarah Hagan'), 0.54 sec
+01:54:52.664:DEBUG:stats worker 3: finished (50, Sarah Hagan)
+01:54:52.664:DEBUG:stats worker 3: got (78, Noexi) from queue)
+01:54:52.665:DEBUG:stats worker 3: requesting stats for (78, 'Noexi')...
+01:54:52.666:DEBUG:sort buffer: added (50, Sarah Hagan) to heap (size 1, heap[0] = 50, lastout = 49)
+01:54:52.666:DEBUG:sort buffer: removed (50, Sarah Hagan) from heap (size 0)
+01:54:52.666:DEBUG:sort buffer: placed (50, Sarah Hagan) on export queue
+01:54:52.712:DEBUG:stats worker 19: got stats for (51, 'Hampus'), 0.54 sec
+01:54:52.712:DEBUG:stats worker 19: finished (51, Hampus)
+01:54:52.712:DEBUG:stats worker 19: got (79, Darkseance) from queue)
+01:54:52.713:DEBUG:stats worker 19: requesting stats for (79, 'Darkseance')...
+01:54:52.714:DEBUG:sort buffer: added (51, Hampus) to heap (size 1, heap[0] = 51, lastout = 50)
+01:54:52.714:DEBUG:sort buffer: removed (51, Hampus) from heap (size 0)
+01:54:52.714:DEBUG:sort buffer: placed (51, Hampus) on export queue
+01:54:52.764:DEBUG:stats worker 24: got stats for (52, 'SalBobo'), 0.55 sec
+01:54:52.765:DEBUG:stats worker 24: finished (52, SalBobo)
+01:54:52.765:DEBUG:stats worker 24: got (80, Flakey) from queue)
+01:54:52.765:DEBUG:stats worker 24: requesting stats for (80, 'Flakey')...
+01:54:52.766:DEBUG:sort buffer: added (52, SalBobo) to heap (size 1, heap[0] = 52, lastout = 51)
+01:54:52.766:DEBUG:sort buffer: removed (52, SalBobo) from heap (size 0)
+01:54:52.766:DEBUG:sort buffer: placed (52, SalBobo) on export queue
+01:54:52.767:DEBUG:stats worker 21: got stats for (53, 'S ebbe'), 0.53 sec
+01:54:52.767:DEBUG:stats worker 21: finished (53, S ebbe)
+01:54:52.767:DEBUG:stats worker 21: got (81, DKHo) from queue)
+01:54:52.767:DEBUG:stats worker 21: requesting stats for (81, 'DKHo')...
+01:54:52.768:DEBUG:sort buffer: added (53, S ebbe) to heap (size 1, heap[0] = 53, lastout = 52)
+01:54:52.768:DEBUG:sort buffer: removed (53, S ebbe) from heap (size 0)
+01:54:52.768:DEBUG:sort buffer: placed (53, S ebbe) on export queue
+01:54:52.811:DEBUG:stats worker 0: got stats for (54, 'Wee'), 0.54 sec
+01:54:52.812:DEBUG:stats worker 0: finished (54, Wee)
+01:54:52.812:DEBUG:stats worker 0: got (82, 9JR) from queue)
+01:54:52.812:DEBUG:stats worker 0: requesting stats for (82, '9JR')...
+01:54:52.813:DEBUG:sort buffer: added (54, Wee) to heap (size 1, heap[0] = 54, lastout = 53)
+01:54:52.813:DEBUG:sort buffer: removed (54, Wee) from heap (size 0)
+01:54:52.813:DEBUG:sort buffer: placed (54, Wee) on export queue
+01:54:52.814:DEBUG:stats worker 8: got stats for (57, 'AndrewWigins'), 0.45 sec
+01:54:52.814:DEBUG:stats worker 8: finished (57, AndrewWigins)
+01:54:52.814:DEBUG:stats worker 8: got (83, Animos) from queue)
+01:54:52.814:DEBUG:stats worker 8: requesting stats for (83, 'Animos')...
+01:54:52.815:DEBUG:sort buffer: added (57, AndrewWigins) to heap (size 1, heap[0] = 57, lastout = 54)
+01:54:52.816:DEBUG:stats worker 5: got stats for (55, 'Shop'), 0.50 sec
+01:54:52.816:DEBUG:stats worker 5: finished (55, Shop)
+01:54:52.816:DEBUG:stats worker 5: got (84, 568385648654) from queue)
+01:54:52.816:DEBUG:stats worker 5: requesting stats for (84, '568385648654')...
+01:54:52.817:DEBUG:sort buffer: added (55, Shop) to heap (size 2, heap[0] = 55, lastout = 54)
+01:54:52.817:DEBUG:sort buffer: removed (55, Shop) from heap (size 1)
+01:54:52.817:DEBUG:sort buffer: placed (55, Shop) on export queue
+01:54:52.864:DEBUG:stats worker 13: got stats for (56, 'Hordalad'), 0.50 sec
+01:54:52.864:DEBUG:stats worker 13: finished (56, Hordalad)
+01:54:52.864:DEBUG:stats worker 13: got (85, yyttam) from queue)
+01:54:52.864:DEBUG:stats worker 13: requesting stats for (85, 'yyttam')...
+01:54:52.866:DEBUG:sort buffer: added (56, Hordalad) to heap (size 2, heap[0] = 56, lastout = 55)
+01:54:52.866:DEBUG:sort buffer: removed (56, Hordalad) from heap (size 1)
+01:54:52.866:DEBUG:sort buffer: placed (56, Hordalad) on export queue
+01:54:52.867:DEBUG:sort buffer: removed (57, AndrewWigins) from heap (size 0)
+01:54:52.867:DEBUG:sort buffer: placed (57, AndrewWigins) on export queue
+01:54:52.867:DEBUG:stats worker 9: got stats for (60, 'ErBr'), 0.49 sec
+01:54:52.868:DEBUG:stats worker 9: finished (60, ErBr)
+01:54:52.868:DEBUG:stats worker 9: got (86, Heuvel Reus) from queue)
+01:54:52.868:DEBUG:stats worker 9: requesting stats for (86, 'Heuvel Reus')...
+01:54:52.869:DEBUG:stats worker 10: got stats for (59, 'Zunkrah'), 0.50 sec
+01:54:52.869:DEBUG:stats worker 10: finished (59, Zunkrah)
+01:54:52.869:DEBUG:stats worker 10: got (87, JayMaster) from queue)
+01:54:52.869:DEBUG:stats worker 10: requesting stats for (87, 'JayMaster')...
+01:54:52.870:DEBUG:sort buffer: added (59, Zunkrah) to heap (size 1, heap[0] = 59, lastout = 57)
+01:54:52.870:DEBUG:sort buffer: added (60, ErBr) to heap (size 2, heap[0] = 59, lastout = 57)
+01:54:52.871:DEBUG:stats worker 6: got stats for (62, 'Cairo'), 0.49 sec
+01:54:52.871:DEBUG:stats worker 6: finished (62, Cairo)
+01:54:52.871:DEBUG:stats worker 6: got (88, iNewton) from queue)
+01:54:52.871:DEBUG:stats worker 6: requesting stats for (88, 'iNewton')...
+01:54:52.872:DEBUG:sort buffer: added (62, Cairo) to heap (size 3, heap[0] = 59, lastout = 57)
+01:54:52.914:DEBUG:stats worker 26: got stats for (63, 'Balla'), 0.50 sec
+01:54:52.914:DEBUG:stats worker 26: finished (63, Balla)
+01:54:52.914:DEBUG:stats worker 26: got (89, Gibberish) from queue)
+01:54:52.914:DEBUG:stats worker 26: requesting stats for (89, 'Gibberish')...
+01:54:52.916:DEBUG:sort buffer: added (63, Balla) to heap (size 4, heap[0] = 59, lastout = 57)
+01:54:52.917:DEBUG:stats worker 18: got stats for (64, 'Nerd'), 0.50 sec
+01:54:52.917:DEBUG:stats worker 18: finished (64, Nerd)
+01:54:52.918:DEBUG:stats worker 18: got (90, Rigondeaux) from queue)
+01:54:52.918:DEBUG:stats worker 18: requesting stats for (90, 'Rigondeaux')...
+01:54:52.919:DEBUG:sort buffer: added (64, Nerd) to heap (size 5, heap[0] = 59, lastout = 57)
+01:54:52.968:DEBUG:stats worker 14: got stats for (65, 'Rousey'), 0.50 sec
+01:54:52.969:DEBUG:stats worker 14: finished (65, Rousey)
+01:54:52.969:DEBUG:stats worker 14: got (91, Hanno Tauber) from queue)
+01:54:52.969:DEBUG:stats worker 14: requesting stats for (91, 'Hanno Tauber')...
+01:54:52.970:DEBUG:sort buffer: added (65, Rousey) to heap (size 6, heap[0] = 59, lastout = 57)
+01:54:53.013:DEBUG:stats worker 4: got stats for (66, 'Zulu'), 0.49 sec
+01:54:53.013:DEBUG:stats worker 4: finished (66, Zulu)
+01:54:53.014:DEBUG:stats worker 4: got (92, 5th hcim LUL) from queue)
+01:54:53.014:DEBUG:stats worker 4: requesting stats for (92, '5th hcim LUL')...
+01:54:53.015:DEBUG:sort buffer: added (66, Zulu) to heap (size 7, heap[0] = 59, lastout = 57)
+01:54:53.016:DEBUG:stats worker 27: got stats for (69, 'Angler'), 0.49 sec
+01:54:53.017:DEBUG:stats worker 27: finished (69, Angler)
+01:54:53.017:DEBUG:stats worker 27: got (93, X Mars) from queue)
+01:54:53.017:DEBUG:stats worker 27: requesting stats for (93, 'X Mars')...
+01:54:53.019:DEBUG:stats worker 7: got stats for (67, 'Fumin'), 0.50 sec
+01:54:53.019:DEBUG:stats worker 7: finished (67, Fumin)
+01:54:53.019:DEBUG:stats worker 7: got (94, Tmm) from queue)
+01:54:53.019:DEBUG:stats worker 7: requesting stats for (94, 'Tmm')...
+01:54:53.020:DEBUG:sort buffer: added (67, Fumin) to heap (size 8, heap[0] = 59, lastout = 57)
+01:54:53.020:DEBUG:sort buffer: added (69, Angler) to heap (size 9, heap[0] = 59, lastout = 57)
+01:54:53.030:DEBUG:stats worker 17: got stats for (68, 'SteSkillalt'), 0.51 sec
+01:54:53.030:DEBUG:stats worker 17: finished (68, SteSkillalt)
+01:54:53.030:DEBUG:stats worker 17: got (95, Tails) from queue)
+01:54:53.030:DEBUG:stats worker 17: requesting stats for (95, 'Tails')...
+01:54:53.031:DEBUG:sort buffer: added (68, SteSkillalt) to heap (size 10, heap[0] = 59, lastout = 57)
+01:54:53.061:DEBUG:stats worker 25: got stats for (73, 'Ozzys'), 0.45 sec
+01:54:53.062:DEBUG:stats worker 25: finished (73, Ozzys)
+01:54:53.062:DEBUG:stats worker 25: got (96, Windows10) from queue)
+01:54:53.062:DEBUG:stats worker 25: requesting stats for (96, 'Windows10')...
+01:54:53.062:DEBUG:sort buffer: added (73, Ozzys) to heap (size 11, heap[0] = 59, lastout = 57)
+01:54:53.064:DEBUG:stats worker 15: got stats for (70, 'JENNY DEATH'), 0.50 sec
+01:54:53.064:DEBUG:stats worker 15: finished (70, JENNY DEATH)
+01:54:53.064:DEBUG:stats worker 15: got (97, fe-ma-le) from queue)
+01:54:53.064:DEBUG:stats worker 15: requesting stats for (97, 'fe-ma-le')...
+01:54:53.065:DEBUG:stats worker 20: got stats for (72, 'dear sleeper'), 0.50 sec
+01:54:53.065:DEBUG:stats worker 20: finished (72, dear sleeper)
+01:54:53.065:DEBUG:stats worker 20: got (98, Pano) from queue)
+01:54:53.065:DEBUG:stats worker 20: requesting stats for (98, 'Pano')...
+01:54:53.066:DEBUG:sort buffer: added (70, JENNY DEATH) to heap (size 12, heap[0] = 59, lastout = 57)
+01:54:53.066:DEBUG:sort buffer: added (72, dear sleeper) to heap (size 13, heap[0] = 59, lastout = 57)
+01:54:53.070:DEBUG:stats worker 1: got stats for (71, 'Chrisha'), 0.50 sec
+01:54:53.070:DEBUG:stats worker 1: finished (71, Chrisha)
+01:54:53.070:DEBUG:stats worker 1: got (99, VVona) from queue)
+01:54:53.070:DEBUG:stats worker 1: requesting stats for (99, 'VVona')...
+01:54:53.071:DEBUG:sort buffer: added (71, Chrisha) to heap (size 14, heap[0] = 59, lastout = 57)
+01:54:53.112:DEBUG:stats worker 23: got stats for (77, 'Avatar Evan'), 0.49 sec
+01:54:53.113:DEBUG:stats worker 23: finished (77, Avatar Evan)
+01:54:53.113:DEBUG:stats worker 23: got (100, Mikael) from queue)
+01:54:53.113:DEBUG:stats worker 23: requesting stats for (100, 'Mikael')...
+01:54:53.114:DEBUG:sort buffer: added (77, Avatar Evan) to heap (size 15, heap[0] = 59, lastout = 57)
+01:54:53.115:DEBUG:stats worker 16: got stats for (75, 'Jiqonix'), 0.49 sec
+01:54:53.115:DEBUG:stats worker 16: finished (75, Jiqonix)
+01:54:53.116:DEBUG:sort buffer: added (75, Jiqonix) to heap (size 16, heap[0] = 59, lastout = 57)
+01:54:53.117:DEBUG:stats worker 3: got stats for (78, 'Noexi'), 0.45 sec
+01:54:53.117:DEBUG:stats worker 3: finished (78, Noexi)
+01:54:53.117:DEBUG:sort buffer: added (78, Noexi) to heap (size 17, heap[0] = 59, lastout = 57)
+01:54:53.171:DEBUG:stats worker 11: got stats for (76, 'Bront'), 0.55 sec
+01:54:53.171:DEBUG:stats worker 11: finished (76, Bront)
+01:54:53.172:DEBUG:sort buffer: added (76, Bront) to heap (size 18, heap[0] = 59, lastout = 57)
+01:54:53.172:DEBUG:stats worker 19: got stats for (79, 'Darkseance'), 0.46 sec
+01:54:53.172:DEBUG:stats worker 19: finished (79, Darkseance)
+01:54:53.173:DEBUG:stats worker 2: got stats for (74, 'rithvik'), 0.56 sec
+01:54:53.173:DEBUG:stats worker 2: finished (74, rithvik)
+01:54:53.173:DEBUG:sort buffer: added (74, rithvik) to heap (size 19, heap[0] = 59, lastout = 57)
+01:54:53.173:DEBUG:sort buffer: added (79, Darkseance) to heap (size 20, heap[0] = 59, lastout = 57)
+01:54:53.179:DEBUG:exported 52 documents: (ranks 6-57)
+01:54:53.265:DEBUG:stats worker 21: got stats for (81, 'DKHo'), 0.50 sec
+01:54:53.265:DEBUG:stats worker 21: finished (81, DKHo)
+01:54:53.266:DEBUG:sort buffer: added (81, DKHo) to heap (size 21, heap[0] = 59, lastout = 57)
+01:54:53.266:DEBUG:stats worker 24: got stats for (80, 'Flakey'), 0.50 sec
+01:54:53.266:DEBUG:stats worker 24: finished (80, Flakey)
+01:54:53.267:DEBUG:stats worker 22: got stats for (58, 'Pufffml'), 0.90 sec
+01:54:53.267:DEBUG:stats worker 22: finished (58, Pufffml)
+01:54:53.267:DEBUG:sort buffer: added (58, Pufffml) to heap (size 22, heap[0] = 58, lastout = 57)
+01:54:53.268:DEBUG:sort buffer: removed (58, Pufffml) from heap (size 21)
+01:54:53.268:DEBUG:sort buffer: placed (58, Pufffml) on export queue
+01:54:53.268:DEBUG:sort buffer: removed (59, Zunkrah) from heap (size 20)
+01:54:53.268:DEBUG:sort buffer: placed (59, Zunkrah) on export queue
+01:54:53.268:DEBUG:sort buffer: removed (60, ErBr) from heap (size 19)
+01:54:53.268:DEBUG:sort buffer: placed (60, ErBr) on export queue
+01:54:53.268:DEBUG:sort buffer: added (80, Flakey) to heap (size 20, heap[0] = 62, lastout = 60)
+01:54:53.269:DEBUG:stats worker 12: got stats for (61, 'H D M P'), 0.89 sec
+01:54:53.269:DEBUG:stats worker 12: finished (61, H D M P)
+01:54:53.269:DEBUG:sort buffer: added (61, H D M P) to heap (size 21, heap[0] = 61, lastout = 60)
+01:54:53.269:DEBUG:sort buffer: removed (61, H D M P) from heap (size 20)
+01:54:53.269:DEBUG:sort buffer: placed (61, H D M P) on export queue
+01:54:53.269:DEBUG:sort buffer: removed (62, Cairo) from heap (size 19)
+01:54:53.269:DEBUG:sort buffer: placed (62, Cairo) on export queue
+01:54:53.269:DEBUG:sort buffer: removed (63, Balla) from heap (size 18)
+01:54:53.269:DEBUG:sort buffer: placed (63, Balla) on export queue
+01:54:53.269:DEBUG:sort buffer: removed (64, Nerd) from heap (size 17)
+01:54:53.269:DEBUG:sort buffer: placed (64, Nerd) on export queue
+01:54:53.269:DEBUG:sort buffer: removed (65, Rousey) from heap (size 16)
+01:54:53.270:DEBUG:sort buffer: placed (65, Rousey) on export queue
+01:54:53.270:DEBUG:sort buffer: removed (66, Zulu) from heap (size 15)
+01:54:53.270:DEBUG:sort buffer: placed (66, Zulu) on export queue
+01:54:53.270:DEBUG:sort buffer: removed (67, Fumin) from heap (size 14)
+01:54:53.270:DEBUG:sort buffer: placed (67, Fumin) on export queue
+01:54:53.270:DEBUG:sort buffer: removed (68, SteSkillalt) from heap (size 13)
+01:54:53.270:DEBUG:sort buffer: placed (68, SteSkillalt) on export queue
+01:54:53.270:DEBUG:sort buffer: removed (69, Angler) from heap (size 12)
+01:54:53.270:DEBUG:sort buffer: placed (69, Angler) on export queue
+01:54:53.270:DEBUG:sort buffer: removed (70, JENNY DEATH) from heap (size 11)
+01:54:53.270:DEBUG:sort buffer: placed (70, JENNY DEATH) on export queue
+01:54:53.270:DEBUG:sort buffer: removed (71, Chrisha) from heap (size 10)
+01:54:53.270:DEBUG:sort buffer: placed (71, Chrisha) on export queue
+01:54:53.270:DEBUG:sort buffer: removed (72, dear sleeper) from heap (size 9)
+01:54:53.270:DEBUG:sort buffer: placed (72, dear sleeper) on export queue
+01:54:53.270:DEBUG:sort buffer: removed (73, Ozzys) from heap (size 8)
+01:54:53.271:DEBUG:sort buffer: placed (73, Ozzys) on export queue
+01:54:53.271:DEBUG:sort buffer: removed (74, rithvik) from heap (size 7)
+01:54:53.271:DEBUG:sort buffer: placed (74, rithvik) on export queue
+01:54:53.271:DEBUG:sort buffer: removed (75, Jiqonix) from heap (size 6)
+01:54:53.271:DEBUG:sort buffer: placed (75, Jiqonix) on export queue
+01:54:53.271:DEBUG:sort buffer: removed (76, Bront) from heap (size 5)
+01:54:53.271:DEBUG:sort buffer: placed (76, Bront) on export queue
+01:54:53.271:DEBUG:sort buffer: removed (77, Avatar Evan) from heap (size 4)
+01:54:53.271:DEBUG:sort buffer: placed (77, Avatar Evan) on export queue
+01:54:53.271:DEBUG:sort buffer: removed (78, Noexi) from heap (size 3)
+01:54:53.271:DEBUG:sort buffer: placed (78, Noexi) on export queue
+01:54:53.271:DEBUG:sort buffer: removed (79, Darkseance) from heap (size 2)
+01:54:53.271:DEBUG:sort buffer: placed (79, Darkseance) on export queue
+01:54:53.271:DEBUG:sort buffer: removed (80, Flakey) from heap (size 1)
+01:54:53.271:DEBUG:sort buffer: placed (80, Flakey) on export queue
+01:54:53.272:DEBUG:sort buffer: removed (81, DKHo) from heap (size 0)
+01:54:53.272:DEBUG:sort buffer: placed (81, DKHo) on export queue
+01:54:53.315:DEBUG:stats worker 5: got stats for (84, '568385648654'), 0.50 sec
+01:54:53.315:DEBUG:stats worker 5: finished (84, 568385648654)
+01:54:53.315:DEBUG:sort buffer: added (84, 568385648654) to heap (size 1, heap[0] = 84, lastout = 81)
+01:54:53.320:DEBUG:stats worker 8: got stats for (83, 'Animos'), 0.51 sec
+01:54:53.320:DEBUG:stats worker 8: finished (83, Animos)
+01:54:53.320:DEBUG:sort buffer: added (83, Animos) to heap (size 2, heap[0] = 83, lastout = 81)
+01:54:53.375:DEBUG:stats worker 0: got stats for (82, '9JR'), 0.56 sec
+01:54:53.375:DEBUG:stats worker 0: finished (82, 9JR)
+01:54:53.376:DEBUG:sort buffer: added (82, 9JR) to heap (size 3, heap[0] = 82, lastout = 81)
+01:54:53.377:DEBUG:sort buffer: removed (82, 9JR) from heap (size 2)
+01:54:53.377:DEBUG:sort buffer: placed (82, 9JR) on export queue
+01:54:53.377:DEBUG:sort buffer: removed (83, Animos) from heap (size 1)
+01:54:53.377:DEBUG:sort buffer: placed (83, Animos) on export queue
+01:54:53.377:DEBUG:sort buffer: removed (84, 568385648654) from heap (size 0)
+01:54:53.377:DEBUG:sort buffer: placed (84, 568385648654) on export queue
+01:54:53.378:DEBUG:stats worker 13: got stats for (85, 'yyttam'), 0.51 sec
+01:54:53.378:DEBUG:stats worker 13: finished (85, yyttam)
+01:54:53.379:DEBUG:sort buffer: added (85, yyttam) to heap (size 1, heap[0] = 85, lastout = 84)
+01:54:53.379:DEBUG:sort buffer: removed (85, yyttam) from heap (size 0)
+01:54:53.379:DEBUG:sort buffer: placed (85, yyttam) on export queue
+01:54:53.412:DEBUG:stats worker 10: got stats for (87, 'JayMaster'), 0.54 sec
+01:54:53.413:DEBUG:stats worker 10: finished (87, JayMaster)
+01:54:53.413:DEBUG:stats worker 6: got stats for (88, 'iNewton'), 0.54 sec
+01:54:53.414:DEBUG:stats worker 6: finished (88, iNewton)
+01:54:53.414:DEBUG:sort buffer: added (87, JayMaster) to heap (size 1, heap[0] = 87, lastout = 85)
+01:54:53.414:DEBUG:sort buffer: added (88, iNewton) to heap (size 2, heap[0] = 87, lastout = 85)
+01:54:53.415:DEBUG:stats worker 9: got stats for (86, 'Heuvel Reus'), 0.55 sec
+01:54:53.415:DEBUG:stats worker 9: finished (86, Heuvel Reus)
+01:54:53.416:DEBUG:sort buffer: added (86, Heuvel Reus) to heap (size 3, heap[0] = 86, lastout = 85)
+01:54:53.416:DEBUG:sort buffer: removed (86, Heuvel Reus) from heap (size 2)
+01:54:53.416:DEBUG:sort buffer: placed (86, Heuvel Reus) on export queue
+01:54:53.416:DEBUG:sort buffer: removed (87, JayMaster) from heap (size 1)
+01:54:53.416:DEBUG:sort buffer: placed (87, JayMaster) on export queue
+01:54:53.416:DEBUG:sort buffer: removed (88, iNewton) from heap (size 0)
+01:54:53.416:DEBUG:sort buffer: placed (88, iNewton) on export queue
+01:54:53.417:DEBUG:stats worker 18: got stats for (90, 'Rigondeaux'), 0.50 sec
+01:54:53.417:DEBUG:stats worker 18: finished (90, Rigondeaux)
+01:54:53.418:DEBUG:stats worker 26: got stats for (89, 'Gibberish'), 0.50 sec
+01:54:53.418:DEBUG:stats worker 26: finished (89, Gibberish)
+01:54:53.418:DEBUG:sort buffer: added (89, Gibberish) to heap (size 1, heap[0] = 89, lastout = 88)
+01:54:53.418:DEBUG:sort buffer: removed (89, Gibberish) from heap (size 0)
+01:54:53.418:DEBUG:sort buffer: placed (89, Gibberish) on export queue
+01:54:53.418:DEBUG:sort buffer: added (90, Rigondeaux) to heap (size 1, heap[0] = 90, lastout = 89)
+01:54:53.418:DEBUG:sort buffer: removed (90, Rigondeaux) from heap (size 0)
+01:54:53.418:DEBUG:sort buffer: placed (90, Rigondeaux) on export queue
+01:54:53.621:DEBUG:stats worker 27: got stats for (93, 'X Mars'), 0.60 sec
+01:54:53.621:DEBUG:stats worker 27: finished (93, X Mars)
+01:54:53.622:DEBUG:stats worker 14: got stats for (91, 'Hanno Tauber'), 0.65 sec
+01:54:53.623:DEBUG:stats worker 14: finished (91, Hanno Tauber)
+01:54:53.623:DEBUG:stats worker 25: got stats for (96, 'Windows10'), 0.56 sec
+01:54:53.623:DEBUG:stats worker 25: finished (96, Windows10)
+01:54:53.624:DEBUG:sort buffer: added (91, Hanno Tauber) to heap (size 1, heap[0] = 91, lastout = 90)
+01:54:53.624:DEBUG:sort buffer: removed (91, Hanno Tauber) from heap (size 0)
+01:54:53.624:DEBUG:sort buffer: placed (91, Hanno Tauber) on export queue
+01:54:53.624:DEBUG:sort buffer: added (93, X Mars) to heap (size 1, heap[0] = 93, lastout = 91)
+01:54:53.624:DEBUG:sort buffer: added (96, Windows10) to heap (size 2, heap[0] = 93, lastout = 91)
+01:54:53.683:DEBUG:stats worker 4: got stats for (92, '5th hcim LUL'), 0.67 sec
+01:54:53.683:DEBUG:stats worker 4: finished (92, 5th hcim LUL)
+01:54:53.684:DEBUG:sort buffer: added (92, 5th hcim LUL) to heap (size 3, heap[0] = 92, lastout = 91)
+01:54:53.684:DEBUG:sort buffer: removed (92, 5th hcim LUL) from heap (size 2)
+01:54:53.684:DEBUG:sort buffer: placed (92, 5th hcim LUL) on export queue
+01:54:53.684:DEBUG:sort buffer: removed (93, X Mars) from heap (size 1)
+01:54:53.684:DEBUG:sort buffer: placed (93, X Mars) on export queue
+01:54:53.686:DEBUG:stats worker 17: got stats for (95, 'Tails'), 0.66 sec
+01:54:53.686:DEBUG:stats worker 17: finished (95, Tails)
+01:54:53.686:DEBUG:sort buffer: added (95, Tails) to heap (size 2, heap[0] = 95, lastout = 93)
+01:54:53.687:DEBUG:stats worker 1: got stats for (99, 'VVona'), 0.62 sec
+01:54:53.687:DEBUG:stats worker 1: finished (99, VVona)
+01:54:53.687:DEBUG:stats worker 7: got stats for (94, 'Tmm'), 0.67 sec
+01:54:53.687:DEBUG:stats worker 7: finished (94, Tmm)
+01:54:53.687:DEBUG:sort buffer: added (94, Tmm) to heap (size 3, heap[0] = 94, lastout = 93)
+01:54:53.687:DEBUG:sort buffer: removed (94, Tmm) from heap (size 2)
+01:54:53.687:DEBUG:sort buffer: placed (94, Tmm) on export queue
+01:54:53.687:DEBUG:sort buffer: removed (95, Tails) from heap (size 1)
+01:54:53.687:DEBUG:sort buffer: placed (95, Tails) on export queue
+01:54:53.687:DEBUG:sort buffer: removed (96, Windows10) from heap (size 0)
+01:54:53.687:DEBUG:sort buffer: placed (96, Windows10) on export queue
+01:54:53.687:DEBUG:sort buffer: added (99, VVona) to heap (size 1, heap[0] = 99, lastout = 96)
+01:54:53.745:DEBUG:stats worker 15: got stats for (97, 'fe-ma-le'), 0.68 sec
+01:54:53.745:DEBUG:stats worker 15: finished (97, fe-ma-le)
+01:54:53.745:DEBUG:stats worker 20: got stats for (98, 'Pano'), 0.68 sec
+01:54:53.746:DEBUG:stats worker 20: finished (98, Pano)
+01:54:53.746:DEBUG:sort buffer: added (97, fe-ma-le) to heap (size 2, heap[0] = 97, lastout = 96)
+01:54:53.746:DEBUG:sort buffer: removed (97, fe-ma-le) from heap (size 1)
+01:54:53.746:DEBUG:sort buffer: placed (97, fe-ma-le) on export queue
+01:54:53.746:DEBUG:sort buffer: added (98, Pano) to heap (size 2, heap[0] = 98, lastout = 97)
+01:54:53.746:DEBUG:sort buffer: removed (98, Pano) from heap (size 1)
+01:54:53.746:DEBUG:sort buffer: placed (98, Pano) on export queue
+01:54:53.746:DEBUG:sort buffer: removed (99, VVona) from heap (size 0)
+01:54:53.746:DEBUG:sort buffer: placed (99, VVona) on export queue
+01:54:53.748:DEBUG:stats worker 23: got stats for (100, 'Mikael'), 0.63 sec
+01:54:53.748:DEBUG:stats worker 23: finished (100, Mikael)
+01:54:53.748:DEBUG:sort buffer: added (100, Mikael) to heap (size 1, heap[0] = 100, lastout = 99)
+01:54:53.748:DEBUG:sort buffer: removed (100, Mikael) from heap (size 0)
+01:54:53.748:DEBUG:sort buffer: placed (100, Mikael) on export queue
+01:54:53.748:DEBUG:username queue joined
+01:54:53.748:DEBUG:nprocessed: 100
+01:54:53.748:DEBUG:results queue joined
+01:54:54.044:DEBUG:exported 43 documents: (ranks 58-100)
+01:54:54.045:DEBUG:export queue joined
+01:54:54.045:DEBUG:main: cancelling workers...
