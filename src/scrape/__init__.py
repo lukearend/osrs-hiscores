@@ -20,6 +20,7 @@ class PageJob:
     pagenum: int                                     # page on the OSRS hiscores (between 1 and 80000)
     startind: int = field(default=0, compare=False)  # start index of the usernames wanted from this page
     endind: int = field(default=25, compare=False)   # end index of the usernames wanted from this page
+    nfailed: int = field(default=0, compare=False)
 
 
 @dataclass(order=True)
@@ -27,6 +28,7 @@ class UsernameJob:
     """ Represents a username to be queried for account stats. """
     rank: int
     username: str = field(compare=False)
+    nfailed: int = field(default=0, compare=False)
 
 
 @dataclass(order=True)
