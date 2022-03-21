@@ -110,13 +110,13 @@ def connect_mongo(url: str) -> Database:
     :param url: connect to instance running at this URL
     :return: database containing project collection(s)
     """
-    is_local = url.startswith("0.0.0.0") or url.startswith("localhost")
-    mongo = MongoClient(url, tlsCAFile=None if is_local else certifi.where())
+    is_local = any([s in url for s in ['127.0.0.1', '0.0.0.0', 'localhost']])
+    mongo = MongoClient(url, tlsCAFile=None if is_local else certifi.where(), serverSelectionTimeoutMS=5000)
     db = mongo[global_db_name()]
     try:
         db.command('ping')
     except ServerSelectionTimeoutError:
-        raise ValueError(f"could not connect to mongodb at {url}")
+        raise ValueError(f"could not connect to mongodb at {url}{', is the container running?' if is_local else ''}")
     return db
 
 

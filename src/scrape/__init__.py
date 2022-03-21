@@ -35,17 +35,18 @@ class UsernameJob:
 class PlayerRecord:
     """ Represents a player data record scraped from the hiscores. """
     rank: int
-    total_level: int
-    total_xp: int
-    ts: datetime  # time record was scraped
     username: str = field(compare=False)
-    stats: List[int] = field(compare=False)
+    total_level: int = field(default=None, compare=False)
+    total_xp: int = field(default=None, compare=False)
+    ts: datetime = field(default=None, compare=False) # time record was scraped
+    stats: List[int] = field(default=None, compare=False)
+    missing: bool = field(default=False, compare=False)
 
 
 class RequestFailed(Exception):
     def __init__(self, message, code):
-        self.code = code
         super().__init__(f"{code}: {message}")
+        self.code = code
 
 class UserNotFound(Exception):
     pass
@@ -75,7 +76,11 @@ async def get_hiscores_page(sess: ClientSession, page_num: int) -> Tuple[List[in
     """
     url = "https://secure.runescape.com/m=hiscore_oldschool/overall"
     params = {'table': 0, 'page': page_num}
-    page_html = await http_request(sess, url, params, timeout=15)
+    try:
+        page_html = await http_request(sess, url, params, timeout=10)
+    except asyncio.TimeoutError:
+        # If a page request times out, it is because we are blocked by the remote server.
+        raise IPAddressBlocked(f"timed out while trying to get page")
     return parse_hiscores_page(page_html)
 
 
@@ -84,7 +89,7 @@ async def get_player_stats(sess: ClientSession, username: str) -> PlayerRecord:
 
     Raises:
         IPAddressBlocked if client has been blocked by hiscores server
-        UserNotFound if data could not be fetched because user does not exist
+        UserNotFound if request for user record timed out or user doesn't exist
         RequestFailed if user data could not be fetched for some other reason
         ParsingFailed if the expected format does not match the data received
 
@@ -95,11 +100,13 @@ async def get_player_stats(sess: ClientSession, username: str) -> PlayerRecord:
     url = "http://services.runescape.com/m=hiscore_oldschool/index_lite.ws"
     params = {'player': username}
     try:
-        stats_csv = await http_request(sess, url, params)
+        stats_csv = await http_request(sess, url, params, timeout=15)
+    except asyncio.TimeoutError:
+        # Not all players are fetched from the CSV API in an equal amount of time.
+        # If it's taking way too long, we just count the user as missing.
+        raise UserNotFound(f"'{username}' (timed out)")
     except RequestFailed as e:
-        if e.code == 404:
-            raise UserNotFound(username)
-        raise
+        raise UserNotFound(f"'{username}'") if e.code == 404 else e
     return parse_stats_csv(username, stats_csv)
 
 
@@ -117,8 +124,6 @@ async def http_request(sess: ClientSession, server_url: str, query_params: Dict[
                     raise IPAddressBlocked(f"client connection error: {e}")
                 raise RequestFailed(error, resp.status)
             return await resp.text()
-    except asyncio.TimeoutError:
-        raise IPAddressBlocked(f"timed out while trying to connect")
     except ClientOSError as e:
         raise IPAddressBlocked(f"client OS error: {e}")
 
