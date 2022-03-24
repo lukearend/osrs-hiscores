@@ -84,6 +84,11 @@ All steps can be run in one shot via `make build` (which uses the download) or `
 
 To launch the application, run `make run` and visit the URL `localhost:8050` in a web browser. The application expects to find the Mongo instance running at `localhost:27017` or the environment variable `OSRS_MONGO_URI`, if set.
 
+Scraping
+--------
+
+Data scraping makes use of OpenVPN to avoid request throttling via IP proxying. The OpenVPN command line client should be installed and OpenVPN server files (.opvn) to use for scraping should be placed in the directory `ref/vpn`. Authentication credentials should be placed in the file `~/.config` where the first line is the OpenVPN username and second line is the password. Throughout the scraping process, the script will periodically choose a new server file and reconnect at that IP.
+
 Dependencies
 ------------
 

@@ -2,7 +2,6 @@ import argparse
 import asyncio
 import heapq
 import logging
-import time
 from asyncio import PriorityQueue, Queue, Event
 from typing import List
 
@@ -19,9 +18,9 @@ from src.scrape import UsernameJob, PageJob, PlayerRecord, RequestFailed, UserNo
     get_hiscores_page, get_player_stats, get_page_range, reset_vpn, mongodoc_to_player, player_to_mongodoc
 
 
-N_PAGE_WORKERS = 2  # number of page workers downloading rank/username info
-UNAME_BUFSIZE = 50  # maximum length of buffer containing username jobs for stats workers
-MAX_HEAPSIZE = 100  # maximum size for the sorting heap before it allows records to be skipped
+N_PAGE_WORKERS = 2   # number of page workers downloading rank/username info
+UNAME_BUFSIZE = 50   # maximum length of buffer containing username jobs for stats workers
+MAX_HEAPSIZE = 1000  # maximum size for the sorting heap before it allows records to be skipped
 
 currentpage = 0
 nprocessed = 0
@@ -132,7 +131,7 @@ async def sort_buffer(in_queue: asyncio.PriorityQueue, out_queue: asyncio.Queue,
             prev = out_rank
             out_rank = heap[0].rank
             if out_rank - prev == 1:
-                logging.debug(f"sort buffer: skipped players {prev} through {out_rank - 1}")
+                logging.debug(f"sort buffer: skipped players {prev} through {out_rank - 1} (heap size is {len(heap)})")
 
             while out_rank < heap[0].rank:
                 await out_queue.put(PlayerRecord(rank=out_rank, username=None, missing=True))
@@ -153,7 +152,6 @@ async def export_records(in_queue: Queue, coll: AsyncIOMotorCollection):
         while len(players) < 50:
             try:
                 next: PlayerRecord = await asyncio.wait_for(in_queue.get(), timeout=0.25)
-                logging.debug(f"exporter: got next (rank {next.rank}), qsize {in_queue.qsize()}, len(players) = {len(players)}")
                 players.append(next)
             except asyncio.TimeoutError:
                 break
@@ -164,7 +162,6 @@ async def export_records(in_queue: Queue, coll: AsyncIOMotorCollection):
         await coll.insert_many([player_to_mongodoc(p) for p in players])
         for _ in range(len(players)):
             in_queue.task_done()
-        logging.debug(f"exported {len(players)} documents: (ranks {players[0].rank}-{players[-1].rank})")
 
     while True:
         players = await getbatch()
@@ -294,10 +291,10 @@ async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="""Download player data from OSRS hiscores into MongoDB.""")
-    parser.add_argument('--mongo-url', required=True, help="store data in Mongo instance running at this URL")
-    parser.add_argument('--mongo-coll', required=True, help="put scraped data into this collection")
-    parser.add_argument('--start-rank', required=True, type=int, help="start data collection at this player rank")
-    parser.add_argument('--stop-rank', required=True, type=int, help="stop data collection at this rank")
+    parser.add_argument('--mongo-url', default="localhost:27017", help="store data in Mongo instance at this URL")
+    parser.add_argument('--mongo-coll', default="scrape", help="put scraped data into this collection")
+    parser.add_argument('--start-rank', default=1, type=int, help="start data collection at this player rank")
+    parser.add_argument('--stop-rank', default=2000000, type=int, help="stop data collection at this rank")
     parser.add_argument('--num-workers', default=28, type=int, help="number of concurrent scraping threads")
     parser.add_argument('--novpn', dest='usevpn', action='store_false', help="if set, will run without using VPN")
     parser.add_argument('--drop', action='store_true', help="if set, will drop collection before scrape begins")

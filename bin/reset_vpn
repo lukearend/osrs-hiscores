@@ -1,5 +1,10 @@
 #!/usr/bin/env bash
-echo "resetting vpn connection..."
-#loc=$(expresso locations | grep -e '- New York' -e '- Los Angeles' -e '- UK' | sed 's/^.*(//;s/)$//' | shuf -n 1)
-loc=$(expresso locations | grep -- '- UK' | sed 's/^.*(//;s/)$//' | shuf -n 1)
-expresso connect --change "$loc"
+pids=$(ps aux | grep -v 'grep' | grep '.ovpn' | awk '{ print $2 }')
+for pid in $pids; do sudo kill -9 $pid; done
+
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)/.."
+cd "$ROOT_DIR/ref/vpn" && serverfile=$(find . -name "*.ovpn" -type f | shuf -n 1)
+
+echo "resetting vpn with server file $serverfile..."
+sudo openvpn --config $serverfile --auth-user-pass ~/.openvpn --daemon
+sleep 3

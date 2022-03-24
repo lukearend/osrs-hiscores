@@ -16,7 +16,7 @@ clusterids_file=$(ROOT_DIR)/data/processed/player-clusters
 clust_xyz_file=$(ROOT_DIR)/data/interim/clusters-xyz
 clust_quartiles_file=$(ROOT_DIR)/data/interim/cluster-quartiles
 appdata_file=$(ROOT_DIR)/data/processed/app-data
-scrape_collection=scrape-20220315
+scrape_collection=scrape-20220324
 app_collection=players
 ifneq (,$(wildcard ./.env))
     include .env
@@ -43,7 +43,7 @@ scrape: mongo-start scrape-hiscores export-scraped-stats ## Scrape stats for the
 scrape-hiscores:
 	source env/bin/activate && cd src/scrape && \
 	python -m scrape_hiscores --mongo-url $(OSRS_MONGO_URI) --mongo-coll $(SCRAPE_COLLECTION) \
-	--start-rank 1 --stop-rank 2000000 --num-workers 28
+	--start-rank 1 --stop-rank 2000000 --num-workers
 
 export-scraped-stats:
 	source env/bin/activate && cd src/scrape && \
