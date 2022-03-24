@@ -24,12 +24,12 @@ else:
 
 mongo_url = os.getenv("OSRS_MONGO_URI", "localhost:27017")
 coll_name = os.getenv("OSRS_MONGO_COLL", "players")
-playerdb = connect_mongo(mongo_url)[coll_name]
+coll = connect_mongo(mongo_url)[coll_name]
 
 app = Dash(__name__,
            title="OSRS player clusters",
            external_stylesheets=[themes.BOOTSTRAP])
 app = build_layout(app, appdata)
-app = add_callbacks(app, appdata, playerdb)
+app = add_callbacks(app, appdata, coll)
 
 app.run_server(debug=debug)

@@ -12,12 +12,12 @@ from app import (
 )
 from app.data import compute_boxplot_data, compute_scatterplot_data
 from app.figures import get_scatterplot, get_empty_boxplot
-from src.common import osrs_statnames
+from src.common import osrs_skills
 from src.results import AppData
 
 
 def add_callbacks(app: Dash, app_data: AppData, player_coll: Collection) -> Dash:
-    all_stats = osrs_statnames()  # includes total level as first element
+    all_stats = osrs_skills(include_total=True)  # includes total level as first element
 
     @app.callback(
         Output('scatter-plot', 'figure'),
@@ -125,7 +125,6 @@ def add_callbacks(app: Dash, app_data: AppData, player_coll: Collection) -> Dash
             }
 
         response = player_coll.find_one({'_id': username.lower()})
-        print(response)
         if not response:
             return {
                 'query': username,
