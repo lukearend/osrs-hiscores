@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 pids=$(ps aux | grep -v 'grep' | grep '.ovpn' | awk '{ print $2 }')
-for pid in $pids; do sudo kill -9 $pid; done
+for pid in $pids; do sudo -S kill -9 $pid; done
 
 ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)/.."
 cd "$ROOT_DIR/ref/vpn" && serverfile=$(find . -name "*.ovpn" -type f | shuf -n 1)
