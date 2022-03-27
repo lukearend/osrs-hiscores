@@ -1,10 +1,20 @@
 #!/usr/bin/env bash
-pids=$(ps aux | grep -v 'grep' | grep '.ovpn' | awk '{ print $2 }')
-for pid in $pids; do sudo -S kill -9 $pid; done
+VPN_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)/../ref/vpn"
+cd "$VPN_DIR" && echo "resetting vpn..."
 
-ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)/.."
-cd "$ROOT_DIR/ref/vpn" && serverfile=$(find . -name "*.ovpn" -type f | shuf -n 1)
+sudo -Sv || exit 1 # request sudo if we don't have it
 
-echo "resetting vpn with server file $serverfile..."
-sudo openvpn --config $serverfile --auth-user-pass ~/.openvpn --daemon
-sleep 3
+restart () {
+  sudo pkill openvpn >/dev/null 2>&1 && sleep 1 && \
+  ./mkserver && sudo openvpn --config tmpserver.ovpn \
+    --auth-user-pass ~/.openvpn --writepid openvpn.pid --daemon && \
+  sleep 2 && echo -n "setting up tunnel... " && sleep 3 && \
+  ps -p "$(cat openvpn.pid)" >/dev/null 2>&1
+}
+
+until restart; do echo "setup failed, retrying"; done
+echo "done"
+
+echo "connecting to www.jagex.com..."
+until ping -c 1 "www.jagex.com" >/dev/null 2>&1; do :; done
+echo "connected via $(curl -s ifconfig.me)"

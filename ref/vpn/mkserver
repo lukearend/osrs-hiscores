@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-echo "creating new server file..."
+echo -n "creating new server file... "
 ip=$(shuf -n 1 nordvpn-servers)
 outfile=tmpserver.ovpn
 

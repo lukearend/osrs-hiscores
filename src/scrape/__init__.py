@@ -1,9 +1,12 @@
 import asyncio
 import dataclasses
+import logging
+import shlex
 import subprocess
-import time
+import sys
 from dataclasses import dataclass, field
 from datetime import datetime
+from getpass import getpass
 from pathlib import Path
 from typing import List, Any, Dict, Tuple
 
@@ -190,19 +193,6 @@ def get_page_range(start_rank: int, end_rank: int) -> Tuple[int, int, int, int]:
     return firstpage, startind, lastpage, endind
 
 
-def reset_vpn(ntries=3):
-    vpn_script = Path(__file__).resolve().parents[2] / "bin" / "reset_vpn"
-    for n in range(1, ntries + 1):
-        try:
-            subprocess.run(vpn_script).check_returncode()
-            break
-        except subprocess.CalledProcessError as e:
-            if n == ntries:
-                raise RuntimeError(f"error resetting VPN: {e.returncode}, stdout: {e.stdout}, stderr: {e.stderr}")
-            print("failed to reset VPN. Trying again in 5 seconds...")
-            time.sleep(5)
-
-
 def mongodoc_to_player(doc: Dict[str, Any]) -> PlayerRecord:
     return PlayerRecord(
         ts=doc['ts'],
@@ -216,3 +206,42 @@ def mongodoc_to_player(doc: Dict[str, Any]) -> PlayerRecord:
 
 def player_to_mongodoc(record: PlayerRecord) -> Dict[str, Any]:
     return dataclasses.asdict(record)
+
+
+def reset_vpn():
+    vpn_script = Path(__file__).resolve().parents[2] / "bin" / "reset_vpn"
+    p = subprocess.run(vpn_script)
+    p.check_returncode()
+
+
+def getsudo(password):
+    cmd = shlex.split(f"sudo -Svp ''")
+    proc = subprocess.Popen(cmd, stdin=subprocess.PIPE, stderr=subprocess.DEVNULL)
+    proc.communicate(password.encode())
+    if proc.returncode != 0:
+        msg = "incorrect sudo password, exiting"
+        print(msg)
+        logging.error(msg)
+        sys.exit(1)
+
+
+def askpass():
+    msg = """
+Root permissions are required by the OpenVPN client which is used during
+scraping to dynamically acquire new IP addresses. Privileges granted here
+will only be used for managing VPN connections and the password will only
+persist in RAM as long as the program is running.
+"""
+    print(msg)
+    pwd = getpass("Enter root password (leave empty to continue without VPN): ")
+    if not pwd:
+        msg = """
+Proceeding without using VPN. This means your IP address will be directly
+exposed to Jagex's servers as your computer runs the scraping process. It
+is likely that your IP address will get throttled or blocked after several
+minutes of scraping activity due to the volume of requests.
+"""
+        print(msg)
+        return None
+    print()
+    return pwd

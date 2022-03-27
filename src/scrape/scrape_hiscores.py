@@ -15,8 +15,8 @@ from tqdm.asyncio import tqdm
 
 from src.common import global_db_name, connect_mongo
 from src.scrape import UsernameJob, PageJob, PlayerRecord, RequestFailed, UserNotFound, IPAddressBlocked, \
-    get_hiscores_page, get_player_stats, get_page_range, reset_vpn, mongodoc_to_player, player_to_mongodoc
-
+    get_hiscores_page, get_player_stats, get_page_range, reset_vpn, mongodoc_to_player, player_to_mongodoc, getsudo, \
+    askpass
 
 N_PAGE_WORKERS = 2   # number of page workers downloading rank/username info
 UNAME_BUFSIZE = 50   # maximum length of buffer containing username jobs for stats workers
@@ -233,6 +233,14 @@ async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
         start_rank = prev_progress + 1
         print(f"starting from {start_rank}")
 
+    # Get root permissions for VPN management.
+    if use_vpn:
+        pwd = askpass()
+        if pwd:
+            getsudo(pwd)
+        else:
+            use_vpn = False
+
     page_jobqueue = build_page_jobqueue(start_rank, stop_rank)  # page workers get jobs from here
     uname_jobqueue = asyncio.PriorityQueue()  # page workers put usernames here, stats workers get them from here
     results_queue = asyncio.PriorityQueue()   # stats workers put results here, sort buffer gets them from here
@@ -268,8 +276,8 @@ async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
         t.start()
         while True:
             if use_vpn:
+                getsudo(pwd)
                 reset_vpn()
-                await asyncio.sleep(3)  # give connection some time to settle
             workers = start_workers()
             try:
                 await asyncio.gather(*workers, sort, export, pbar, is_done)
