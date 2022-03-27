@@ -20,7 +20,7 @@ elif [ "$arg" == 'connect' ] # connect to instance through SSH
 then
 	ip_addr=$(aws ec2 describe-instances --instance-id "$EC2_INSTANCE_ID" | \
 	          jq -r '.Reservations[0].Instances[0].PublicIpAddress')
-	ssh -i "$EC2_PEM_FILE" "$EC2_INSTANCE_USER@$ip_addr"
+	ssh -i "$EC2_PEM_FILE" "ec2-user@$ip_addr"
 elif [ "$arg" == 'setup' ] # setup script once logged into instance
 then
   cd bin/dev && ./ec2_setup
