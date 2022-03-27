@@ -10,3 +10,5 @@ __pycache__
 /tmp
 /volume
 /test/data
+/ref/vpn/openvpn.pid
+/ref/vpn/tmpserver.ovpn

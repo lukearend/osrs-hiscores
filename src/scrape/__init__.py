@@ -51,11 +51,12 @@ class RequestFailed(Exception):
         super().__init__(f"{code}: {message}")
         self.code = code
 
-class UserNotFound(Exception):
+
+class RequestBlocked(Exception):
     pass
 
 
-class IPAddressBlocked(Exception):
+class UserNotFound(Exception):
     pass
 
 
@@ -83,7 +84,7 @@ async def get_hiscores_page(sess: ClientSession, page_num: int) -> Tuple[List[in
         page_html = await http_request(sess, url, params, timeout=10)
     except asyncio.TimeoutError:
         # If a page request times out, it is because we are blocked by the remote server.
-        raise IPAddressBlocked(f"timed out while trying to get page")
+        raise RequestBlocked(f"timed out while trying to get page")
     return parse_hiscores_page(page_html)
 
 
@@ -106,7 +107,7 @@ async def get_player_stats(sess: ClientSession, username: str) -> PlayerRecord:
         stats_csv = await http_request(sess, url, params, timeout=15)
     except asyncio.TimeoutError:
         # Not all players are fetched from the CSV API in an equal amount of time.
-        # If it's taking way too long, we just count the user as missing.
+        # If it's taking way too long (many seconds), we count the user as missing.
         raise UserNotFound(f"'{username}' (timed out)")
     except RequestFailed as e:
         raise UserNotFound(f"'{username}'") if e.code == 404 else e
@@ -114,31 +115,33 @@ async def get_player_stats(sess: ClientSession, username: str) -> PlayerRecord:
 
 
 async def http_request(sess: ClientSession, server_url: str, query_params: Dict[str, Any], timeout: int = None):
+    """ Make an HTTP request and determine whether it failed or was blocked. """
     headers = {"Access-Control-Allow-Origin": "*",
                "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept"}
     try:
         async with sess.get(server_url, headers=headers, params=query_params, timeout=timeout) as resp:
             if resp.status == 503:
-                raise IPAddressBlocked("server too busy")
+                raise RequestBlocked("server too busy")
             elif resp.status != 200:
                 try:
                     error = await resp.text()
                 except ClientConnectionError as e:
-                    raise IPAddressBlocked(f"client connection error: {e}")
+                    raise RequestBlocked(f"client connection error: {e}")
                 raise RequestFailed(error, resp.status)
             return await resp.text()
     except ClientOSError as e:
-        raise IPAddressBlocked(f"client OS error: {e}")
+        raise RequestBlocked(f"client OS error: {e}")
 
 
 def parse_hiscores_page(page_html: str) -> Tuple[List[int], List[str]]:
+    """ Extract a list of ranks and usernames from a front page of the hiscores. """
     page_text = BeautifulSoup(page_html, 'html.parser').text
 
     table_start = page_text.find('Overall\nHiscores')
     table_end = page_text.find('Search by name')
     if table_start == -1 or table_end == -1:
         if "your IP has been temporarily blocked" in page_text:
-            raise IPAddressBlocked("blocked temporarily due to high usage")
+            raise RequestBlocked("blocked temporarily due to high usage")
         raise ParsingFailed(f"could not find main rankings table. Page text: {page_text}")
 
     table_raw = page_text[table_start:table_end]
@@ -160,6 +163,7 @@ _tlvl_col = osrs_csv_api_stats().index('total_level')
 _txp_col = osrs_csv_api_stats().index('total_xp')
 
 def parse_stats_csv(username: str, raw_csv: str) -> PlayerRecord:
+    """ Transform raw CSV data for a player into a normalized data record. """
     stats_csv = raw_csv.strip().replace('\n', ',')  # stat groups are separated by newlines
     stats = [int(i) for i in stats_csv.split(',')]
     stats = [None if i < 0 else i for i in stats]
@@ -178,11 +182,16 @@ def parse_stats_csv(username: str, raw_csv: str) -> PlayerRecord:
 
 
 def get_page_range(start_rank: int, end_rank: int) -> Tuple[int, int, int, int]:
-    """
-    todo: write docstring
-    :param start_rank:
-    :param end_rank:
-    :return:
+    """ Get the range of "front" hiscore pages (the pages 1-80000 each containing
+    25 of the top 2 million ranks/usernames) based on a range of rankings.
+
+    :param start_rank: lowest player ranking to include in scraping
+    :param end_rank: highest player ranking to include in scraping
+    :return: tuple of
+        - first page (value between 1 and 80000)
+        - index of first row in first page to use (value between 1 and 25)
+        - last page
+        - index of last row in last page to use
     """
     if start_rank > end_rank:
         raise ValueError(f"start rank ({start_rank}) cannot be greater than end rank ({end_rank})")

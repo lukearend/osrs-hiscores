@@ -14,7 +14,7 @@ from pymongo.collection import Collection
 from tqdm.asyncio import tqdm
 
 from src.common import global_db_name, connect_mongo
-from src.scrape import UsernameJob, PageJob, PlayerRecord, RequestFailed, UserNotFound, IPAddressBlocked, \
+from src.scrape import UsernameJob, PageJob, PlayerRecord, RequestFailed, UserNotFound, RequestBlocked, \
     get_hiscores_page, get_player_stats, get_page_range, reset_vpn, mongodoc_to_player, player_to_mongodoc, getsudo, \
     askpass
 
@@ -281,7 +281,7 @@ async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
             workers = start_workers()
             try:
                 await asyncio.gather(*workers, sort, export, pbar, is_done)
-            except (RequestFailed, IPAddressBlocked) as e:
+            except (RequestFailed, RequestBlocked) as e:
                 print(e)
                 logging.debug(f"main: caught {e}")
                 continue
