@@ -17,12 +17,17 @@ from src.common import global_db_name, connect_mongo
 from src.scrape import UsernameJob, PageJob, PlayerRecord, RequestFailed, UserNotFound, get_page_range, \
     get_hiscores_page, get_player_stats, mongodoc_to_player, player_to_mongodoc, reset_vpn, getsudo, askpass
 
+
 N_PAGE_WORKERS = 2   # number of page workers downloading rank/username info
 UNAME_BUFSIZE = 100  # maximum length of buffer containing username jobs for stats workers
 MAX_HEAPSIZE = 1000  # maximum size for the sorting heap before it allows records to be skipped
 
-currentpage = 0
-nprocessed = 0
+currentpage = 0  # for page workers to coordinate in enqueueing their results
+nprocessed = 0   # for global progress bar
+
+
+class DoneScraping(Exception):
+    """ Raised when all scraping is done to indicate script should exit. """
 
 
 async def page_worker(sess: ClientSession, page_queue: PriorityQueue, out_queue: PriorityQueue,
@@ -119,27 +124,32 @@ async def sort_buffer(in_queue: asyncio.PriorityQueue, out_queue: asyncio.Queue)
         # release the lowest item on the queue, resetting next_rank to continue from there.
         while len(heap) >= MAX_HEAPSIZE:
             lowest_item: PlayerRecord = heapq.heappop(heap)
-            next_rank = lowest_item.rank + 1
-            logging.debug(f"sort buffer: heap overflow, releasing rank {lowest_item.rank}")
-            await out_queue.put(lowest_item)
+            logging.debug(f"sort buffer: heap overflow, changing next_rank from {next_rank} to {lowest_item.rank}")
+            next_rank = lowest_item.rank
 
         # Add the newly received item to the heap.
         heapq.heappush(heap, in_item)
+        if len(heap) == 1:
+            logging.debug(f"sort buffer: pushed first item, has rank {heap[0].rank}")
         if next_rank is None:
             next_rank = in_item.rank
 
         # Release as many items as we can without hitting a gap in ranks.
-        tmp = next_rank
-        while heap and heap[0].rank == next_rank:
+        nreleased = 0
+        i = 0
+        while heap and heap[0].rank <= next_rank:
             out_item: PlayerRecord = heapq.heappop(heap)
             if not out_item.missing:
                 await out_queue.put(out_item)  # don't export data for players marked as not found
             in_queue.task_done()
-            next_rank += 1
+            next_rank = max(next_rank, out_item.rank + 1)
+            nreleased += 1
+            if i == 0:
+                firstout = out_item.rank
+            lastout = out_item.rank
 
-        nreleased = next_rank - tmp
         if nreleased > MAX_HEAPSIZE // 2:
-            logging.debug(f"released {nreleased} items from heap (size is now {len(heap)})")
+            logging.debug(f"sort buffer: released {nreleased} items (ranks {firstout}-{lastout}, heap size is now {len(heap)})")
 
 
 async def export_records(in_queue: Queue, coll: AsyncIOMotorCollection):
@@ -165,15 +175,11 @@ async def export_records(in_queue: Queue, coll: AsyncIOMotorCollection):
 
 
 async def track_progress(remaining: int):
-    with tqdm(total=remaining) as pbar:
+    with tqdm(initial=nprocessed, total=remaining) as pbar:
         while True:
             await asyncio.sleep(0.5)
             pbar.n = nprocessed
             pbar.refresh()
-
-
-class DoneScraping(Exception):
-    """ Raised when all scraping is done to indicate script should exit. """
 
 
 async def detect_finished(page_queue, uname_queue, results_queue, export_queue):
@@ -199,13 +205,11 @@ async def get_prev_progress(coll: Collection) -> int:
 
 
 def build_page_jobqueue(start_rank: int, stop_rank: int) -> PriorityQueue:
-    queue = asyncio.PriorityQueue()
     firstpage, startind, lastpage, endind = get_page_range(start_rank, stop_rank)
-
-    global currentpage, nprocessed
+    global currentpage
     currentpage = firstpage
-    nprocessed = 0
 
+    queue = asyncio.PriorityQueue()
     for pagenum in range(firstpage, lastpage + 1):
         job = PageJob(pagenum=pagenum,
                       startind=startind if pagenum == firstpage else 0,
@@ -221,7 +225,7 @@ async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
                         datefmt="%H:%M:%S", level=getattr(logging, loglevel.upper()),
                         filename='scrape_hiscores.log', filemode='w')
 
-    connect_mongo(mongo_url)  # check connectivity before acquiring async client
+    connect_mongo(mongo_url)  # check connectivity
     coll = motor.motor_asyncio.AsyncIOMotorClient(mongo_url)[global_db_name()][mongo_coll]
     if drop:
         await coll.drop()
@@ -247,6 +251,8 @@ async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
     nextuname = asyncio.Event()  # signals next username should be enqueued, raised by stats workers for page worker
     nextpage.set()
     nextuname.set()
+    global nprocessed
+    nprocessed = 0
 
     # Spawn the global tasks for sorting, exporting and detecting completion.
     sort = asyncio.create_task(sort_buffer(results_queue, export_queue))  # sort scraped records within fixed queue
