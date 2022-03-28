@@ -120,8 +120,8 @@ async def sort_buffer(in_queue: asyncio.PriorityQueue, out_queue: asyncio.Queue)
         # Get the next item to be added to the heap.
         in_item: PlayerRecord = await in_queue.get()
 
-        # If heap is full, the item with next_rank was never seen. Consider it missing and
-        # release the lowest item on the queue, resetting next_rank to continue from there.
+        # If heap is full, the item with next_rank was never seen. Consider it, and all
+        # items up to the current lowest item on the heap, unaccounted for in sorting.
         while len(heap) >= MAX_HEAPSIZE:
             lowest_item: PlayerRecord = heapq.heappop(heap)
             logging.debug(f"sort buffer: heap overflow, changing next_rank from {next_rank} to {lowest_item.rank}")
@@ -149,7 +149,7 @@ async def sort_buffer(in_queue: asyncio.PriorityQueue, out_queue: asyncio.Queue)
             lastout = out_item.rank
 
         if nreleased > MAX_HEAPSIZE // 2:
-            logging.debug(f"sort buffer: released {nreleased} items (ranks {firstout}-{lastout}, heap size is now {len(heap)})")
+            logging.debug(f"sort buffer: flushed {nreleased} items (ranks {firstout}-{lastout}, heap size is now {len(heap)})")
 
 
 async def export_records(in_queue: Queue, coll: AsyncIOMotorCollection):
