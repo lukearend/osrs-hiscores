@@ -5,11 +5,11 @@ cd "$VPN_DIR" && echo "resetting vpn..."
 sudo -Sv || exit 1 # request sudo if we don't have it
 
 restart () {
-  sudo pkill openvpn >/dev/null 2>&1 && sleep 1 && \
-  ./mkserver && sudo openvpn --config tmpserver.ovpn \
-    --auth-user-pass ~/.openvpn --writepid openvpn.pid --daemon && \
-  sleep 2 && echo -n "setting up tunnel... " && sleep 3 && \
-  ps -p "$(cat openvpn.pid)" >/dev/null 2>&1
+  sudo pkill openvpn >/dev/null 2>&1 ; sleep 1
+  ./mkserver && \
+  sudo openvpn --config tmpserver.ovpn --auth-user-pass ~/.openvpn --writepid openvpn.pid --daemon
+  sleep 2 && echo -n "setting up tunnel... " && sleep 3
+  ps -p $(cat openvpn.pid) >/dev/null 2>&1
 }
 
 until restart; do echo "setup failed, retrying"; done

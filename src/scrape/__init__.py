@@ -20,10 +20,11 @@ from src.common import osrs_csv_api_stats
 
 @dataclass(order=True)
 class PageJob:
-    """ Represents a page to be queried from the OSRS hiscores. """
-    pagenum: int                                     # page # on the front pages (between 1 and 80000)
-    startind: int = field(default=0, compare=False)  # start index of the usernames wanted from this page
-    endind: int = field(default=25, compare=False)   # end index of the usernames wanted from this page
+    """ Represents a page to be queried from the OSRS hiscores and enqueued. """
+    pagenum: int                                           # page # on the front pages (between 1 and 80000)
+    startind: int = field(default=0, compare=False)        # start index of the usernames wanted from this page
+    endind: int = field(default=25, compare=False)         # end index of the usernames wanted from this page
+    result: Any = field(default=None, compare=False)       # page results, stored in case cancelled while enqueuing
 
 
 @dataclass(order=True)
@@ -31,19 +32,18 @@ class UsernameJob:
     """ Represents a username to be queried for account stats. """
     rank: int
     username: str = field(compare=False)
-    nfailed: int = field(default=0, compare=False)
 
 
 @dataclass(order=True)
 class PlayerRecord:
     """ Represents data for one player scraped from the hiscores. """
     rank: int
-    username: str = field(compare=False)
+    username: str = field(default=None, compare=False)
     total_level: int = field(default=None, compare=False)
     total_xp: int = field(default=None, compare=False)
-    ts: datetime = field(default=None, compare=False) # time this record was scraped
     stats: List[int] = field(default=None, compare=False)
-    missing: bool = field(default=False, compare=False)
+    ts: datetime = field(default=None, compare=False)    # time at which record was scraped
+    missing: bool = field(default=False, compare=False)  # set to true if data for this username was not found
 
 
 class RequestFailed(Exception):
@@ -215,7 +215,7 @@ def get_page_range(start_rank: int, end_rank: int) -> Tuple[int, int, int, int]:
 def reset_vpn():
     """ Reset VPN, acquiring a new IP address. Requires root permissions. """
     vpn_script = Path(__file__).resolve().parents[2] / "bin" / "reset_vpn"
-    p = subprocess.run(shlex.split(vpn_script))
+    p = subprocess.run(vpn_script)
     p.check_returncode()
 
 
