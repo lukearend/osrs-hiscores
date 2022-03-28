@@ -32,7 +32,6 @@ async def page_worker(sess: ClientSession, page_queue: PriorityQueue, out_queue:
 
     async def putback(job, unames_done=0):
         job.startind += unames_done
-        job.nfailed += 1
         await page_queue.put(job)
         page_queue.task_done()
 
@@ -42,34 +41,36 @@ async def page_worker(sess: ClientSession, page_queue: PriorityQueue, out_queue:
         job: PageJob = await page_queue.get()
         n_enqueued = 0
         try:
-            ranks, unames = await get_hiscores_page(sess, job.pagenum)
+            # Get the requested page.
+            try:
+                ranks, unames = await get_hiscores_page(sess, job.pagenum)
+            except RequestFailed:
+                logging.info(f"{name}: caught RequestFailed, raising")
+                await putback(job)
+                raise
 
+            # Wait until it is my turn to enqueue the usernames.
             while currentpage != job.pagenum:
                 await nextpage.wait()
                 nextpage.clear()
 
             for rank, uname in list(zip(ranks, unames))[job.startind:job.endind]:
-                outjob = UsernameJob(rank, uname)
                 while out_queue.qsize() >= UNAME_BUFSIZE:
-                    await nextuname.wait()
+                    await nextuname.wait()  # wait for signal to enqueue next username
                     nextuname.clear()
-                await out_queue.put(outjob)
+                await out_queue.put(UsernameJob(rank, uname))
                 n_enqueued += 1
 
-            currentpage += 1
-            page_queue.task_done()
-            nextpage.set()
-
+        # If interrupted, put the partially completed job back to be finished later.
         except asyncio.CancelledError:
-            logging.info(f"{name}: cancelled")
+            logging.debug(f"{name}: cancelled")
             await putback(job, unames_done=n_enqueued)
             raise
 
-        except Exception as e:
-            logging.error(f"{name}: caught exception: {e}")
-            await putback(job)
-            logging.error(f"{name}: raising {type(e).__name__}")
-            raise
+        # Let other worker(s) know this page was successfully enqueued.
+        currentpage += 1
+        page_queue.task_done()
+        nextpage.set()
 
 
 async def stats_worker(sess: ClientSession, uname_queue: PriorityQueue, out_queue: Queue,
@@ -84,65 +85,57 @@ async def stats_worker(sess: ClientSession, uname_queue: PriorityQueue, out_queu
         nprocessed += 1
 
     async def putback(job):
+        if job.nfailed == 3:
+            msg = f"{name}: job ({job.rank}, {job.username}) failed too many times, skipping"
+            logging.warning(msg)
+            await putout(PlayerRecord(rank=job.rank, username=job.username, missing=True))
         await uname_queue.put(job)
         uname_queue.task_done()
-        logging.info(f"{name}: put ({job.rank}, {job.username}) back on username queue...")
-        logging.info(f"{name}: job ({job.rank}, {job.username}) has now failed {job.nfailed} times")
+        logging.debug(f"{name}: put ({job.rank}, {job.username}) back, has now failed {job.nfailed} times...")
 
     await asyncio.sleep(workernum * 0.1)
     while True:
         job: UsernameJob = await uname_queue.get()
         try:
+            # Get stats for the requested username.
             player: PlayerRecord = await get_player_stats(sess, job.username)
-            await putout(player)
-
         except UserNotFound:
             await putout(PlayerRecord(rank=job.rank, username=job.username, missing=True))
-
-        except asyncio.CancelledError:
-            logging.info(f"{name}: cancelled")
+        except RequestFailed:
+            logging.info(f"{name}: caught RequestFailed, raising")
+            job.nfailed += 1
             await putback(job)
             raise
-
-        except Exception as e:
-            logging.error(f"{name}: caught exception: {e}")
-            job.nfailed += 1
-            if job.nfailed == 3:
-                msg = f"{name}: job ({job.rank}, {job.username}) failed too many times, skipping"
-                print(msg)
-                logging.warning(msg)
-                await putout(PlayerRecord(rank=job.rank, username=job.username, missing=True))
-            else:
-                await putback(job)
-                logging.error(f"{name}: raising {type(e).__name__}")
-                raise
+        except asyncio.CancelledError:
+            logging.debug(f"{name}: cancelled")
+            await putback(job)
+            raise
+        await putout(player)
 
 
 async def sort_buffer(in_queue: asyncio.PriorityQueue, out_queue: asyncio.Queue, start_rank: int):
-
     heap = []
-    out_rank = start_rank  # rank of item that should be released from the heap next
+    next_rank = start_rank  # rank of item that should be released from the heap next
     while True:
+        # Get the next item to be added to the heap.
         item = await in_queue.get()
+
+        # If heap is full, the item with next_rank was never seen. Consider it missing and
+        # release the lowest item on the queue, resetting next_rank to continue from there.
+        while len(heap) >= MAX_HEAPSIZE:
+            lowest_item: PlayerRecord = heapq.heappop(heap)
+            next_rank = lowest_item.rank + 1
+            logging.debug(f"sort buffer: heap overflow, releasing rank {lowest_item.rank}. next_rank is now {next_rank}")
+            await out_queue.put(lowest_item)
+
+        # Add the newly received item to the heap.
         heapq.heappush(heap, item)
 
-        # If heap is full, skip some records to catch up out_rank with min item on heap.
-        if len(heap) > MAX_HEAPSIZE:
-            prev = out_rank
-            out_rank = heap[0].rank
-            if out_rank - prev == 1:
-                logging.debug(f"sort buffer: skipped players {prev} through {out_rank - 1} (heap size is {len(heap)})")
-
-            while out_rank < heap[0].rank:
-                await out_queue.put(PlayerRecord(rank=out_rank, username=None, missing=True))
-                out_rank += 1
-
-        # Release as many items from the heap as we can without hitting a gap in ranks.
-        while heap and heap[0].rank == out_rank:
-            out = heapq.heappop(heap)
-            await out_queue.put(out)
+        # Release as many items as we can without hitting a gap in ranks.
+        while heap and heap[0].rank == next_rank:
+            await out_queue.put(heapq.heappop(heap))
             in_queue.task_done()
-            out_rank += 1
+            next_rank += 1
 
 
 async def export_records(in_queue: Queue, coll: AsyncIOMotorCollection):
@@ -281,15 +274,13 @@ async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
             workers = start_workers()
             try:
                 await asyncio.gather(*workers, sort, export, pbar, is_done)
-            except (RequestFailed, RequestBlocked) as e:
-                print(e)
-                logging.debug(f"main: caught {e}")
-                continue
             except DoneScraping:
-                logging.info("main: caught DoneScraping")
                 break
+            except RequestFailed as e:
+                logging.info(f"main: caught {e}")
+                continue
             except Exception as e:
-                logging.debug(f"main: caught {e}")
+                logging.error(f"main: caught {e}")
                 raise
             finally:
                 logging.debug("main: cancelling workers...")
