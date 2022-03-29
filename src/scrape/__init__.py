@@ -18,20 +18,38 @@ from bs4 import BeautifulSoup
 from src.common import osrs_csv_api_stats
 
 
-@dataclass(order=True)
-class PageJob:
-    """ Represents a page to be queried from the OSRS hiscores and enqueued. """
-    pagenum: int                                           # page # on the front pages (between 1 and 80000)
-    startind: int = field(default=0, compare=False)        # start index of the usernames wanted from this page
-    endind: int = field(default=25, compare=False)         # end index of the usernames wanted from this page
-    result: Any = field(default=None, compare=False)       # page results, stored in case cancelled while enqueuing
+class JobQueue:
+    """ A priority queue that allows to set a maxsize with a soft limit. Calling put()
+    with force=False is subject to blocking if queue is full; calling with force=True
+    will immediately force an item into the queue no matter its size. """
 
+    def __init__(self, maxsize=None):
+        self.q = asyncio.PriorityQueue()
+        self.shortened = asyncio.Event()
+        self.maxsize = maxsize
 
-@dataclass(order=True)
-class UsernameJob:
-    """ Represents a username to be queried for account stats. """
-    rank: int
-    username: str = field(compare=False)
+    async def put(self, item, force=False):
+        if self.maxsize and not force:
+            while self.q.qsize() >= self.maxsize:
+                await self.shortened.wait()
+                self.shortened.clear()
+
+        await self.q.put(item)
+
+    async def get(self):
+        item = await self.q.get()
+        self.shortened.set()
+        return item
+
+    async def join(self):
+        await self.q.join()
+
+    def task_done(self, n=1):
+        for _ in range(n):
+            self.q.task_done()
+
+    def qsize(self):
+        return self.q.qsize()
 
 
 @dataclass(order=True)
@@ -42,8 +60,35 @@ class PlayerRecord:
     total_level: int = field(default=None, compare=False)
     total_xp: int = field(default=None, compare=False)
     stats: List[int] = field(default=None, compare=False)
-    ts: datetime = field(default=None, compare=False)    # time at which record was scraped
-    missing: bool = field(default=False, compare=False)  # set to true if data for this username was not found
+    ts: datetime = field(default=None, compare=False)          # time at which record was scraped
+
+    def __str__(self):
+        return f"PlayerRecord({self.rank}, '{self.username}')"
+
+
+@dataclass(order=True)
+class PageJob:
+    """ Represents the following task: fetch a front page from the OSRS hiscores,
+    extract the rank/username data, and enqueue the 25 usernames in rank order. """
+    pagenum: int                                               # page # on the front pages (between 1 and 80000)
+    startind: int = field(default=0, compare=False)            # start index of the usernames wanted from this page
+    endind: int = field(default=25, compare=False)             # end index of the usernames wanted from this page
+    pagecontents: Any = field(default=None, compare=False)     # page results, kept as partial progress when cancelled
+
+    def __str__(self):
+        return f"PageJob({self.pagenum}, {self.startind}, {self.endind}, hascontents: {self.pagecontents})"
+
+
+@dataclass(order=True)
+class UsernameJob:
+    """ Represents the task of fetching account stats by username and enqueueing
+    the stats alongside other workers in a way that preserves rank order. """
+    rank: int
+    username: str = field(compare=False)
+    result: PlayerRecord = field(default=None, compare=False)  # downloaded stats, kept as progress when cancelled
+
+    def __str__(self):
+        return f"UsernameJob({self.rank}, '{self.username}')"
 
 
 class RequestFailed(Exception):
@@ -223,32 +268,36 @@ def getsudo(password):
     """ Attempt to acquire sudo permissions using the given password. """
     proc = Popen(shlex.split(f"sudo -Svp ''"), stdin=PIPE, stderr=DEVNULL)
     proc.communicate(password.encode())
-    if proc.returncode != 0:
-        msg = "incorrect sudo password, exiting"
-        print(msg)
-        logging.error(msg)
-        sys.exit(1)
+    return True if proc.returncode == 0 else False
 
 
 def askpass():
     """ Request root password for VPN usage. """
-    print(textwrap.dedent("""
+    msg1 = textwrap.dedent("""
         Root permissions are required by the OpenVPN client which is used during
         scraping to periodically acquire a new IP address. Privileges granted here
         will only be used to manage the VPN connection and the password will only
         persist in RAM as long as the program is running.
-        """))
+        """)
 
+    msg2 = textwrap.dedent("""
+        Proceeding without VPN. It is likely your IP address will get blocked or
+        throttled after a few minutes of scraping due to the volume of requests.
+        """)
+
+    print(msg1)
     pwd = getpass("Enter root password (leave empty to continue without VPN): ")
     if not pwd:
-        print(textwrap.dedent("""
-            Proceeding without VPN. It is likely your IP address will get blocked or
-            throttled after a few minutes of scraping due to the volume of requests.
-            """))
+        print(msg2)
         return None
-
     print()
     return pwd
+
+
+def print_and_log(msg, level):
+    print(msg)
+    logger = getattr(logging, level.lower())
+    logger(msg)
 
 
 def mongodoc_to_player(doc: Dict[str, Any]) -> PlayerRecord:
