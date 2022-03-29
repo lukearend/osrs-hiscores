@@ -60,6 +60,7 @@ class PageWorker:
             except (CancelledError, RequestFailed):
                 await self.in_q.put(job, force=True)
                 self.in_q.task_done()
+                raise
 
 
 class StatsWorker:
@@ -95,6 +96,7 @@ class StatsWorker:
             except (CancelledError, RequestFailed):
                 await self.in_q.put(job, force=True)
                 self.in_q.task_done()
+                raise
 
 
 async def export_records(in_queue: Queue, coll: AsyncIOMotorCollection):

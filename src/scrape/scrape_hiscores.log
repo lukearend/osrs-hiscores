@@ -1,0 +1,4 @@
+00:20:34.995:INFO:found an existing record at rank 27607
+00:20:34.995:INFO:starting from 27608
+00:20:39.194:INFO:starting to scrape (ranks 27608-2000000, 28 stats workers)
+00:20:39.194:INFO:resetting VPN...
