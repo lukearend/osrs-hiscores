@@ -18,6 +18,7 @@ from src.scrape.requests import PlayerRecord, RequestFailed
 from src.scrape.vpn import reset_vpn, getsudo, askpass
 from src.scrape.workers import JobCounter, JobQueue, PageWorker, StatsWorker, PageJob
 
+
 N_PAGE_WORKERS = 2   # number of page workers downloading rank/username info
 UNAME_BUFSIZE = 100  # maximum length of buffer containing username jobs for stats workers
 
