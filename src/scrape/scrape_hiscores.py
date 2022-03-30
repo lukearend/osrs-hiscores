@@ -13,8 +13,9 @@ from motor.motor_asyncio import AsyncIOMotorCollection
 from tqdm.asyncio import tqdm
 
 from src.common import global_db_name, connect_mongo
-from src.scrape import get_page_range, reset_vpn, getsudo, askpass, mongodoc_to_player, player_to_mongodoc, printlog
+from src.scrape import get_page_range, mongodoc_to_player, player_to_mongodoc, printlog
 from src.scrape.requests import PlayerRecord, RequestFailed
+from src.scrape.vpn import reset_vpn, getsudo, askpass
 from src.scrape.workers import JobCounter, JobQueue, PageWorker, StatsWorker, PageJob
 
 N_PAGE_WORKERS = 2   # number of page workers downloading rank/username info
