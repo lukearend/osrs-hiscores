@@ -76,12 +76,14 @@ class Worker:
         while True:
             job = await self.in_q.get()
             try:
-                await request_fn(sess, job)
+                if job.result is None:
+                    await request_fn(sess, job)
+
                 while self.jobcounter.value < job.priority:
                     await self.nextjob.wait()
                     self.nextjob.clear()
-                await enqueue_fn(self.out_q, job)
 
+                await enqueue_fn(self.out_q, job)
                 self.in_q.task_done()
                 self.jobcounter.value += 1
                 self.nextjob.set()
@@ -107,13 +109,13 @@ class PageWorker:
             job.result = await get_hiscores_page(sess, page_num=job.pagenum)
 
     async def enqueue_usernames(self, queue: Queue, job: PageJob):
-        for rank, uname in job.result[job.startind, job.endind]:
+        for rank, uname in job.result[job.startind:job.endind]:
             outjob = UsernameJob(priority=rank, username=uname)
             await queue.put(outjob)
             job.startind += 1
 
     async def run(self, sess: ClientSession):
-        return self.worker.run(sess, request_fn=self.request_page, enqueue_fn=self.enqueue_usernames)
+        await self.worker.run(sess, request_fn=self.request_page, enqueue_fn=self.enqueue_usernames)
 
 
 class StatsWorker:
@@ -127,12 +129,11 @@ class StatsWorker:
         self.currentrank.value = init_rank
 
     async def request_stats(self, sess: ClientSession, job: UsernameJob):
-        if job.result is None:
-            try:
-                job.result = await get_player_stats(sess, username=job.username)
-            except UserNotFound:
-                printlog(f"{self.name}: player '{job.username}' not found (rank {job.priority})", 'info')
-                job.result = 'notfound'
+        try:
+            job.result = await get_player_stats(sess, username=job.username)
+        except UserNotFound:
+            printlog(f"{self.name}: player '{job.username}' not found (rank {job.priority})", 'info')
+            job.result = 'notfound'
 
     async def enqueue_result(self, queue: Queue, job: UsernameJob):
         if job.result != 'notfound':
@@ -141,4 +142,4 @@ class StatsWorker:
 
     async def run(self, sess: ClientSession, delay: float = 0):
         await asyncio.sleep(delay)
-        return self.worker.run(sess, request_fn=self.request_stats, enqueue_fn=self.enqueue_result)
+        await self.worker.run(sess, request_fn=self.request_stats, enqueue_fn=self.enqueue_result)
