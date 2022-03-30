@@ -108,14 +108,18 @@ async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
     uname_q = JobQueue(maxsize=UNAME_BUFSIZE)
     export_q = JobQueue()
 
+    currentpage = JobCounter(value=firstpage)
+    currentrank = JobCounter(value=start_rank)
+    nextpage = asyncio.Event()
+    nextrank = asyncio.Event()
+
     # Scraping happens in two stages. First the page workers download front pages
     # of the hiscores and extract usernames in ranked order. Then the stats workers
     # receive usernames and query the CSV API for the corresponding account stats.
-    pageworkers = [PageWorker(in_queue=page_q, out_queue=uname_q, init_page=firstpage,
-                              name=f'page worker {i}') for i in range(N_PAGE_WORKERS)]
-    statworkers = [StatsWorker(in_queue=uname_q, out_queue=export_q, init_rank=start_rank,
-                               name=f'stats worker {i}') for i in range(nworkers)]
-    currentrank: JobCounter = StatsWorker.currentrank
+    pageworkers = [PageWorker(in_queue=page_q, out_queue=uname_q, page_counter=currentpage, next_page=nextpage)
+                   for _ in range(N_PAGE_WORKERS)]
+    statworkers = [StatsWorker(in_queue=uname_q, out_queue=export_q, rank_counter=currentrank, next_rank=nextrank)
+                   for _ in range(nworkers)]
 
     export = asyncio.create_task(export_records(export_q, coll))
     isdone = asyncio.create_task(detect_finished(page_q, uname_q, export_q))

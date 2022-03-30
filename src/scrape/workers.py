@@ -9,10 +9,13 @@ from src.scrape import printlog
 from src.scrape.requests import RequestFailed, UserNotFound, PlayerRecord, get_hiscores_page, get_player_stats
 
 
-@dataclass
 class JobCounter:
     """ A counter shared among workers for keeping track of the current job. """
-    value: int = 0
+    def __init__(self, value: int):
+        self.value = value
+
+    def next(self):
+        self.value += 1
 
 
 @dataclass(order=True)
@@ -83,7 +86,7 @@ class Worker:
                 await enqueue_fn(self.out_q, job)
 
                 self.in_q.task_done()
-                self.jobcounter.value += 1
+                self.jobcounter.next()
                 self.nextjob.set()
 
             except (CancelledError, RequestFailed):
@@ -94,13 +97,8 @@ class Worker:
 
 class PageWorker:
     """ Downloads front pages from the hiscores and enqueues usernames in rank order. """
-    currentpage = JobCounter()
-    nextpage = asyncio.Event()
-
-    def __init__(self, in_queue: JobQueue, out_queue: JobQueue, init_page: int = 0, name: str = None):
-        self.name = name if name else type(self).__name__
-        self.worker = Worker(in_queue, out_queue, job_counter=self.currentpage, next_signal=self.nextpage)
-        self.currentpage.value = init_page
+    def __init__(self, in_queue: JobQueue, out_queue: JobQueue, page_counter: JobCounter, next_page: Event):
+        self.worker = Worker(in_queue, out_queue, job_counter=page_counter, next_signal=next_page)
 
     async def request_page(self, sess: ClientSession, job: PageJob):
         if job.result is None:
@@ -118,20 +116,17 @@ class PageWorker:
 
 class StatsWorker:
     """ Downloads player stats given player usernames. """
-    currentrank = JobCounter()
     nextuser = asyncio.Event()
 
-    def __init__(self, in_queue: JobQueue, out_queue: Queue, init_rank: int = 0, name: str = None):
-        self.name = name if name else type(self).__name__
-        self.worker = Worker(in_queue, out_queue, job_counter=self.currentrank, next_signal=self.nextuser)
-        self.currentrank.value = init_rank
+    def __init__(self, in_queue: JobQueue, out_queue: Queue, rank_counter: JobCounter, next_rank: Event):
+        self.worker = Worker(in_queue, out_queue, job_counter=rank_counter, next_signal=next_rank)
 
     async def request_stats(self, sess: ClientSession, job: UsernameJob):
         if job.result is None:
             try:
                 job.result = await get_player_stats(sess, username=job.username)
             except UserNotFound:
-                printlog(f"{self.name}: player '{job.username}' not found (rank {job.priority})", 'info')
+                printlog(f"player '{job.username}' not found (rank {job.priority})", 'info')
                 job.result = 'notfound'
 
     async def enqueue_result(self, queue: Queue, job: UsernameJob):
