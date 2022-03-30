@@ -12,3 +12,5 @@ __pycache__
 /test/data
 /ref/vpn/openvpn.pid
 /ref/vpn/tmpserver.ovpn
+/src/scrape/scrape_hiscores.log
+

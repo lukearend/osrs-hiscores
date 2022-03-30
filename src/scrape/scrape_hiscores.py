@@ -2,106 +2,32 @@ import argparse
 import asyncio
 import logging
 import sys
-from asyncio import Queue, Event, CancelledError, TimeoutError
+import traceback
+from asyncio import CancelledError, TimeoutError
 from contextlib import suppress
 
 import aiohttp
 import motor.motor_asyncio
-from aiohttp import ClientSession
 from codetiming import Timer
 from motor.motor_asyncio import AsyncIOMotorCollection
 from tqdm.asyncio import tqdm
 
 from src.common import global_db_name, connect_mongo
-from src.scrape import JobQueue, UsernameJob, PageJob, PlayerRecord, RequestFailed, UserNotFound, get_page_range, \
-    get_hiscores_page, get_player_stats, mongodoc_to_player, player_to_mongodoc, reset_vpn, getsudo, askpass, \
-    print_and_log
+from src.scrape import get_page_range, reset_vpn, getsudo, askpass, mongodoc_to_player, player_to_mongodoc, printlog
+from src.scrape.requests import PlayerRecord, RequestFailed
+from src.scrape.workers import JobCounter, JobQueue, PageWorker, StatsWorker, PageJob
 
-
-N_PAGE_WORKERS = 2  # number of page workers downloading rank/username info
-UNAME_BUFSIZE = 100 # maximum length of buffer containing username jobs for stats workers
-
-currentpage = 0  # for page workers to coordinate in enqueueing their results
-currentrank = 0  # for stats workers to coordinate in enqueueing their results
+N_PAGE_WORKERS = 2   # number of page workers downloading rank/username info
+UNAME_BUFSIZE = 100  # maximum length of buffer containing username jobs for stats workers
 
 
 class DoneScraping(Exception):
     """ Raised when all scraping is done to indicate script should exit. """
 
 
-class PageWorker:
-    def __init__(self, in_queue: JobQueue, out_queue: JobQueue, name: str = None):
-        self.name = name if name else type(self).__name__
-        self.in_q = in_queue
-        self.out_q = out_queue
-
-    async def run(self, sess: ClientSession, next_page: Event):
-        while True:
-            job: PageJob = await self.in_q.get()
-            try:
-                if not job.pagecontents:
-                    job.pagecontents = await get_hiscores_page(sess, page_num=job.pagenum)
-                ranks, unames = job.pagecontents
-
-                global currentpage
-                while currentpage < job.pagenum:
-                    await next_page.wait()
-                    next_page.clear()
-
-                for i in range(job.startind, job.endind):
-                    out_job = UsernameJob(rank=ranks[i], username=unames[i])
-                    await self.out_q.put(out_job)
-                    job.startind += 1
-
-                self.in_q.task_done()
-                currentpage += 1
-                next_page.set()
-
-            except (CancelledError, RequestFailed):
-                await self.in_q.put(job, force=True)
-                self.in_q.task_done()
-                raise
-
-
-class StatsWorker:
-    def __init__(self, in_queue: JobQueue, out_queue: JobQueue, name: str = None):
-        self.name = name if name else type(self).__name__
-        self.in_q = in_queue
-        self.out_q = out_queue
-
-    async def run(self, sess: ClientSession, next_user: Event, delay: float = 0):
-        await asyncio.sleep(delay)
-        while True:
-            job: UsernameJob = await self.in_q.get()
-            try:
-                if not job.result:
-                    try:
-                        job.result = await get_player_stats(sess, username=job.username)
-                    except UserNotFound:
-                        job.result = 'notfound'
-
-                global currentrank
-                while currentrank < job.rank:
-                    await next_user.wait()
-                    next_user.clear()
-
-                if job.result != 'notfound':
-                    player: PlayerRecord = job.result
-                    await self.out_q.put(player)
-
-                self.in_q.task_done()
-                currentrank += 1
-                next_user.set()
-
-            except (CancelledError, RequestFailed):
-                await self.in_q.put(job, force=True)
-                self.in_q.task_done()
-                raise
-
-
-async def export_records(in_queue: Queue, coll: AsyncIOMotorCollection):
+async def export_records(in_queue: JobQueue, coll: AsyncIOMotorCollection):
     while True:
-        # Release a batch every 50 records or 0.25 seconds of inactivity.
+        # Release a batch every 50 records or after a break in activity.
         players = []
         while len(players) < 50:
             try:
@@ -110,24 +36,24 @@ async def export_records(in_queue: Queue, coll: AsyncIOMotorCollection):
             except TimeoutError:
                 break
         if players:
-            await coll.insert_many([player_to_mongodoc(p) for p in players])
-            for _ in range(len(players)):
-                in_queue.task_done()
+            docs = [player_to_mongodoc(p) for p in players]
+            await coll.insert_many(docs)
+            in_queue.task_done(n=len(docs))
 
 
-async def track_progress(start_rank: int, end_rank: int, pageq: JobQueue, unameq: JobQueue, exportq: Queue):
+async def progress_bar(start_rank: int, end_rank: int, current_rank: JobCounter):
     total = end_rank - start_rank + 1
-    n = currentrank - start_rank
-    with tqdm(initial=n, total=total) as pbar:
+    ndone = current_rank.value - start_rank
+    with tqdm(initial=ndone, total=total) as pbar:
         while True:
-            try:
-                await asyncio.wait_for(asyncio.gather(pageq.join(), unameq.join(), exportq.join()), timeout=1)
-                raise DoneScraping
-            except TimeoutError:
-                pass
-            finally:
-                pbar.n = currentrank - start_rank
-                pbar.refresh()
+            await asyncio.sleep(1)
+            pbar.n = current_rank.value - start_rank
+            pbar.refresh()
+
+
+async def detect_finished(*queues: JobQueue):
+    await asyncio.gather(*[q.join() for q in queues])
+    raise DoneScraping
 
 
 async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
@@ -137,23 +63,27 @@ async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
                         datefmt="%H:%M:%S", level=getattr(logging, loglevel.upper()),
                         filename='scrape_hiscores.log', filemode='w')
 
+    # The remote server seems to have a connection limit of 30.
+    if args.num_workers + N_PAGE_WORKERS > 30:
+        raise ValueError(f"too many workers, maximum allowed is {30 - N_PAGE_WORKERS}")
+
     # Connect to MongoDB and check for existing progress.
     connect_mongo(mongo_url)
     coll = motor.motor_asyncio.AsyncIOMotorClient(mongo_url)[global_db_name()][mongo_coll]
     if drop:
         await coll.drop()
-        print_and_log(f"dropped collection '{mongo_coll}'", level='info')
+        printlog(f"dropped collection '{mongo_coll}'", level='info')
 
     highest_doc = await coll.find_one({}, sort=[('rank', -1)])
     if highest_doc:
         existing_rank = mongodoc_to_player(highest_doc).rank
         if existing_rank >= start_rank:
-            print_and_log(f"found an existing record at rank {existing_rank}", level='info')
+            printlog(f"found an existing record at rank {existing_rank}", level='info')
             if existing_rank >= stop_rank:
-                print_and_log("nothing to do", level='info')
+                printlog("nothing to do", level='info')
                 return
             start_rank = existing_rank + 1
-            print_and_log(f"starting from {start_rank}", level='info')
+            printlog(f"starting from {start_rank}", level='info')
 
     # Get root permissions for VPN management.
     if usevpn:
@@ -165,28 +95,30 @@ async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
 
     # Determine the range of pages that need to be scraped based on the desired range of ranks.
     firstpage, startind, lastpage, endind = get_page_range(start_rank, stop_rank)
-    global currentpage, currentrank
-    currentpage = firstpage
-    currentrank = start_rank
 
     # Build the job queues connecting each stage of the processing pipeline.
-    page_jobq = asyncio.PriorityQueue()
+    page_q = JobQueue()
     for pagenum in range(firstpage, lastpage + 1):
-        job = PageJob(pagenum=pagenum,
+        job = PageJob(priority=pagenum, pagenum=pagenum,
                       startind=startind if pagenum == firstpage else 0,
                       endind=endind if pagenum == lastpage else 25)
-        await page_jobq.put(job)
-    uname_jobq = JobQueue(maxsize=UNAME_BUFSIZE)
-    export_q = asyncio.Queue()
+        await page_q.put(job)
+    uname_q = JobQueue(maxsize=UNAME_BUFSIZE)
+    export_q = JobQueue()
 
-    # Create the workers for performing scraping tasks.
+    # Scraping happens in two stages. First the page workers download front pages
+    # of the hiscores and extract usernames in ranked order. Then the stats workers
+    # receive usernames and query the CSV API for the corresponding account stats.
+    pageworkers = [PageWorker(in_queue=page_q, out_queue=uname_q, init_page=firstpage,
+                              name=f'page worker {i}') for i in range(N_PAGE_WORKERS)]
+    statworkers = [StatsWorker(in_queue=uname_q, out_queue=export_q, init_rank=start_rank,
+                               name=f'stats worker {i}') for i in range(nworkers)]
+    currentrank: JobCounter = StatsWorker.currentrank
+
     export = asyncio.create_task(export_records(export_q, coll))
-    pageworkers = [PageWorker(page_jobq, uname_jobq, name=f'page worker {i}') for i in range(N_PAGE_WORKERS)]
-    statworkers = [StatsWorker(uname_jobq, export_q, name=f'stats worker {i}') for i in range(nworkers)]
-    pageworker_signal = asyncio.Event()
-    statworker_signal = asyncio.Event()
+    isdone = asyncio.create_task(detect_finished(page_q, uname_q, export_q))
 
-    print_and_log(f"starting to scrape (ranks {start_rank}-{stop_rank}, {nworkers} stats workers)", level='info')
+    printlog(f"starting to scrape (ranks {start_rank}-{stop_rank}, {nworkers} stats workers)", level='info')
     t = Timer(text="done ({minutes:.1f} minutes)")
     t.start()
     while True:
@@ -198,14 +130,14 @@ async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
 
         # Spawn the data scraping tasks and wait until requests start getting blocked.
         async with aiohttp.ClientSession() as sess:
-            T = [asyncio.create_task(track_progress(start_rank, stop_rank, page_jobq, uname_jobq, export_q))]
+            T = [asyncio.create_task(progress_bar(start_rank, stop_rank, current_rank=currentrank))]
             for w in pageworkers:
-                T.append(asyncio.create_task(w.run(sess, next_page=pageworker_signal)))
+                T.append(asyncio.create_task(w.run(sess)))
             for i, w in enumerate(statworkers):
-                T.append(asyncio.create_task(w.run(sess, next_user=statworker_signal, delay=i * 0.1)))
+                T.append(asyncio.create_task(w.run(sess, delay=i * 0.1)))
 
             try:
-                await asyncio.gather(*T, export)  # allow first exception to be caught
+                await asyncio.gather(*T, export, isdone)  # allow first exception to be caught
             except DoneScraping:
                 break
             except RequestFailed as e:
@@ -237,15 +169,11 @@ if __name__ == "__main__":
     parser.add_argument('--drop', action='store_true', help="if set, will drop collection before scrape begins")
     args = parser.parse_args()
 
-    if args.num_workers + N_PAGE_WORKERS > 30:
-        print_and_log(f"running with >{30 - N_PAGE_WORKERS} stats workers is not recommended. This will "
-                      f"create more than 30 open connections at once, exceeding the remote server limit.",
-                      level='warning')
-
     try:
         asyncio.run(main(args.mongo_url, args.mongo_coll, args.start_rank, args.stop_rank,
                          args.num_workers, args.log_level, args.usevpn, args.drop))
     except Exception as e:
-        logging.critical(f"{type(e).__name__}: {e}")
-        print(f"{e}, exiting")
+        logging.critical(traceback.format_exc())
+        print(e)
+        printlog("exiting", 'info')
         sys.exit(1)
