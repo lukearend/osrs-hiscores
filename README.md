@@ -87,7 +87,15 @@ To launch the application, run `make run` and visit the URL `localhost:8050` in 
 Scraping
 --------
 
-Data scraping makes use of OpenVPN to avoid request throttling via IP proxying. The OpenVPN command line client should be installed and OpenVPN server files (.opvn) to use for scraping should be placed in the directory `ref/vpn`. Authentication credentials should be placed in the file `~/.config` where the first line is the OpenVPN username and second line is the password. Throughout the scraping process, the script will periodically choose a new server file and reconnect at that IP.
+Prerequisites: NordVPN subscription (simple, but paid) or access to another VPN service running the OpenVPN protocol (advanced).
+
+Data scraping makes use of OpenVPN to avoid request throttling via IP proxying. OpenVPN is an open-source protocol that allows VPN clients to communicate with VPN servers via a standardized interface. 
+
+The OpenVPN command line client should be installed and OpenVPN server files (.opvn) to use for scraping should be placed in the directory `ref/vpn`. Authentication credentials should be placed in the file `~/.config` where the first line is the OpenVPN username and second line is the password. Throughout the scraping process, the script will periodically choose a new server file and reconnect at that IP.
+
+This repository ships with a list of IP addresses for NordVPN servers. If you have a NordVPN account, the `~/.config` file should contain your service credentials. The scraping script will then use your service credentials to connect to the NordVPN servers listed in `bin/vpn/server-ips`. If you do not have a NordVPN account, you will have to supply OpenVPN with credentials for another VPN service that is compatible with OpenVPN. This could be a VPN server you own privately or another VPN service that uses the OpenVPN protocol. Place your service credentials in the file `~/.config` as described above and populate the file `bin/vpn/server-ips` with a list of server IPs you would like to connect to. The scraping script will then proxy through those IPs.
+
+Scraping can be performed without using a VPN by running the scraping script with the option `--novpn`. This is not recommended as your IP address will be directly exposed to Jagex's servers. It is likely that your IP address will be blocked due to the volume of requests after a few minutes of scraping activity.
 
 Dependencies
 ------------

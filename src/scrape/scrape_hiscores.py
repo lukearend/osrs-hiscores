@@ -8,13 +8,13 @@ from contextlib import suppress
 
 import aiohttp
 import motor.motor_asyncio
-from codetiming import Timer
 from motor.motor_asyncio import AsyncIOMotorCollection
+from codetiming import Timer
 from tqdm.asyncio import tqdm
 
 from src.common import global_db_name, connect_mongo
-from src.scrape import get_page_range, mongodoc_to_player, player_to_mongodoc, printlog
-from src.scrape.requests import PlayerRecord, RequestFailed
+from src.scrape import get_page_range, mongodoc_to_player, printlog, player_to_mongodoc
+from src.scrape.requests import RequestFailed, PlayerRecord
 from src.scrape.vpn import reset_vpn, getsudo, askpass
 from src.scrape.workers import JobCounter, JobQueue, PageWorker, StatsWorker, PageJob
 
@@ -24,38 +24,38 @@ UNAME_BUFSIZE = 100  # maximum length of buffer containing username jobs for sta
 
 
 class DoneScraping(Exception):
-    """ Raised when all scraping is done to indicate script should exit. """
+    """ Raised when all scraping is done. """
 
 
-async def export_records(in_queue: JobQueue, coll: AsyncIOMotorCollection):
+async def export_records(in_queue: JobQueue, out_coll: AsyncIOMotorCollection, job_counter: JobCounter):
+    """ Export player records and signal when scraping is finished. """
+
     while True:
-        # Release a batch every 50 records or after a break in activity.
-        players = []
-        while len(players) < 50:
+        # Export a batch every 50 records or after a break in activity.
+        batch = []
+        while len(batch) < 50:
             try:
-                next: PlayerRecord = await asyncio.wait_for(in_queue.get(), timeout=1)
-                players.append(next)
+                player: PlayerRecord = await asyncio.wait_for(in_queue.get(), timeout=1)
+                if player == 'notfound':
+                    job_counter.next()
+                else:
+                    batch.append(player)
             except TimeoutError:
                 break
-        if players:
-            docs = [player_to_mongodoc(p) for p in players]
-            await coll.insert_many(docs)
-            in_queue.task_done(n=len(docs))
+        if batch:
+            docs = [player_to_mongodoc(p) for p in batch]
+            await out_coll.insert_many(docs)
+            job_counter.next(n=len(docs))
 
 
-async def progress_bar(start_rank: int, end_rank: int, current_rank: JobCounter):
-    total = end_rank - start_rank + 1
-    ndone = current_rank.value - start_rank
-    with tqdm(initial=ndone, total=total) as pbar:
+async def progress_bar(ndone: JobCounter, ntodo: int):
+    with tqdm(total=ntodo, smoothing=0.9) as pbar:
         while True:
-            await asyncio.sleep(1)
-            pbar.n = current_rank.value - start_rank
+            await ndone.await_next()
+            pbar.n = ndone.value
             pbar.refresh()
-
-
-async def detect_finished(*queues: JobQueue):
-    await asyncio.gather(*[q.join() for q in queues])
-    raise DoneScraping
+            if ndone.value == ntodo:
+                raise DoneScraping
 
 
 async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
@@ -108,21 +108,20 @@ async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
     uname_q = JobQueue(maxsize=UNAME_BUFSIZE)
     export_q = JobQueue()
 
-    currentpage = JobCounter(value=firstpage)
-    currentrank = JobCounter(value=start_rank)
-    nextpage = asyncio.Event()
-    nextrank = asyncio.Event()
-
     # Scraping happens in two stages. First the page workers download front pages
     # of the hiscores and extract usernames in ranked order. Then the stats workers
     # receive usernames and query the CSV API for the corresponding account stats.
-    pageworkers = [PageWorker(in_queue=page_q, out_queue=uname_q, page_counter=currentpage, next_page=nextpage)
+    currentpage = JobCounter(value=firstpage)
+    pageworkers = [PageWorker(in_queue=page_q, out_queue=uname_q, page_counter=currentpage)
                    for _ in range(N_PAGE_WORKERS)]
-    statworkers = [StatsWorker(in_queue=uname_q, out_queue=export_q, rank_counter=currentrank, next_rank=nextrank)
+
+    currentrank = JobCounter(value=start_rank)
+    statworkers = [StatsWorker(in_queue=uname_q, out_queue=export_q, rank_counter=currentrank)
                    for _ in range(nworkers)]
 
-    export = asyncio.create_task(export_records(export_q, coll))
-    isdone = asyncio.create_task(detect_finished(page_q, uname_q, export_q))
+    ndone = JobCounter(value=0)
+    export = asyncio.create_task(export_records(in_queue=export_q, out_coll=coll, job_counter=ndone))
+    isdone = asyncio.create_task(progress_bar(ndone=ndone, ntodo=stop_rank - start_rank + 1))
 
     printlog(f"starting to scrape (ranks {start_rank}-{stop_rank}, {nworkers} stats workers)", level='info')
     t = Timer(text="done ({minutes:.1f} minutes)")
@@ -136,9 +135,7 @@ async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
 
         # Spawn the data scraping tasks and wait until requests start getting blocked.
         async with aiohttp.ClientSession() as sess:
-            T = [asyncio.create_task(progress_bar(start_rank, stop_rank, current_rank=currentrank))]
-            for w in pageworkers:
-                T.append(asyncio.create_task(w.run(sess)))
+            T = [asyncio.create_task(w.run(sess)) for w in pageworkers]
             for i, w in enumerate(statworkers):
                 T.append(asyncio.create_task(w.run(sess, delay=i * 0.1)))
 

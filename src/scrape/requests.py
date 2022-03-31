@@ -1,4 +1,4 @@
-import asyncio
+from asyncio import TimeoutError
 from dataclasses import dataclass, field
 from datetime import datetime
 from typing import List, Tuple, Dict, Any
@@ -27,21 +27,25 @@ class PlayerRecord:
 
 class RequestFailed(Exception):
     """ Raised when an HTTP request to the hiscores API fails. """
+
     def __init__(self, message, code=None):
-        prefix = f"{code}: " if code is not None else ''
-        super().__init__(f"{prefix}{message}")
         self.code = code
+        super().__init__(message)
 
 
 class UserNotFound(Exception):
     """ Raised when data for a requested username does not exist. """
 
 
+class ServerBusy(Exception):
+    """ Raised when the CSV API is too busy to process a stats request. """
+
+
 class ParsingFailed(Exception):
     """ Raised when data received from the hiscores API could not be parsed. """
 
 
-async def get_hiscores_page(sess: ClientSession, page_num: int) -> Tuple[List[int], List[str]]:
+async def get_hiscores_page(sess: ClientSession, page_num: int) -> List[Tuple[int, str]]:
     """ Fetch a front page of the OSRS hiscores by page number. The "front pages"
     are the 80000 pages containing ranks for the top 2 million players. Each page
     provides 25 rank/username pairs, such that page 1 contains ranks 1-25, page
@@ -53,9 +57,7 @@ async def get_hiscores_page(sess: ClientSession, page_num: int) -> Tuple[List[in
 
     :param session: HTTP client session
     :param page_num: integer between 1 and 80000
-    :return:
-        - list of the 25 rank numbers on one page of the hiscores
-        - list of the 25 usernames corresponding to those ranks
+    :return: list of the 25 rank/username pairs from one page of the hiscores
     """
     if page_num > 80000:
         raise ValueError("page number cannot be greater than 80000")
@@ -63,10 +65,9 @@ async def get_hiscores_page(sess: ClientSession, page_num: int) -> Tuple[List[in
     url = "https://secure.runescape.com/m=hiscore_oldschool/overall"
     params = {'table': 0, 'page': page_num}
     try:
-        page_html = await http_request(sess, url, params, timeout=10)
-    except asyncio.TimeoutError:
-        # If a page request times out, it is because we are blocked by the remote server.
-        raise RequestFailed(f"timed out while trying to get page")
+        page_html = await http_request(sess, url, params, timeout=15)
+    except (TimeoutError, RequestFailed) as e:
+        raise RequestFailed(f"page {page_num}: {e}")
     return parse_hiscores_page(page_html)
 
 
@@ -85,18 +86,17 @@ async def get_player_stats(sess: ClientSession, username: str) -> PlayerRecord:
     url = "http://services.runescape.com/m=hiscore_oldschool/index_lite.ws"
     params = {'player': username}
     try:
-        stats_csv = await http_request(sess, url, params, timeout=15)
-    except asyncio.TimeoutError:
-        # Not all players are fetched from the CSV API in an equal amount of time.
-        # If it's taking way too long (i.e. many seconds) we count the user as missing.
-        raise UserNotFound(f"'{username}', request timed out")
+        stats_csv = await http_request(sess, url, params, timeout=30)
+    except TimeoutError as e:
+        raise ServerBusy(e)
     except RequestFailed as e:
-        raise UserNotFound(f"'{username}', 404 response") if e.code == 404 else e
+        raise UserNotFound(f"'{username}'") if e.code == 404 else e
     return parse_stats_csv(username, stats_csv)
 
 
 async def http_request(sess: ClientSession, server_url: str, query_params: Dict[str, Any], timeout: int = None):
     """ Make an HTTP request and handle any failure that occurs. """
+
     headers = {"Access-Control-Allow-Origin": "*",
                "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept"}
     try:
@@ -105,14 +105,16 @@ async def http_request(sess: ClientSession, server_url: str, query_params: Dict[
             if resp.status == 200:
                 return text
             raise RequestFailed(text, code=resp.status)
+    except TimeoutError:
+        raise TimeoutError(f"timed out after {timeout} seconds")
     except ClientConnectionError as e:
         raise RequestFailed(f"client connection error: {e}")
 
 
 def parse_hiscores_page(page_html: str) -> List[Tuple[int, str]]:
     """ Extract a list of ranks and usernames from a front page of the hiscores. """
-    page_text = BeautifulSoup(page_html, 'html.parser').text
 
+    page_text = BeautifulSoup(page_html, 'html.parser').text
     table_start = page_text.find('Overall\nHiscores')
     table_end = page_text.find('Search by name')
     if table_start == -1 or table_end == -1:
@@ -136,6 +138,7 @@ def parse_hiscores_page(page_html: str) -> List[Tuple[int, str]]:
 
 def parse_stats_csv(username: str, raw_csv: str) -> PlayerRecord:
     """ Transform raw CSV data for a player into a normalized data record. """
+
     stats_csv = raw_csv.strip().replace('\n', ',')  # stat groups are separated by newlines
     stats = [int(i) for i in stats_csv.split(',')]
     stats = [None if i < 0 else i for i in stats]
