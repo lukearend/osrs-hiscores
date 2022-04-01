@@ -20,4 +20,4 @@ sudo amazon-linux-extras install epel -y
 sudo yum install openvpn -y
 
 sudo git pull git@github.com:lukearend/osrs-hiscores.git
-cd osrs-hiscores && make init
+cd osrs-hiscores && git checkout development && make init
