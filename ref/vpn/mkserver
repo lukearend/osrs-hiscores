@@ -1,9 +1,10 @@
 #!/usr/bin/env bash
 echo -n "creating new server file... "
-ip=$(shuf -n 1 nordvpn-servers)
+ip=$(shuf -n 1 nordvpn-servers)    # get random IP from servers file
 outfile=tmpserver.ovpn
 
-cat nordvpn.ovpn | head -3 > $outfile
-echo "remote $ip 443" >> $outfile
-cat nordvpn.ovpn | tail --line=+5 >> $outfile
+template=nordvpn.ovpn
+cat $template | head -3 > $outfile
+echo "remote $ip 443" >> $outfile  # replace the fourth line of template file with server IP
+cat $template | tail -$(($(wc -l < $template) - 4)) $template >> $outfile
 echo "$ip ($outfile)"

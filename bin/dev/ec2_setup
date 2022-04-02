@@ -10,9 +10,6 @@ sudo service docker start
 EOF
 docker run hello-world
 
-sudo amazon-linux-extras install epel -y
-sudo yum install openvpn -y
-
 if ! [ -f ~/.ssh/id_ed25519 ]; then
   ssh-keygen -t ed25519 -f ~/.ssh/id_ed25519 -C osrs-hiscores-ec2-instance -q -N ""
 fi
