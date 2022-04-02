@@ -5,5 +5,5 @@ outfile=tmpserver.ovpn
 
 cat nordvpn.ovpn | head -3 > $outfile
 echo "remote $ip 443" >> $outfile
-cat nordvpn.ovpn | tail +5 >> $outfile
+cat nordvpn.ovpn | tail --line=+5 >> $outfile
 echo "$ip ($outfile)"

@@ -7,6 +7,9 @@ fi
 arg=$1
 usage="usage: ./ec2_instance [status|start|stop|connect|setup]"
 
+ipaddr=$(aws ec2 describe-instances --instance-id "$EC2_INSTANCE_ID" | \
+          jq -r '.Reservations[0].Instances[0].PublicIpAddress')
+
 if [ "$arg" == 'status' ] # check instance status
 then
 	aws ec2 describe-instance-status --instance-ids "$EC2_INSTANCE_ID"
@@ -18,13 +21,11 @@ then
 	aws ec2 stop-instances --instance-ids "$EC2_INSTANCE_ID"
 elif [ "$arg" == 'connect' ] # connect to instance through SSH
 then
-	ip_addr=$(aws ec2 describe-instances --instance-id "$EC2_INSTANCE_ID" | \
-	          jq -r '.Reservations[0].Instances[0].PublicIpAddress')
-	ssh -i "$EC2_PEM_FILE" "ec2-user@$ip_addr"
-elif [ "$arg" == 'setup' ] # setup script once logged into instance
+	ssh -i "$EC2_PEM_FILE" "ec2-user@$ipaddr"
+elif [ "$arg" == 'setup' ] # copy setup script up to instance
 then
-  cd bin/dev && ./ec2_setup
+  scp bin/dev/ec2_setup "ec2-user@$ipaddr:/home/ec2-user/"
 else
-  echo
+  echo "$usage"
   exit 1
 fi
