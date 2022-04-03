@@ -87,16 +87,10 @@ To launch the application, run `make run` and visit the URL `localhost:8050` in 
 Scraping
 --------
 
-If scraping data rapidly for a prolonged period of time, your IP address may get blocked due to the high volume of requests. For this reason it is recommended that you use a small number of workers while scraping. Please be respectful of Jagex's server resources in your usage of this code. There is an option to proxy requests through a VPN using the flag `--usevpn`. This requires access to an OpenVPN-compatible service (e.g. NordVPN, ExpressVPN, your own private server, etc.) and some advanced setup.
+If scraping data rapidly for a prolonged period of time, your IP address may get blocked due to the high volume of requests. For this reason it is recommended that you use a small number of workers while scraping. Please be respectful of Jagex's server resources in your usage of this code. There is an option to proxy requests through a VPN using the flag `--usevpn`. This requires access to an OpenVPN-based service (NordVPN, ExpressVPN, a private VPN server, etc.) and some advanced setup. [OpenVPN](https://github.com/OpenVPN/openvpn) is a free and open-source VPN encryption protocol.
 
 Dependencies
 ------------
 
 * Python 3.[TODO]+
 * Docker ([TODO: installation instructions])
-* for data scraping:
-  * [expresso](https://github.com/sttz/expresso) ([TODO: installation instructions)]: a command line interface to [ExpressVPN](https://www.expressvpn.com/)
-  * ExpressVPN ([TODO: installation instructions])
-* for developers:
-  * `jq` ([TODO: installation instructions])
-  * the [AWS CLI](https://aws.amazon.com/cli/) ([TODO: installation instructions])
