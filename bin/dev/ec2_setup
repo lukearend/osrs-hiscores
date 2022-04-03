@@ -5,7 +5,7 @@ sudo yum upgrade -y
 sudo yum install git docker -y
 
 sudo usermod -aG docker ec2-user
-newgrp docker << EOF # newgrp spawns a new shell - start docker daemon and ~ it.
+newgrp docker << EOF # newgrp spawns a new shell - start docker daemon and exit.
 sudo service docker start
 EOF
 docker run hello-world

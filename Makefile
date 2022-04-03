@@ -42,8 +42,7 @@ scrape: mongo-start scrape-hiscores export-scraped-stats ## Scrape stats for the
 
 scrape-hiscores:
 	source env/bin/activate && cd src/scrape && \
-	python -m scrape_hiscores --mongo-url $(OSRS_MONGO_URI) --mongo-coll $(SCRAPE_COLLECTION) \
-	--start-rank 1 --stop-rank 2000000 --num-workers
+	python -m scrape_hiscores scrape.out --start-rank 1 --stop-rank 2000000 --num-workers 25
 
 export-scraped-stats:
 	source env/bin/activate && cd src/scrape && \
@@ -134,20 +133,20 @@ test_data_file:=$(ROOT_DIR)/test/data/player-stats-small.csv
 test: lint test-units test-pipeline ## Run unit and integration tests.
 
 lint:
-	source env/bin/activate && \
+	@source env/bin/activate && \
 	pycodestyle app src --ignore=E501,E302 && \
 	echo "code check passed"
 
 test-units: $(test_data_file)
 	source env/bin/activate && cd test && \
-	OSRS_SPLITS_FILE=$(ROOT_DIR)/test/data_splits.json pytest test -sv
+	OSRS_SPLITS_FILE=$(ROOT_DIR)/test/data_splits.json pytest . -sv --asyncio-mode=strict
 
 test-pipeline:
 	cd test && ./test_pipeline $(test_data_file)
 
 $(test_data_file):
 	source env/bin/activate && cd test && \
-	python -m build_stats_small $(stats_file) $@
+	python -m build_stats_small $(stats_file).csv $@
 
 # Other -------------------------------------------------------------------------------------------
 

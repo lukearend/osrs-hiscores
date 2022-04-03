@@ -1,15 +1,17 @@
 import asyncio
 import random
+from random import randint
 from pathlib import Path
-from typing import Dict, Any
+from typing import Dict, Any, Tuple, List
 
 import aiohttp
 import pytest
 
-from src.common import env_var, connect_mongo, osrs_skills, osrs_csv_api_stats
-from src.scrape import (PlayerRecord, get_hiscores_page, get_player_stats,
-                        player_to_mongodoc, mongodoc_to_player)
-from src.scrape.scrape_hiscores import build_pagejobs_list
+from src.common import connect_mongo, osrs_skills, osrs_csv_api_stats
+from src.scrape import PlayerRecord, player_to_mongodoc, mongodoc_to_player, get_page_range
+from src.scrape.requests import get_hiscores_page, get_player_stats
+from src.scrape.workers import JobCounter, JobQueue
+from src.scrape.scrape_hiscores import main
 
 test_dir = Path(__file__).resolve().parent
 mongo_url = "localhost:27017"
@@ -27,34 +29,26 @@ async def test_get_page_usernames():
 @pytest.mark.asyncio
 async def test_get_player_stats():
     async with aiohttp.ClientSession() as sess:
-        front_page = await get_hiscores_page(sess, page_num=1)
-        top_player_name = front_page[0]  # setup: get "Lynx Titan", or whatever he may change his name to
+        front_page: List[Tuple[int, str]] = await get_hiscores_page(sess, page_num=1)
+        top_player_name = front_page[0][1]
 
         top_player: PlayerRecord = await get_player_stats(sess, username=top_player_name)
         assert top_player.rank == 1
         assert top_player.total_level == 2277
         assert top_player.total_xp == 4_600_000_000
 
-        # Lynx Titan is 200m all, so his individual stat rankings are fixed forever.
-        expected_ranks = {
-            'attack': 15, 'defence': 28, 'strength': 18, 'hitpoints': 7, 'ranged': 8, 'prayer': 11,
-            'magic': 32, 'cooking': 160, 'woodcutting': 15, 'fletching': 12, 'fishing': 9,
-            'firemaking': 48, 'crafting': 4, 'smithing': 3, 'mining': 25, 'herblore': 5, 'agility': 23,
-            'thieving': 12, 'slayer': 2, 'farming': 19, 'runecraft': 7, 'hunter': 4, 'construction': 4
-        }
         for skill in osrs_skills():
-            rank_i = osrs_csv_api_stats().index(f"{skill}_rank")
-            lvl_i = osrs_csv_api_stats().index(f"{skill}_level")
-            xp_i = osrs_csv_api_stats().index(f"{skill}_xp")
-            assert top_player.stats[rank_i] == expected_ranks[skill]
-            assert top_player.stats[lvl_i] == 99
-            assert top_player.stats[xp_i] == 200_000_000
+            lvl_ind = osrs_csv_api_stats().index(f"{skill}_level")
+            xp_ind = osrs_csv_api_stats().index(f"{skill}_xp")
+            assert top_player.stats[lvl_ind] == 99
+            assert top_player.stats[xp_ind] == 200_000_000
 
 
-def test_read_write_scrape_records():
+def test_player_to_mongodoc():
     db = connect_mongo(mongo_url)
     coll = db['scrape-test']
     coll.drop()
+
     async def get_player():
         async with aiohttp.ClientSession() as sess:
             return await get_player_stats(sess, username="snakeylime")
@@ -73,27 +67,69 @@ def test_read_write_scrape_records():
 
 def test_build_page_jobs():
     with pytest.raises(ValueError):
-        pages = build_pagejobs_list(start_rank=26, end_rank=25)
+        get_page_range(start_rank=26, end_rank=25)
+    with pytest.raises(ValueError):
+        get_page_range(start_rank=0, end_rank=25)
+    with pytest.raises(ValueError):
+        get_page_range(start_rank=1, end_rank=2_000_050)
 
-    pages = build_pagejobs_list(start_rank=1, end_rank=25)
-    assert len(pages) == 1
-    assert pages[0].startind == 0
-    assert pages[0].endind == 25
+    firstpage, startind, lastpage, endind = get_page_range(start_rank=1, end_rank=25)
+    assert firstpage == lastpage == 1
+    assert startind == 0
+    assert endind == 25
 
-    pages = build_pagejobs_list(start_rank=5, end_rank=55)
-    assert len(pages) == 3
-    assert pages[0].startind == 4
-    assert pages[0].endind == 25
-    assert pages[1].startind == 0
-    assert pages[1].endind == 25
-    assert pages[2].startind == 0
-    assert pages[2].endind == 5
+    firstpage, startind, lastpage, endind = get_page_range(start_rank=26, end_rank=2_000_000)
+    assert firstpage == 2
+    assert startind == 0
+    assert lastpage == 80000
+    assert endind == 25
 
-    pages = build_pagejobs_list(start_rank=1, end_rank=2_000_000)
-    assert len(pages) == 80_000
-    assert pages[0].startind == 0
-    assert pages[-1].endind == 25
+    firstpage, startind, lastpage, endind = get_page_range(start_rank=5, end_rank=55)
+    assert firstpage == 1
+    assert startind == 4
+    assert lastpage == 3
+    assert endind == 5
 
+
+@pytest.mark.asyncio
+async def test_jobqueue():
+    q = JobQueue(maxsize=3)
+    await q.put(1)
+    await q.put(4)
+    await q.put(3)
+    with pytest.raises(asyncio.TimeoutError):
+        await asyncio.wait_for(q.put(2), timeout=0.1)
+    await q.put(2, force=True)
+    assert await q.get() == 1
+    assert await q.get() == 2
+    assert await q.get() == 3
+    assert await q.get() == 4
+
+
+@pytest.mark.asyncio
+async def test_jobcounter():
+    jc = JobCounter(value=5)
+    assert jc.value == 5
+
+    async def call_next():
+        await asyncio.sleep(0.25)
+        jc.next()
+    asyncio.create_task(call_next())
+
+    with pytest.raises(asyncio.TimeoutError):
+        await asyncio.wait_for(jc.await_next(), timeout=0.1)
+    await asyncio.wait_for(jc.await_next(), timeout=0.25)
+    assert jc.value == 6
+
+
+@pytest.mark.asyncio
+async def test_scrape_main():
+    start_rank = random.randint(1_500_000, 2_000_000) - 100
+    end_rank = start_rank + 100
+    await main(mongo_url="mongodb://localhost:27017", mongo_coll="scrape-test",
+               start_rank=start_rank, stop_rank=end_rank,
+               nworkers=28, loglevel='debug', logfile='stdout',
+               usevpn=False, drop=True)
 
 
 if __name__ == '__main__':

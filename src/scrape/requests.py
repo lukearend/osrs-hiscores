@@ -1,44 +1,13 @@
 from asyncio import TimeoutError
-from dataclasses import dataclass, field
 from datetime import datetime
 from typing import List, Tuple, Dict, Any
 
 from aiohttp import ClientSession, ClientConnectionError
 from bs4 import BeautifulSoup
 
-from src.common import osrs_csv_api_stats
-
-
-CSV_API_RANK_COL = osrs_csv_api_stats().index('total_rank')
-CSV_API_TOT_LVL_COL = osrs_csv_api_stats().index('total_level')
-CSV_API_TOT_XP_COL = osrs_csv_api_stats().index('total_xp')
-
-
-@dataclass(order=True)
-class PlayerRecord:
-    """ Contains data for one player scraped from the hiscores. """
-    rank: int
-    total_level: int
-    total_xp: int
-    username: str = field(compare=False)
-    stats: List[int] = field(compare=False)
-    ts: datetime = field(compare=False)  # time at which record was scraped
-
-
-class RequestFailed(Exception):
-    """ Raised when an HTTP request to the hiscores API fails. """
-
-    def __init__(self, message, code=None):
-        self.code = code
-        super().__init__(message)
-
-
-class UserNotFound(Exception):
-    """ Raised when data for a requested username does not exist. """
-
-
-class ServerBusy(Exception):
-    """ Raised when the CSV API is too busy to process a stats request. """
+from src.common import csv_api_stats
+from src.scrape import (PlayerRecord, RequestFailed, UserNotFound, ServerBusy,
+                        STATS_RANK_COL, STATS_TOTXP_COL, STATS_TOTLVL_COL)
 
 
 class ParsingFailed(Exception):
@@ -46,14 +15,10 @@ class ParsingFailed(Exception):
 
 
 async def get_hiscores_page(sess: ClientSession, page_num: int) -> List[Tuple[int, str]]:
-    """ Fetch a front page of the OSRS hiscores by page number. The "front pages"
-    are the 80000 pages containing ranks for the top 2 million players. Each page
-    provides 25 rank/username pairs, such that page 1 contains ranks 1-25, page
-    2 contains ranks 26-50, etc.
+    """ Fetch a front page of the OSRS hiscores by page number.
 
     Raises:
         RequestFailed if page could not be downloaded from hiscores server
-        ParsingFailed if downloaded page HTML could not be correctly parsed
 
     :param session: HTTP client session
     :param page_num: integer between 1 and 80000
@@ -77,7 +42,6 @@ async def get_player_stats(sess: ClientSession, username: str) -> PlayerRecord:
     Raises:
         UserNotFound if request for user record timed out or user doesn't exist
         RequestFailed if user data could not be fetched for some other reason
-        ParsingFailed if the data received does not match the expected format
 
     :param session: HTTP client session
     :param username: username for player to fetch
@@ -142,15 +106,12 @@ def parse_stats_csv(username: str, raw_csv: str) -> PlayerRecord:
     stats_csv = raw_csv.strip().replace('\n', ',')  # stat groups are separated by newlines
     stats = [int(i) for i in stats_csv.split(',')]
     stats = [None if i < 0 else i for i in stats]
-    assert len(stats) == len(osrs_csv_api_stats()), f"the API returned an unexpected number of stats: {stats}"
-
-    ts = datetime.utcnow()
-    ts = ts.replace(microsecond=ts.microsecond - ts.microsecond % 1000)  # mongo only has millisecond precision
+    assert len(stats) == len(csv_api_stats()), f"the API returned an unexpected number of stats: {stats}"
     return PlayerRecord(
         username=username,
-        rank=stats[CSV_API_RANK_COL],
-        total_level=stats[CSV_API_TOT_LVL_COL],
-        total_xp=stats[CSV_API_TOT_XP_COL],
+        rank=stats[STATS_RANK_COL],
+        total_level=stats[STATS_TOTLVL_COL],
+        total_xp=stats[STATS_TOTXP_COL],
         stats=stats,
-        ts=ts
+        ts=datetime.utcnow()
     )

@@ -5,13 +5,14 @@ import numpy as np
 from numpy.random import default_rng
 from tqdm import tqdm
 
-from src.common import line_count
+from src.common import count_csv_rows
 
 
 def main(in_file: str, out_file: str):
     print("building test dataset...")
     print("reading player stats...")
-    nplayers = line_count(in_file) - 1
+
+    nplayers = count_csv_rows(in_file)
     nstats = 3 * 24  # total and 23 skills each with rank, level, xp
     usernames = []
     stats = np.zeros((nplayers, nstats), dtype='int')

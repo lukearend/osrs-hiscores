@@ -25,7 +25,6 @@ then
 elif [ "$arg" == 'setup' ] # copy setup script up to instance
 then
   scp bin/dev/ec2_setup "ec2-user@$ipaddr:/home/ec2-user/"
-  scp ~/.openvpn "ec2-user@$ipaddr:/home/ec2-user/.openvpn"
 else
   echo "$usage"
   exit 1

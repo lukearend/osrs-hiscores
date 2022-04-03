@@ -2,12 +2,12 @@
 import json
 import os
 import pickle
+import subprocess
 from dataclasses import dataclass
 
 from functools import cache
 from pathlib import Path
 import shlex
-from subprocess import check_output
 from typing import List, Dict, Any
 
 import boto3
@@ -35,7 +35,7 @@ def osrs_skills(include_total: bool = False) -> List[str]:
 
 
 @cache
-def osrs_csv_api_stats() -> List[str]:
+def csv_api_stats() -> List[str]:
     """
     Load the list of header fields returned from the OSRS hiscores CSV API.
     :return: header fields, e.g. ['total_rank', 'total_level', 'total_xp', ...]
@@ -158,9 +158,11 @@ def unpickle(file: str) -> Any:
         return pickle.load(f)
 
 
-def count_csv_records(file: str) -> int:
-    cmd = f"tail +2 {file} | wc -l"
-    return int(check_output(shlex.split(cmd)))
+def count_csv_rows(file: str, header=True) -> int:
+    cmd = f"wc -l {file}"
+    stdout = subprocess.check_output(shlex.split(cmd))
+    n = int(stdout.decode().strip().split()[0])  # stdout returns number and filename
+    return n - 1 if header else n
 
 
 def global_db_name() -> str:

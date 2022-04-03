@@ -1,99 +1,49 @@
+""" Scrapes stats from the OSRS hiscores into a CSV file. Returns error
+    code 2 if CSV file already contains the requested range of stats. """
+
 import argparse
 import asyncio
 import logging
 import sys
 import traceback
-from asyncio import CancelledError, TimeoutError
-from contextlib import suppress
 
 import aiohttp
-import motor.motor_asyncio
-from motor.motor_asyncio import AsyncIOMotorCollection
 from codetiming import Timer
-from tqdm.asyncio import tqdm
 
-from src.common import global_db_name, connect_mongo
-from src.scrape import get_page_range, mongodoc_to_player, printlog, player_to_mongodoc
-from src.scrape.requests import RequestFailed, PlayerRecord
-from src.scrape.vpn import reset_vpn, getsudo, askpass
-from src.scrape.workers import JobCounter, JobQueue, PageWorker, StatsWorker, PageJob
+from src.scrape import RequestFailed, JobCounter, get_page_range
+from src.scrape.export import DoneScraping, get_top_rank, export_records, progress_bar
+from src.scrape.workers import JobQueue, PageJob, PageWorker, StatsWorker
+from src.scrape.vpn import reset_vpn, askpass
 
 
 N_PAGE_WORKERS = 2   # number of page workers downloading rank/username info
 UNAME_BUFSIZE = 100  # maximum length of buffer containing username jobs for stats workers
 
 
-class DoneScraping(Exception):
-    """ Raised when all scraping is done. """
+class NothingToDo(Exception):
+    """ Raised if the script discovers the output file is already complete. """
 
 
-async def export_records(in_queue: JobQueue, out_coll: AsyncIOMotorCollection, job_counter: JobCounter):
-    """ Export player records and signal when scraping is finished. """
-
-    while True:
-        # Export a batch every 50 records or after a break in activity.
-        batch = []
-        while len(batch) < 50:
-            try:
-                player: PlayerRecord = await asyncio.wait_for(in_queue.get(), timeout=1)
-                if player == 'notfound':
-                    job_counter.next()
-                else:
-                    batch.append(player)
-            except TimeoutError:
-                break
-        if batch:
-            docs = [player_to_mongodoc(p) for p in batch]
-            await out_coll.insert_many(docs)
-            job_counter.next(n=len(docs))
+def logprint(msg, level):
+    print(msg)
+    logger = getattr(logging, level.lower())
+    logger(msg)
 
 
-async def progress_bar(ndone: JobCounter, ntodo: int):
-    with tqdm(total=ntodo, smoothing=0.9) as pbar:
-        while True:
-            await ndone.await_next()
-            pbar.n = ndone.value
-            pbar.refresh()
-            if ndone.value == ntodo:
-                raise DoneScraping
-
-
-async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
-               nworkers: int = 28, loglevel: str = 'warning', usevpn: bool = True, drop: bool = False):
-
-    logging.basicConfig(format="%(asctime)s.%(msecs)03d:%(levelname)s:%(message)s",
-                        datefmt="%H:%M:%S", level=getattr(logging, loglevel.upper()),
-                        filename='scrape_hiscores.log', filemode='w')
+async def main(out_file: str, start_rank: int, stop_rank: int, nworkers: int = 28, usevpn: bool = False):
 
     # The remote server seems to have a connection limit of 30.
     if args.num_workers + N_PAGE_WORKERS > 30:
-        raise ValueError(f"too many workers, maximum allowed is {30 - N_PAGE_WORKERS}")
+        raise ValueError(f"too many stats workers, maximum allowed is {30 - N_PAGE_WORKERS}")
 
-    # Connect to MongoDB and check for existing progress.
-    connect_mongo(mongo_url)
-    coll = motor.motor_asyncio.AsyncIOMotorClient(mongo_url)[global_db_name()][mongo_coll]
-    if drop:
-        await coll.drop()
-        printlog(f"dropped collection '{mongo_coll}'", level='info')
-
-    highest_doc = await coll.find_one({}, sort=[('rank', -1)])
-    if highest_doc:
-        existing_rank = mongodoc_to_player(highest_doc).rank
-        if existing_rank >= start_rank:
-            printlog(f"found an existing record at rank {existing_rank}", level='info')
-            if existing_rank >= stop_rank:
-                printlog("nothing to do", level='info')
-                return
-            start_rank = existing_rank + 1
-            printlog(f"starting from {start_rank}", level='info')
-
-    # Get root permissions for VPN management.
-    if usevpn:
-        password = askpass()
-        if not password:
-            usevpn = False
-        elif not getsudo(password):
-            raise ValueError("sudo failed to authenticate")
+    # Check for existing progress.
+    highest_rank = get_top_rank(out_file)
+    if highest_rank and highest_rank >= start_rank:
+        logprint(f"found an existing record at rank {highest_rank}", level='info')
+        if highest_rank >= stop_rank:
+            raise NothingToDo
+        start_rank = highest_rank + 1
+        logprint(f"starting from {start_rank}", level='info')
 
     # Determine the range of pages that need to be scraped based on the desired range of ranks.
     firstpage, startind, lastpage, endind = get_page_range(start_rank, stop_rank)
@@ -106,7 +56,7 @@ async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
                       endind=endind if pagenum == lastpage else 25)
         await page_q.put(job)
     uname_q = JobQueue(maxsize=UNAME_BUFSIZE)
-    export_q = JobQueue()
+    export_q = asyncio.Queue()
 
     # Scraping happens in two stages. First the page workers download front pages
     # of the hiscores and extract usernames in ranked order. Then the stats workers
@@ -120,20 +70,21 @@ async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
                    for _ in range(nworkers)]
 
     ndone = JobCounter(value=0)
-    export = asyncio.create_task(export_records(in_queue=export_q, out_coll=coll, job_counter=ndone))
+    export = asyncio.create_task(export_records(in_queue=export_q, out_file=out_file, job_counter=ndone))
     isdone = asyncio.create_task(progress_bar(ndone=ndone, ntodo=stop_rank - start_rank + 1))
 
-    printlog(f"starting to scrape (ranks {start_rank}-{stop_rank}, {nworkers} stats workers)", level='info')
+    if usevpn:
+        pwd = askpass()
+
+    logprint(f"starting to scrape (ranks {start_rank}-{stop_rank}, {nworkers} stats workers)", level='info')
     t = Timer(text="done ({minutes:.1f} minutes)")
     t.start()
+
     while True:
         if usevpn:
-            logging.info(f"resetting VPN...")
-            assert getsudo(password)
-            reset_vpn()
-            logging.info(f"successfully reset VPN")
+            reset_vpn(pwd)
 
-        # Spawn the data scraping tasks and wait until requests start getting blocked.
+        # Spawn the data scraping tasks and run until requests get blocked.
         async with aiohttp.ClientSession() as sess:
             T = [asyncio.create_task(w.run(sess)) for w in pageworkers]
             for i, w in enumerate(statworkers):
@@ -144,39 +95,47 @@ async def main(mongo_url: str, mongo_coll: str, start_rank: int, stop_rank: int,
             except DoneScraping:
                 break
             except RequestFailed as e:
-                logging.info(f"main: caught RequestFailed: {e}")
+                logging.error(f"main: caught RequestFailed: {e}")
+                if not usevpn:
+                    raise
                 continue
-            except Exception:
-                raise
             finally:
                 for task in T:
                     task.cancel()
                 await asyncio.gather(*T, return_exceptions=True)  # suppress CancelledErrors
 
     export.cancel()
-    with suppress(CancelledError):
-        await export
+    isdone.cancel()
+    await asyncio.gather(export, isdone, return_exceptions=True)
     t.stop()
     logging.info("done")
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="""Download player data from OSRS hiscores into MongoDB.""")
-    parser.add_argument('--mongo-url', default="localhost:27017", help="store data in Mongo instance at this URL")
-    parser.add_argument('--mongo-coll', default="scrape", help="put scraped data into this collection")
+    parser = argparse.ArgumentParser(description="""Download player data from the OSRS hiscores.""")
+    parser.add_argument('outfile', help="dump scraped data to this CSV file in append mode")
     parser.add_argument('--start-rank', default=1, type=int, help="start data collection at this player rank")
     parser.add_argument('--stop-rank', default=2000000, type=int, help="stop data collection at this rank")
-    parser.add_argument('--num-workers', default=28, type=int, help="number of concurrent scraping threads")
-    parser.add_argument('--log-level', default='warning', help="'debug'|'info'|'warning'|'error'|'critical'")
-    parser.add_argument('--novpn', dest='usevpn', action='store_false', help="if set, will run without using VPN")
-    parser.add_argument('--drop', action='store_true', help="if set, will drop collection before scrape begins")
+    parser.add_argument('--num-workers', default=25, type=int, help="number of concurrent scraping threads")
+    parser.add_argument('--log-file', default=None, help="if provided, output logs to this file")
+    parser.add_argument('--log-level', default='info', help="'debug'|'info'|'warning'|'error'|'critical'")
+    parser.add_argument('--usevpn', dest='usevpn', action='store_true', help="if set, will use OpenVPN")
     args = parser.parse_args()
 
+    if args.log_file:
+        logging.basicConfig(format="%(asctime)s.%(msecs)03d:%(levelname)s:%(message)s",
+                            datefmt="%H:%M:%S", level=getattr(logging, args.log_level.upper()),
+                            handlers=[logging.FileHandler(filename=args.log_file, mode='w')])
+    else:
+        logging.disable()
+
     try:
-        asyncio.run(main(args.mongo_url, args.mongo_coll, args.start_rank, args.stop_rank,
-                         args.num_workers, args.log_level, args.usevpn, args.drop))
+        asyncio.run(main(args.outfile, args.start_rank, args.stop_rank, args.num_workers, args.usevpn))
+    except NothingToDo:
+        logprint("nothing to do", level='info')
+        sys.exit(2)
     except Exception as e:
+        print(f"error: {e}")
         logging.critical(traceback.format_exc())
-        print(e)
-        printlog("exiting", 'info')
+        logging.info("exiting")
         sys.exit(1)

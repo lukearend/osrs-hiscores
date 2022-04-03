@@ -87,6 +87,11 @@ To launch the application, run `make run` and visit the URL `localhost:8050` in 
 Scraping
 --------
 
+If scraping data rapidly for a prolonged period of time, your IP address may get blocked due to the high volume of requests. For this reason it is recommended that you use a small number of workers while scraping. Please be respectful of Jagex's server resources in your usage of this code.
+
+Dead VPN description
+--------------------
+
 Prerequisites: NordVPN subscription (simple, but paid) or access to another VPN service running the OpenVPN protocol (advanced).
 
 Data scraping makes use of OpenVPN to avoid request throttling via IP proxying. OpenVPN is an open-source protocol that allows VPN clients to communicate with VPN servers via a standardized interface. 

@@ -1,9 +1,13 @@
 #!/usr/bin/env bash
-echo -n "creating new server file... "
-ip=$(shuf -n 1 nordvpn-servers)    # get random IP from servers file
-outfile=tmpserver.ovpn
 
-template=nordvpn.ovpn
+# Expects a list of IP addresses for available servers in the file `servers`.
+# Builds a config using the template server file `server-template.ovpn`.
+
+echo -n "creating new server file... "
+ip=$(shuf -n 1 servers)
+outfile=server.ovpn
+template=template.ovpn
+
 cat $template | head -3 > $outfile
 echo "remote $ip 443" >> $outfile  # replace the fourth line of template file with server IP
 cat $template | tail -$(($(wc -l < $template) - 4)) $template >> $outfile
