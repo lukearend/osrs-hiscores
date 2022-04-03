@@ -2,10 +2,10 @@
 import argparse
 import sys
 
-from src.common import PlayerResults, playerdata_to_mongodoc, connect_mongo, global_db_name
+from src import PlayerResults, playerdata_to_mongodoc, connect_mongo, global_db_name, DB_NAME
 from tqdm import tqdm
 
-from src.common import line_count
+from src import line_count
 from src.data import load_clusterids_data, load_stats_data
 
 
@@ -58,7 +58,7 @@ def main(stats_file: str, clusters_file: str, url: str, coll_name: str, drop: bo
 if __name__ == "__main__":
     desc = f"""Build a collection of mappings from usernames to player info
            (stats and clustering results). The collection is created in the
-           database '{global_db_name()}' at the specified Mongo instance."""
+           database '{DB_NAME}' at the specified Mongo instance."""
 
     parser = argparse.ArgumentParser(description=desc)
     parser.add_argument('statsfile', type=str, help="load player stats from this CSV file")

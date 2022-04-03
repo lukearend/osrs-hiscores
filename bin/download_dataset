@@ -7,7 +7,8 @@ when run with no arguments or help, -h or --help, it should print the help text.
 import os
 from pathlib import Path
 from dotenv import find_dotenv, load_dotenv
-from src.common import env_var, download_from_s3
+from src import env_var
+from src.analytics.data import download_from_s3
 
 centroids_file = Path(__name__).resolve().parents[1] / "data" / "processed" / "cluster-centroids.csv"
 clusters_file = Path(__name__).resolve().parents[1] / "data" / "processed" / "player-clusters.csv"

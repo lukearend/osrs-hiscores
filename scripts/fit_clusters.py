@@ -5,7 +5,8 @@ import numpy as np
 from codetiming import Timer
 from numpy.typing import NDArray
 
-from src.common import DatasetSplit, load_stats_data, load_splits, split_dataset
+from src import DatasetSplit, load_stats_data, load_splits
+from src.analytics.data import split_dataset
 from src.models import load_kmeans_params, fit_kmeans
 
 

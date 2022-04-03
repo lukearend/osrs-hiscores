@@ -6,11 +6,10 @@
 import argparse
 import pickle
 import time
-import sys
 
 from codetiming import Timer
 
-from src.common import load_centroid_data, load_splits
+from src import load_centroid_data, load_splits
 from src.models import load_umap_params, umap_reduce
 
 

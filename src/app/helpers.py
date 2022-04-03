@@ -9,7 +9,7 @@ from typing import List
 
 import boto3
 
-from src.results import AppData
+from src.app import AppData
 
 
 def asset_dir():

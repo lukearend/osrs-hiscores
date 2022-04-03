@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 import argparse
-from src.common import connect_mongo
+from src import connect_mongo
 
 desc = """Drop a collection in the database 'osrs-hiscores' at the Mongo
           instance specified by environment variable OSRS_MONGO_URI."""

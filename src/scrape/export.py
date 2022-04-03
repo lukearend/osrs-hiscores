@@ -1,12 +1,11 @@
 import csv
-import io
 import os
 from asyncio import Queue
 from datetime import datetime
 
 from tqdm import tqdm
 
-from src.common import csv_api_stats
+from src import csv_api_stats
 from src.scrape import PlayerRecord, CSV_HEADER, STATS_RANK_COL, STATS_TOTLVL_COL, STATS_TOTXP_COL
 
 from src.scrape.workers import JobCounter
@@ -36,7 +35,7 @@ async def export_records(in_queue: Queue, out_file: str, job_counter: JobCounter
         while True:
             player: PlayerRecord = await in_queue.get()
             if player != 'notfound':
-                f.write(playerrecord_to_csv(player) + '\n')
+                f.write(player_to_csv(player) + '\n')
             job_counter.next()
 
 
@@ -56,10 +55,10 @@ def get_top_rank(scrape_file) -> int:
         if len(last_lines) <= 1:
             return None
 
-    return csv_to_playerrecord(last_lines[-1]).rank
+    return csv_to_player(last_lines[-1]).rank
 
 
-def csv_to_playerrecord(csv_line: str) -> PlayerRecord:
+def csv_to_player(csv_line: str) -> PlayerRecord:
     username, *stats, ts = csv_line.split(',')
     stats = [int(v) if v else None for v in stats]
     assert len(stats) == len(csv_api_stats()), f"CSV row contained an unexpected number of stats: '{csv_line}'"
@@ -73,7 +72,7 @@ def csv_to_playerrecord(csv_line: str) -> PlayerRecord:
     )
 
 
-def playerrecord_to_csv(player: PlayerRecord) -> str:
+def player_to_csv(player: PlayerRecord) -> str:
     stats = [str(v) if v else '' for v in player.stats]
     fields = [player.username] + stats + [player.ts.isoformat()]
     return ','.join(fields)

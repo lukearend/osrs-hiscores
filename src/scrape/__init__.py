@@ -3,7 +3,7 @@ from dataclasses import dataclass
 from datetime import datetime
 from typing import List, Tuple
 
-from src.common import csv_api_stats
+from src import csv_api_stats
 
 CSV_HEADER = ['username'] + csv_api_stats() + ['ts']
 STATS_RANK_COL = csv_api_stats().index('total_rank')

@@ -6,7 +6,7 @@ import pickle
 
 import numpy as np
 
-from src.common import load_splits, load_centroid_data
+from src import load_splits, load_centroid_data
 from src.results import AppData, SplitData, ClusterData, load_cluster_analytics, load_clusters_xyz
 
 

@@ -5,7 +5,7 @@ from typing import List, Tuple, Dict, Any
 from aiohttp import ClientSession, ClientConnectionError
 from bs4 import BeautifulSoup
 
-from src.common import csv_api_stats
+from src import csv_api_stats
 from src.scrape import (PlayerRecord, RequestFailed, UserNotFound, ServerBusy,
                         STATS_RANK_COL, STATS_TOTXP_COL, STATS_TOTLVL_COL)
 

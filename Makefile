@@ -9,14 +9,13 @@ run: mongo-start                        ## Run main application.
 # Setup -------------------------------------------------------------------------------------------
 
 ROOT_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-allstats_file=$
-stats_file=$(ROOT_DIR)/data/processed/player-stats
-centroids_file=$(ROOT_DIR)/data/processed/cluster-centroids
-clusterids_file=$(ROOT_DIR)/data/processed/player-clusters
+raw_stats_file=$(ROOT_DIR)/data/raw/player-stats-raw
+stats_file=$(ROOT_DIR)/data/final/player-stats
+centroids_file=$(ROOT_DIR)/data/final/cluster-centroids
+clusterids_file=$(ROOT_DIR)/data/final/player-clusters
 clust_xyz_file=$(ROOT_DIR)/data/interim/clusters-xyz
 clust_quartiles_file=$(ROOT_DIR)/data/interim/cluster-quartiles
-appdata_file=$(ROOT_DIR)/data/processed/app-data
-scrape_collection=scrape-20220324
+appdata_file=$(ROOT_DIR)/data/final/app-data
 app_collection=players
 ifneq (,$(wildcard ./.env))
     include .env
@@ -27,7 +26,7 @@ init: env mongo-pull
 
 env:
 	echo "building virtual environment..."
-	python3 -m venv env && \
+	@python3 -m venv env && \
 	source env/bin/activate && \
 	pip3 install --upgrade pip && \
 	pip3 install -r requirements.txt && \
@@ -38,18 +37,13 @@ mongo-pull:
 
 # Data scraping -----------------------------------------------------------------------------------
 
-scrape: mongo-start scrape-hiscores export-scraped-stats ## Scrape stats for the top 2 million OSRS accounts.
+scrape: scrape-hiscores ## Scrape stats for the top 2 million OSRS accounts.
 
 scrape-hiscores:
-	source env/bin/activate && cd src/scrape && \
-	python -m scrape_hiscores scrape.out --start-rank 1 --stop-rank 2000000 --num-workers 25
+	source env/bin/activate && \
+	python -m scrape_hiscores $(raw_stats_file).csv --start-rank 1 --stop-rank 2000000 --num-workers 25
 
-export-scraped-stats:
-	source env/bin/activate && cd src/scrape && \
-	python -m export_collection $< $(stats_file).csv
-
-$(stats_file).csv: export-scraped-stats
-$(stats_file).pkl: stats-csv-to-pkl
+$(raw_stats_file).csv: scrape-hiscores
 
 # Player clustering -------------------------------------------------------------------------------
 
@@ -114,7 +108,7 @@ upload-s3:
 	aws s3 cp $(stats_file).pkl s3://$(OSRS_DATASET_BUCKET)/player-stats.pkl
 
 upload-gdrive: csv-files
-	upload_gdrive $(stats_file).csv $(centroids_file).csv $(clusterids_file).csv
+	bin/dev/upload_gdrive $(stats_file).csv $(centroids_file).csv $(clusterids_file).csv
 
 csv-files: $(stats_file).csv $(centroids_file).csv $(clusterids_file).csv
 
@@ -128,13 +122,13 @@ $(clusterids_file).csv: clusterids-pkl-to-csv
 
 # Testing -----------------------------------------------------------------------------------------
 
-test_data_file:=$(ROOT_DIR)/test/data/player-stats-small.csv
+test_data_file:=$(ROOT_DIR)/test/data/test-data.csv
 
 test: lint test-units test-pipeline ## Run unit and integration tests.
 
 lint:
 	@source env/bin/activate && \
-	pycodestyle app src --ignore=E501,E302 && \
+	pycodestyle app src --ignore=E301,E302,E501 && \
 	echo "code check passed"
 
 test-units: $(test_data_file)
@@ -146,7 +140,7 @@ test-pipeline:
 
 $(test_data_file):
 	source env/bin/activate && cd test && \
-	python -m build_stats_small $(stats_file).csv $@
+	python build_test_data.py $(stats_file).csv $@
 
 # Other -------------------------------------------------------------------------------------------
 

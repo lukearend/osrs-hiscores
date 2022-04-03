@@ -1,59 +1,8 @@
-import pickle
 from dataclasses import dataclass
 from typing import List, Dict, Any
 
 import numpy as np
 from numpy.typing import NDArray
-
-from src.common import DatasetSplit
-
-
-@dataclass
-class ClusterData:
-    """ Contains app data for a set of clusters. """
-    xyz: Dict  # TODO: becomes NDArray once umap params frozen
-    sizes: NDArray
-    centroids: NDArray
-    quartiles: NDArray
-    uniqueness: NDArray
-
-
-@dataclass
-class SplitData:
-    """ Contains app data for one split of the dataset. """
-    skills: List[str]
-    clusterdata: ClusterData
-    axlims: Dict  # TODO: becomes Dict[NDArray] once umap params frozen
-
-
-@dataclass
-class AppData:
-    """ Contains all data needed to run Dash app. """
-    splitnames: List[DatasetSplit]
-    splitdata: Dict[str, SplitData]
-
-
-@dataclass
-class ClusterAnalytics:
-    """ Contains analytics for a set of clusters. """
-    sizes: NDArray
-    quartiles: NDArray
-    uniqueness: NDArray
-
-
-def load_clusters_xyz(file: str) -> Dict[str, Dict]:  # TODO: becomes NDArray once umap params frozen
-    with open(file, 'rb') as f:
-        return pickle.load(f)
-
-
-def load_cluster_analytics(file: str) -> Dict[str, ClusterAnalytics]:
-    with open(file, 'rb') as f:
-        return pickle.load(f)
-
-
-def load_app_data(file: str) -> AppData:
-    with open(file, 'rb') as f:
-        return pickle.load(f)
 
 
 def compute_cluster_sizes(clusterids: NDArray) -> NDArray:
@@ -104,28 +53,3 @@ def compute_stat_quartiles(player_vectors: NDArray) -> NDArray:
              skill for the 0, 25, 50, 75, and 100th percentiles
     """
     return np.nanpercentile(player_vectors, axis=0, q=[0, 25, 50, 75, 100])
-
-
-@dataclass
-class PlayerResults:
-    """ Stats and clustering results for a player. """
-    username: str
-    clusterids: Dict[str, int]  # resulting cluster ID for each split of the dataset
-    stats: List[int]
-
-
-def player_results_to_mongodoc(player: PlayerResults) -> Dict[str, Any]:
-    return {
-        '_id': player.username.lower(),
-        'username': player.username,
-        'clusterids': player.clusterids,
-        'stats': player.stats
-    }
-
-
-def mongodoc_to_player_results(doc: Dict[str, Any]) -> PlayerResults:
-    return PlayerResults(
-        username=doc['username'],
-        clusterids=doc['clusterids'],
-        stats=doc['stats']
-    )

@@ -5,7 +5,8 @@ from typing import Dict
 from codetiming import Timer
 from numpy.typing import NDArray
 
-from src.common import load_splits, load_stats_data, load_centroid_data, split_dataset, DatasetSplit
+from src import load_splits, load_stats_data, load_centroid_data
+from src.analytics.data import split_dataset
 from src.models import cluster_l2
 
 

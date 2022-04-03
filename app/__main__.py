@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 
-""" Visualize hiscores clustering results with a Dash application. """
+""" A Dash application to visualize the results of clustering the OSRS hiscores. """
 
 import os
 
 from dash import Dash
 from dash_bootstrap_components import themes
 
-from src.common import env_var, connect_mongo
-from app import load_appdata_local, load_appdata_s3
-from app.layout import build_layout
-from app.callbacks import add_callbacks
+from src import env_var, connect_mongo
+from src.app import load_appdata_local, load_appdata_s3
+from src.app.layout import build_layout
+from src.app.callbacks import add_callbacks
 
 envmode = os.getenv("OSRS_APP_ENV", 'development')
 if envmode in ['production', 'test']:

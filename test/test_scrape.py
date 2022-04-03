@@ -1,17 +1,18 @@
 import asyncio
+import os
 import random
-from random import randint
 from pathlib import Path
-from typing import Dict, Any, Tuple, List
+from typing import Tuple, List
 
 import aiohttp
 import pytest
 
-from src.common import connect_mongo, osrs_skills, osrs_csv_api_stats
-from src.scrape import PlayerRecord, player_to_mongodoc, mongodoc_to_player, get_page_range
+from src import connect_mongo, osrs_skills, csv_api_stats
+from src.scrape import PlayerRecord, JobCounter, get_page_range
+from src.scrape.export import player_to_csv, csv_to_player, get_top_rank
 from src.scrape.requests import get_hiscores_page, get_player_stats
-from src.scrape.workers import JobCounter, JobQueue
-from src.scrape.scrape_hiscores import main
+from src.scrape.workers import JobQueue
+from scripts.scrape_hiscores import main
 
 test_dir = Path(__file__).resolve().parent
 mongo_url = "localhost:27017"
@@ -38,31 +39,10 @@ async def test_get_player_stats():
         assert top_player.total_xp == 4_600_000_000
 
         for skill in osrs_skills():
-            lvl_ind = osrs_csv_api_stats().index(f"{skill}_level")
-            xp_ind = osrs_csv_api_stats().index(f"{skill}_xp")
+            lvl_ind = csv_api_stats().index(f"{skill}_level")
+            xp_ind = csv_api_stats().index(f"{skill}_xp")
             assert top_player.stats[lvl_ind] == 99
             assert top_player.stats[xp_ind] == 200_000_000
-
-
-def test_player_to_mongodoc():
-    db = connect_mongo(mongo_url)
-    coll = db['scrape-test']
-    coll.drop()
-
-    async def get_player():
-        async with aiohttp.ClientSession() as sess:
-            return await get_player_stats(sess, username="snakeylime")
-    before_player = asyncio.run(get_player())
-
-    before_doc: Dict[str, Any] = player_to_mongodoc(before_player)
-    coll.insert_one(before_doc)
-    after_doc = coll.find_one({"username": "snakeylime"})
-    del before_doc['_id']  # strangely, '_id' is added to before_doc after insertion
-    del after_doc['_id']
-    assert before_doc == after_doc
-
-    after_player: PlayerRecord = mongodoc_to_player(after_doc)
-    assert before_player == after_player
 
 
 def test_build_page_jobs():
@@ -89,6 +69,21 @@ def test_build_page_jobs():
     assert startind == 4
     assert lastpage == 3
     assert endind == 5
+
+
+def test_convert_player_csv():
+    db = connect_mongo(mongo_url)
+    coll = db['scrape-test']
+    coll.drop()
+
+    async def get_player():
+        async with aiohttp.ClientSession() as sess:
+            return await get_player_stats(sess, username="snakeylime")
+    player = asyncio.run(get_player())
+
+    player_csv: str = player_to_csv(player)
+    player_restored: PlayerRecord = csv_to_player(player_csv)
+    assert player == player_restored
 
 
 @pytest.mark.asyncio
@@ -124,16 +119,13 @@ async def test_jobcounter():
 
 @pytest.mark.asyncio
 async def test_scrape_main():
+    outfile = 'data/scrape.out'
     start_rank = random.randint(1_500_000, 2_000_000) - 100
-    end_rank = start_rank + 100
-    await main(mongo_url="mongodb://localhost:27017", mongo_coll="scrape-test",
-               start_rank=start_rank, stop_rank=end_rank,
-               nworkers=28, loglevel='debug', logfile='stdout',
-               usevpn=False, drop=True)
-
-
-if __name__ == '__main__':
-    test_build_page_jobs()
+    end_rank = start_rank + 50
+    if os.path.isfile(outfile):
+        os.remove(outfile)
+    await main(outfile, start_rank=start_rank, stop_rank=end_rank, nworkers=25)
+    assert get_top_rank(outfile) == end_rank
 
 
 # from pymongo import MongoClient

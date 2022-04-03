@@ -5,7 +5,7 @@ import numpy as np
 from numpy.random import default_rng
 from tqdm import tqdm
 
-from src.common import count_csv_rows
+from src import count_csv_rows
 
 
 def main(in_file: str, out_file: str):

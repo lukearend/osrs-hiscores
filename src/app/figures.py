@@ -9,7 +9,7 @@ from PIL import Image
 from numpy.typing import NDArray
 from pandas import DataFrame
 
-from app import load_boxplot_layout, asset_dir
+from src.app import load_boxplot_layout, asset_dir
 
 
 def get_scatterplot(df: DataFrame, colorlims: Tuple[int], colorlabel: str,

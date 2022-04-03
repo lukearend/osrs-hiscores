@@ -5,8 +5,7 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-from app import load_boxplot_layout
-from src.results import SplitData
+from src.app import load_boxplot_layout, SplitData
 
 
 def compute_scatterplot_data(splitdata: SplitData, colorstat: str, levelrange: Tuple,
