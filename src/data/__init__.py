@@ -1,26 +1,21 @@
 """ Utilities for writing and loading data. """
 
 import csv
-import json
-import os
 import pickle
-from functools import cache
-from pathlib import Path
-from typing import Dict, List, Any
+from typing import Dict, Any
 
 import boto3
 import numpy as np
 import progressbar as progressbar
 from botocore.exceptions import NoCredentialsError
-from numpy.typing import NDArray
 from tqdm import tqdm
 
-from src import count_csv_rows, osrs_skills, DatasetSplit
-from src.analytics import PlayerStatsData, PlayerClustersData, ClusterCentroids
+from src import count_csv_rows, osrs_skills
+from src.analytics import PlayerStatsDataset, PlayerClustersData, ClusterCentroids, ClusterAnalytics
 from src.app import AppData
 
 
-def load_stats_data_csv(file: str, include_total=True) -> PlayerStatsData:
+def load_stats_data_csv(file: str, include_total=True) -> PlayerStatsDataset:
     """
     Load dataset of player skill levels from the CSV file created by the
     scraping process. Each row of the dataset is a vector of skill levels for
@@ -51,7 +46,7 @@ def load_stats_data_csv(file: str, include_total=True) -> PlayerStatsData:
                 stats[i, :] = [line[i] for i in take_cols]
                 pbar.update(1)
 
-    return PlayerStatsData(
+    return PlayerStatsDataset(
         usernames=usernames,
         skills=osrs_skills(include_total),
         levels=stats
@@ -86,7 +81,7 @@ def load_clusterids_data(file: str) -> PlayerClustersData:
         return pickle.load(f)
 
 
-def load_clusters_xyz(file: str) -> Dict[str, Dict]:  # TODO: becomes NDArray once umap params frozen
+def load_clusters_xyz(file: str) -> NDArray
     with open(file, 'rb') as f:
         return pickle.load(f)
 
@@ -99,54 +94,6 @@ def load_cluster_analytics(file: str) -> Dict[str, ClusterAnalytics]:
 def load_app_data(file: str) -> AppData:
     with open(file, 'rb') as f:
         return pickle.load(f)
-
-
-@cache
-def load_splits(file: str = None) -> List[DatasetSplit]:
-    """
-    Load metadata about splits of the dataset to use for this project.
-
-    If `file` is provided, split information is loaded from there. Otherwise,
-    if OSRS_SPLITS_FILE is set in the environment, splits are loaded from there.
-    Otherwise the splits are loaded from a default location.
-
-    :param file: load split information from this JSON file. Splits should be
-                 given as a list of maps, each having a 'name' key giving a name
-                 for the split a key 'skills' which is a list of the OSRS skills
-                 to be included in that split of the dataset.
-    :return: list of objects representing metadata about each split
-    """
-    if not file:
-        file = os.getenv("OSRS_SPLITS_FILE", None)
-    elif not file:
-        file = Path(__file__).resolve().parents[2] / "ref" / "data_splits.json"
-
-    splits = []
-    with open(file, 'r') as f:
-        for s in json.load(f):
-            split = DatasetSplit(
-                name=s['name'],
-                skills=s['skills']
-            )
-            splits.append(split)
-
-    return splits
-
-
-def split_dataset(player_vectors: NDArray, split: str, has_total: bool = False, splits_file: str = None) -> DatasetSplit:
-    for ds in load_splits(splits_file):
-        if ds.name == split:
-            break
-    else:
-        raise KeyError(split)
-
-    all_skills = osrs_skills(include_total=has_total)
-    keep_cols = [all_skills.index(skill) for skill in ds.skills]
-    if has_total:
-        keep_cols.insert(0, all_skills.index('total'))
-
-    player_vectors = player_vectors[:, keep_cols]
-    return player_vectors.copy()  # copy to make array C-contiguous which is needed by faiss
 
 
 def download_from_s3(bucket: str, s3_file: str, local_file: str):

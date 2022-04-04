@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 if [ "$#" -ne 3 ]; then
   echo "usage: ./upload_gdrive <statsfile> <centroidsfile> <clusteridsfile>"
   exit 1

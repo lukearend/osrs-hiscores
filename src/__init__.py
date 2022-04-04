@@ -1,4 +1,5 @@
-""" Contains knowledge shared across modules. """
+""" Common knowledge. """
+
 import json
 import os
 import subprocess
@@ -10,11 +11,10 @@ import shlex
 from typing import List, Any, Dict
 
 import certifi as certifi
+from numpy.typing import NDArray
 from pymongo import MongoClient
 from pymongo.database import Database
 from pymongo.errors import ServerSelectionTimeoutError
-
-from src.analytics.data import load_splits
 
 
 DB_NAME = 'osrs-hiscores'
@@ -40,12 +40,60 @@ class DatasetSplit:
 
 
 @cache
+def load_splits(file: str = None) -> List[DatasetSplit]:
+    """
+    Load metadata about splits of the dataset to use for this project.
+
+    If `file` is provided, split information is loaded from there. Otherwise,
+    if OSRS_SPLITS_FILE is set in the environment, splits are loaded from there.
+    Otherwise the splits are loaded from a default location.
+
+    :param file: load split information from this JSON file. Splits should be
+                 given as a list of maps, each having a 'name' key giving a name
+                 for the split a key 'skills' which is a list of the OSRS skills
+                 to be included in that split of the dataset.
+    :return: list of objects representing metadata about each split
+    """
+    if not file:
+        file = os.getenv("OSRS_SPLITS_FILE", None)
+    elif not file:
+        file = Path(__file__).resolve().parents[2] / "ref" / "data_splits.json"
+
+    splits = []
+    with open(file, 'r') as f:
+        for s in json.load(f):
+            split = DatasetSplit(
+                name=s['name'],
+                skills=s['skills']
+            )
+            splits.append(split)
+
+    return splits
+
+
+def split_dataset(player_vectors: NDArray, split: str, has_total: bool = False, splits_file: str = None) -> DatasetSplit:
+    for ds in load_splits(splits_file):
+        if ds.name == split:
+            break
+    else:
+        raise KeyError(split)
+
+    all_skills = osrs_skills(include_total=has_total)
+    keep_cols = [all_skills.index(skill) for skill in ds.skills]
+    if has_total:
+        keep_cols.insert(0, all_skills.index('total'))
+
+    player_vectors = player_vectors[:, keep_cols]
+    return player_vectors.copy()  # copy to make array C-contiguous which is needed by faiss
+
+
+@cache
 def osrs_skills(include_total: bool = False) -> List[str]:
     """
     Load the list of OSRS skill names in an ordering for use throughout the project.
     :return: OSRS skills names, e.g. ['attack', 'defence', ...]
     """
-    file = Path(__file__).resolve().parents[2] / "ref" / "osrs-skills.json"
+    file = Path(__file__).resolve().parents[1] / "ref" / "osrs-skills.json"
     with open(file, 'r') as f:
         skills = json.load(f)
     if include_total:
@@ -59,7 +107,7 @@ def csv_api_stats() -> List[str]:
     Load the list of header fields returned from the OSRS hiscores CSV API.
     :return: header fields, e.g. ['total_rank', 'total_level', 'total_xp', ...]
     """
-    ref_file = Path(__file__).resolve().parents[2] / "ref" / "csv-api-stats.json"
+    ref_file = Path(__file__).resolve().parents[1] / "ref" / "csv-api-stats.json"
     with open(ref_file, 'r') as f:
         return json.load(f)
 

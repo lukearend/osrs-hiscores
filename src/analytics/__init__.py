@@ -5,7 +5,7 @@ from numpy.typing import NDArray
 
 
 @dataclass
-class PlayerStatsData:
+class PlayerStatsDataset:
     """
     A dataset of OSRS account skill levels.
 

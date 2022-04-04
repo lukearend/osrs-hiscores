@@ -3,7 +3,7 @@ from dash import Dash, dcc, html
 
 from src.app import format_skill, default_n_neighbors, default_min_dist, get_level_tick_marks, \
     get_color_label, get_color_range, get_point_size, load_table_layout, AppData
-from src.app.data import compute_scatterplot_data
+from src.app.plotdata import compute_scatterplot_data
 from src.app.figures import get_empty_boxplot, get_scatterplot
 
 

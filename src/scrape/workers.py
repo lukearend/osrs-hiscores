@@ -1,3 +1,5 @@
+""" Workers for performing jobs in the scraping pipeline. """
+
 import asyncio
 import logging
 from asyncio import Queue, CancelledError

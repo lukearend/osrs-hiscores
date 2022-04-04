@@ -9,7 +9,8 @@ from src import DatasetSplit
 @dataclass
 class ClusterData:
     """ Contains app data for a set of clusters. """
-    xyz: Dict  # TODO: becomes NDArray once umap params frozen
+
+    xyz: NDArray
     sizes: NDArray
     centroids: NDArray
     quartiles: NDArray
@@ -19,13 +20,22 @@ class ClusterData:
 @dataclass
 class SplitData:
     """ Contains app data for one split of the dataset. """
+
     skills: List[str]
     clusterdata: ClusterData
-    axlims: Dict  # TODO: becomes Dict[NDArray] once umap params frozen
+    axlims: NDArray
 
 
 @dataclass
 class AppData:
     """ Contains all data needed to run Dash app. """
+
     splitnames: List[DatasetSplit]
     splitdata: Dict[str, SplitData]
+
+
+@dataclass
+class BoxplotLayout:
+    """ Contains layout information for rendering boxplot for a specific split. """
+    ticklabels: List[str]
+    tickxoffset: float

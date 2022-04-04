@@ -1,42 +1,35 @@
+""" Code related to exporting of scraped data. """
+
+import asyncio
 import csv
 import os
-from asyncio import Queue
-from datetime import datetime
+from typing import Tuple, List
 
 from tqdm import tqdm
 
 from src import csv_api_stats
-from src.scrape import PlayerRecord, CSV_HEADER, STATS_RANK_COL, STATS_TOTLVL_COL, STATS_TOTXP_COL
-
-from src.scrape.workers import JobCounter
+from src.scrape import PlayerRecord, player_to_csv, csv_to_player
+from src.scrape.workers import PageJob
 
 
 class DoneScraping(Exception):
     """ Raised when all scraping is done to indicate script should exit. """
 
 
-async def progress_bar(ndone: JobCounter, ntodo: int):
-    with tqdm(total=ntodo, smoothing=0.9) as pbar:
-        while True:
-            await ndone.await_next()
-            pbar.n = ndone.value
-            pbar.refresh()
-            if ndone.value == ntodo:
-                raise DoneScraping
-
-
-async def export_records(in_queue: Queue, out_file: str, job_counter: JobCounter):
+async def export_records(in_queue: asyncio.Queue, out_file: str, total: int):
     """ Write player records appearing on a queue to a CSV file. """
 
-    mode = 'w' if not os.path.isfile(out_file) else 'a'
-    with open(out_file, 'a') as f:
-        if mode == 'w':
-            csv.writer(f).writerow(CSV_HEADER)
-        while True:
+    exists = os.path.isfile(out_file)
+    with open(out_file, mode='a' if exists else 'w') as f:
+        if not exists:
+            csv_header = ['username'] + csv_api_stats() + ['ts']
+            csv.writer(f).writerow(csv_header)
+
+        for _ in tqdm(range(total), smoothing=0.01):
             player: PlayerRecord = await in_queue.get()
             if player != 'notfound':
                 f.write(player_to_csv(player) + '\n')
-            job_counter.next()
+        raise DoneScraping
 
 
 def get_top_rank(scrape_file) -> int:
@@ -58,21 +51,31 @@ def get_top_rank(scrape_file) -> int:
     return csv_to_player(last_lines[-1]).rank
 
 
-def csv_to_player(csv_line: str) -> PlayerRecord:
-    username, *stats, ts = csv_line.split(',')
-    stats = [int(v) if v else None for v in stats]
-    assert len(stats) == len(csv_api_stats()), f"CSV row contained an unexpected number of stats: '{csv_line}'"
-    return PlayerRecord(
-        username=username,
-        rank=stats[STATS_RANK_COL],
-        total_level=stats[STATS_TOTLVL_COL],
-        total_xp=stats[STATS_TOTXP_COL],
-        stats=stats,
-        ts=datetime.fromisoformat(ts)
-    )
+def get_page_jobs(start_rank: int, end_rank: int) -> List[PageJob]:
+    """ Get the list of front pages that need to be scraped for usernames based on
+    the desired range of rankings to scrape. The "front pages" are the 80000 pages
+    containing ranks for the top 2 million players. Each page provides 25 rank/username
+    pairs, such that page 1 contains ranks 1-25, page 2 contains ranks 26-50, etc.
 
+    :param start_rank: lowest player ranking to include in scraping
+    :param end_rank: highest player ranking to include in scraping
+    :return: list of page jobs to do
+    """
+    if start_rank < 1:
+        raise ValueError("start rank cannot be less than 1")
+    if end_rank > 2_000_000:
+        raise ValueError("end rank cannot be greater than 2 million")
+    if start_rank > end_rank:
+        raise ValueError("start rank cannot be greater than end rank")
 
-def player_to_csv(player: PlayerRecord) -> str:
-    stats = [str(v) if v else '' for v in player.stats]
-    fields = [player.username] + stats + [player.ts.isoformat()]
-    return ','.join(fields)
+    firstpage = (start_rank - 1) // 25 + 1  # first page number (value between 1 and 80000)
+    lastpage = (end_rank - 1) // 25 + 1     # last page number (value between 1 and 8000)
+    startind = (start_rank - 1) % 25        # start for range of page rows to take (value between 0 and 24)
+    endind = (end_rank - 1) % 25 + 1        # end for range of page rows to take (value between 1 and 25)
+
+    jobs = []
+    for pagenum in range(firstpage, lastpage + 1):
+        jobs.append(PageJob(priority=pagenum, pagenum=pagenum,
+                            startind=startind if pagenum == firstpage else 0,
+                            endind=endind if pagenum == lastpage else 25))
+    return jobs

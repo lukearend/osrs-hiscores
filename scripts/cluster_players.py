@@ -6,7 +6,7 @@ from codetiming import Timer
 from numpy.typing import NDArray
 
 from src import load_splits, load_stats_data, load_centroid_data
-from src.analytics.data import split_dataset
+from src.data import split_dataset
 from src.models import cluster_l2
 
 

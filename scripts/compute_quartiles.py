@@ -11,7 +11,7 @@ from codetiming import Timer
 from tqdm import tqdm
 
 from src import load_splits, load_clusterids_data, load_stats_data
-from src.analytics.data import split_dataset
+from src.data import split_dataset
 from src.results import ClusterAnalytics, compute_cluster_sizes, compute_cluster_uniqueness, compute_stat_quartiles
 
 

@@ -1,6 +1,7 @@
+""" VPN driver code. """
+
 import logging
 import shlex
-import subprocess
 import textwrap
 from getpass import getpass
 from pathlib import Path

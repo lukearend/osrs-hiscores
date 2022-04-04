@@ -2,12 +2,12 @@ import argparse
 import pickle
 from typing import Any
 
-from src.data import PlayerStatsData
+from src.data import PlayerStatsDataset
 from src.data import load_stats_data_csv
 
 
 def main(stats_csv_file: str, stats_pkl_file: str) -> Any:
-    data: PlayerStatsData = load_stats_data_csv(stats_csv_file, include_total=True)
+    data: PlayerStatsDataset = load_stats_data_csv(stats_csv_file, include_total=True)
     with open(stats_pkl_file, 'wb') as f:
         pickle.dump(data, f)
 

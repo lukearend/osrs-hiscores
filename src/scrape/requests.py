@@ -1,3 +1,5 @@
+""" Code that makes requests to the OSRS hiscores. """
+
 from asyncio import TimeoutError
 from datetime import datetime
 from typing import List, Tuple, Dict, Any
@@ -6,8 +8,7 @@ from aiohttp import ClientSession, ClientConnectionError
 from bs4 import BeautifulSoup
 
 from src import csv_api_stats
-from src.scrape import (PlayerRecord, RequestFailed, UserNotFound, ServerBusy,
-                        STATS_RANK_COL, STATS_TOTXP_COL, STATS_TOTLVL_COL)
+from src.scrape import PlayerRecord, RequestFailed, UserNotFound, ServerBusy
 
 
 class ParsingFailed(Exception):
@@ -20,7 +21,7 @@ async def get_hiscores_page(sess: ClientSession, page_num: int) -> List[Tuple[in
     Raises:
         RequestFailed if page could not be downloaded from hiscores server
 
-    :param session: HTTP client session
+    :param sess: HTTP client session
     :param page_num: integer between 1 and 80000
     :return: list of the 25 rank/username pairs from one page of the hiscores
     """
@@ -43,7 +44,7 @@ async def get_player_stats(sess: ClientSession, username: str) -> PlayerRecord:
         UserNotFound if request for user record timed out or user doesn't exist
         RequestFailed if user data could not be fetched for some other reason
 
-    :param session: HTTP client session
+    :param sess: HTTP client session
     :param username: username for player to fetch
     :return: object containing player stats data
     """
@@ -107,11 +108,4 @@ def parse_stats_csv(username: str, raw_csv: str) -> PlayerRecord:
     stats = [int(i) for i in stats_csv.split(',')]
     stats = [None if i < 0 else i for i in stats]
     assert len(stats) == len(csv_api_stats()), f"the API returned an unexpected number of stats: {stats}"
-    return PlayerRecord(
-        username=username,
-        rank=stats[STATS_RANK_COL],
-        total_level=stats[STATS_TOTLVL_COL],
-        total_xp=stats[STATS_TOTXP_COL],
-        stats=stats,
-        ts=datetime.utcnow()
-    )
+    return PlayerRecord(username=username, stats=stats, ts=datetime.utcnow())

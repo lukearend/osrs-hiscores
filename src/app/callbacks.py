@@ -7,7 +7,7 @@ from pymongo.database import Collection
 import numpy as np
 
 from src import osrs_skills
-from src.app.data import compute_boxplot_data, compute_scatterplot_data
+from src.app.plotdata import compute_boxplot_data, compute_scatterplot_data
 from src.app.figures import get_scatterplot, get_empty_boxplot
 from src.app import validate_username, format_skill, default_n_neighbors, default_min_dist, \
     get_level_tick_marks, get_color_label, get_color_range, get_point_size, AppData
@@ -29,9 +29,12 @@ def add_callbacks(app: Dash, app_data: AppData, player_coll: Collection) -> Dash
     def redraw_scatterplot(split: str, skill: str, level_range: List[int],
                            n_neighbors: int, min_dist: float, player_data: Dict, ptsize_name: str):
         df = compute_scatterplot_data(app_data.splitdata[split], skill, level_range, n_neighbors, min_dist)
-        color_label = get_color_label(skill)
-        color_range = get_color_range(skill)
-        point_size = get_point_size(ptsize_name)
+
+        color_label = f"{skill_upper(skill)}\nlevel"
+
+        color_range = [500, 2277] if skill == 'total' else [1, 99]
+
+        point_size = {'small': 1, 'medium': 2, 'large': 3}[ptsize_name]
 
         axis_limits = app_data.splitdata[split].axlims[n_neighbors][min_dist]
         if player_data is None:
