@@ -11,7 +11,7 @@ from src.scrape import PlayerRecord, JobCounter, player_to_csv, csv_to_player
 from src.scrape.export import get_top_rank, get_page_jobs
 from src.scrape.requests import get_hiscores_page, get_player_stats
 from src.scrape.workers import JobQueue
-from src.scrape.__main__ import main
+from scripts.scrape_hiscores import main
 
 
 @pytest.mark.asyncio

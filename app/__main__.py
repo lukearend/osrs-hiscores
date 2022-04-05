@@ -7,8 +7,8 @@ import os
 from dash import Dash
 from dash_bootstrap_components import themes
 
-from src import env_var, connect_mongo
-from src.app import load_appdata_local, load_appdata_s3
+from src import env_var
+from src.app import load_appdata_local, load_appdata_s3, connect_mongo
 from src.app.layout import build_layout
 from src.app.callbacks import add_callbacks
 

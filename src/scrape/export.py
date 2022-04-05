@@ -3,7 +3,7 @@
 import asyncio
 import csv
 import os
-from typing import Tuple, List
+from typing import List
 
 from tqdm import tqdm
 
@@ -27,7 +27,7 @@ async def export_records(in_queue: asyncio.Queue, out_file: str, total: int):
 
         for _ in tqdm(range(total), smoothing=0.01):
             player: PlayerRecord = await in_queue.get()
-            if player != 'notfound':
+            if player is not None:
                 f.write(player_to_csv(player) + '\n')
         raise DoneScraping
 
@@ -53,9 +53,7 @@ def get_top_rank(scrape_file) -> int:
 
 def get_page_jobs(start_rank: int, end_rank: int) -> List[PageJob]:
     """ Get the list of front pages that need to be scraped for usernames based on
-    the desired range of rankings to scrape. The "front pages" are the 80000 pages
-    containing ranks for the top 2 million players. Each page provides 25 rank/username
-    pairs, such that page 1 contains ranks 1-25, page 2 contains ranks 26-50, etc.
+    the desired range of rankings to scrape.
 
     :param start_rank: lowest player ranking to include in scraping
     :param end_rank: highest player ranking to include in scraping

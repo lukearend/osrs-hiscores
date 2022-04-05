@@ -2,7 +2,8 @@
 import argparse
 import sys
 
-from src import PlayerResults, playerdata_to_mongodoc, connect_mongo, global_db_name, DB_NAME
+from src import PlayerResults, playerdata_to_mongodoc, global_db_name, DB_NAME
+from src.app import connect_mongo
 from tqdm import tqdm
 
 from src import line_count

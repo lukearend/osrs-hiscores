@@ -12,7 +12,7 @@ from codetiming import Timer
 
 from src.scrape import RequestFailed, JobCounter, logprint
 from src.scrape.export import DoneScraping, export_records, get_top_rank, get_page_jobs
-from src.scrape.workers import JobQueue, PageWorker, StatsWorker
+from src.scrape.workers import JobQueue, Worker, request_stats, enqueue_stats, request_page, enqueue_page_usernames
 from src.scrape.vpn import reset_vpn, askpass
 
 
@@ -32,7 +32,7 @@ async def main(out_file: str, start_rank: int, stop_rank: int, nworkers: int = 2
 
     # Check for existing progress.
     highest_rank = get_top_rank(out_file)
-    if highest_rank and highest_rank >= start_rank:
+    if highest_rank is not None and highest_rank >= start_rank:
         logprint(f"found an existing record at rank {highest_rank}", level='info')
         if highest_rank >= stop_rank:
             raise NothingToDo
@@ -52,11 +52,11 @@ async def main(out_file: str, start_rank: int, stop_rank: int, nworkers: int = 2
     # of the hiscores and extract usernames in ranked order. Then the stats workers
     # receive usernames and query the CSV API for the corresponding account stats.
     currentpage = JobCounter(value=joblist[0].pagenum)
-    pageworkers = [PageWorker(in_queue=page_q, out_queue=uname_q, page_counter=currentpage)
+    pageworkers = [Worker(in_queue=page_q, out_queue=uname_q, job_counter=currentpage)
                    for _ in range(N_PAGE_WORKERS)]
 
     currentrank = JobCounter(value=start_rank)
-    statworkers = [StatsWorker(in_queue=uname_q, out_queue=export_q, rank_counter=currentrank)
+    statworkers = [Worker(in_queue=uname_q, out_queue=export_q, job_counter=currentrank)
                    for _ in range(nworkers)]
 
     if usevpn:
@@ -70,21 +70,25 @@ async def main(out_file: str, start_rank: int, stop_rank: int, nworkers: int = 2
         if usevpn:
             reset_vpn(pwd)
 
-        # Spawn the data scraping tasks and run until requests get blocked.
+        # Spawn the data scraping tasks and run until requests fail.
         async with aiohttp.ClientSession() as sess:
-            T = [asyncio.create_task(export_records(in_queue=export_q, out_file=out_file,
-                                                    total=stop_rank - start_rank + 1))]
+            T = [asyncio.create_task(
+                export_records(in_queue=export_q, out_file=out_file, total=stop_rank - start_rank + 1)
+            )]
             for w in pageworkers:
-                T.append(asyncio.create_task(w.run(sess)))
+                T.append(asyncio.create_task(
+                    w.run(sess, request_fn=request_page, enqueue_fn=enqueue_page_usernames)
+                ))
             for i, w in enumerate(statworkers):
-                T.append(asyncio.create_task(w.run(sess, delay=i * 0.1)))
-
+                T.append(asyncio.create_task(
+                    w.run(sess, request_fn=request_stats, enqueue_fn=enqueue_stats, delay=i * 0.1)
+                ))
             try:
                 await asyncio.gather(*T)  # allow first exception to be caught
             except DoneScraping:
                 break
             except RequestFailed as e:
-                logging.error(f"main: caught RequestFailed: {e}")
+                logging.error(f"caught RequestFailed: {e}")
                 if not usevpn:
                     raise
                 continue

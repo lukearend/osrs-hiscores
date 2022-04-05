@@ -2,7 +2,7 @@
 
 from asyncio import TimeoutError
 from datetime import datetime
-from typing import List, Tuple, Dict, Any
+from typing import List, Tuple, Dict
 
 from aiohttp import ClientSession, ClientConnectionError
 from bs4 import BeautifulSoup
@@ -16,7 +16,10 @@ class ParsingFailed(Exception):
 
 
 async def get_hiscores_page(sess: ClientSession, page_num: int) -> List[Tuple[int, str]]:
-    """ Fetch a front page of the OSRS hiscores by page number.
+    """ Fetch a front page of the OSRS hiscores by page number. The
+    "front pages" are the 80000 pages containing ranks for the top 2
+    million players. Each page provides 25 rank/username pairs, such
+    that page 1 contains ranks 1-25, page 2 contains ranks 26-50, etc.
 
     Raises:
         RequestFailed if page could not be downloaded from hiscores server
@@ -29,49 +32,50 @@ async def get_hiscores_page(sess: ClientSession, page_num: int) -> List[Tuple[in
         raise ValueError("page number cannot be greater than 80000")
 
     url = "https://secure.runescape.com/m=hiscore_oldschool/overall"
-    params = {'table': 0, 'page': page_num}
     try:
-        page_html = await http_request(sess, url, params, timeout=15)
+        page_html = await http_request(sess, url, params={'table': 0, 'page': page_num})
     except (TimeoutError, RequestFailed) as e:
         raise RequestFailed(f"page {page_num}: {e}")
     return parse_hiscores_page(page_html)
 
 
 async def get_player_stats(sess: ClientSession, username: str) -> PlayerRecord:
-    """ Fetch stats for a player by username.
+    """ Fetch stats for a player by username. A description of
+    the result format for the OSRS Hiscores API is available at
+    https://runescape.wiki/w/Application_programming_interface.
 
     Raises:
-        UserNotFound if request for user record timed out or user doesn't exist
+        UserNotFound if the requested user doesn't exist
+        TimeoutError if request for user record timed out
         RequestFailed if user data could not be fetched for some other reason
 
     :param sess: HTTP client session
     :param username: username for player to fetch
     :return: object containing player stats data
     """
-    url = "http://services.runescape.com/m=hiscore_oldschool/index_lite.ws"
-    params = {'player': username}
+    url = "https://secure.runescape.com/m=hiscore_oldschool/index_lite.ws"
     try:
-        stats_csv = await http_request(sess, url, params, timeout=30)
+        stats_csv = await http_request(sess, url, params={'player': username})
     except TimeoutError as e:
         raise ServerBusy(e)
     except RequestFailed as e:
-        raise UserNotFound(f"'{username}'") if e.code == 404 else e
+        raise UserNotFound({username}) if e.code == 404 else e
     return parse_stats_csv(username, stats_csv)
 
 
-async def http_request(sess: ClientSession, server_url: str, query_params: Dict[str, Any], timeout: int = None):
+async def http_request(sess: ClientSession, url: str, params: Dict[str, str]):
     """ Make an HTTP request and handle any failure that occurs. """
 
     headers = {"Access-Control-Allow-Origin": "*",
                "Access-Control-Allow-Headers": "Origin, X-Requested-With, Content-Type, Accept"}
     try:
-        async with sess.get(server_url, headers=headers, params=query_params, timeout=timeout) as resp:
+        async with sess.get(url, headers=headers, params=params, timeout=30) as resp:
             text = await resp.text()
             if resp.status == 200:
                 return text
             raise RequestFailed(text, code=resp.status)
     except TimeoutError:
-        raise TimeoutError(f"timed out after {timeout} seconds")
+        raise TimeoutError(f"timed out")
     except ClientConnectionError as e:
         raise RequestFailed(f"client connection error: {e}")
 

@@ -64,17 +64,18 @@ class PlayerRecord:
         self.rank = stats[self.RANK_COL]
         self.ts = ts
 
+    # Define better players as "lesser" so they come first in a sort.
     def __lt__(self, other):
-        if self.total_level < other.total_level:
+        if self.total_level > other.total_level:
             return True
-        elif self.total_xp < other.total_xp:
+        elif self.total_xp > other.total_xp:
             return True
-        elif other.rank < self.rank:  # higher rank means worse player
+        elif self.rank < other.rank:
             return True
         return False
 
     def __eq__(self, other):
-        if other == 'notfound':
+        if other is None:
             return False
         return not self < other and not other < self
 

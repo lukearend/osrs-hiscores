@@ -5,7 +5,7 @@ outfile="$ROOTDIR/data/raw/player-stats-raw.csv"
 cd "$ROOTDIR" && source env/bin/activate && \
 
 function scrape {
-  python -m src.scrape "$outfile" --start-rank 1 --stop-rank 2000000 \
+  python scripts/scrape_hiscores.py "$outfile" --start-rank 1 --stop-rank 2000000 \
     --num-workers 28 --log-file /tmp/scrape.log --log-level INFO --usevpn
 }
 
