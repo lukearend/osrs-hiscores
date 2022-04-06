@@ -1,13 +1,14 @@
 #!/usr/bin/env python3
 
 """ Preprocess and build a single file for the data to be used in Dash app. """
+
 import argparse
 import pickle
 
 import numpy as np
 
-from src import load_splits, load_centroid_data
-from src.results import AppData, SplitData, ClusterData, load_cluster_analytics, load_clusters_xyz
+from src.analytics.app import build_app_data
+from src.analytics.data import load_pkl
 
 
 def compute_minmax(xyz):
@@ -18,53 +19,65 @@ def compute_minmax(xyz):
     }
 
 
-def main(centroids_file: str, cluster_analytics_file: str, clusters_xyz_file: str, out_file: str):
+def main(centroids_file: str, cluster_analytics_file: str, clusters_xyz_file: str, out_file: str, mongo_url: str, coll_name: str, drop: bool = False):
     print("building app data...", end=' ', flush=True)
-    cluster_analytics = load_cluster_analytics(cluster_analytics_file)
-    cluster_xyz = load_clusters_xyz(clusters_xyz_file)
-    centroids = load_centroid_data(centroids_file)
+    cluster_analytics = load_pkl(cluster_analytics_file)
+    cluster_xyz = load_pkl(clusters_xyz_file)
+    centroids = load_pkl(centroids_file)
 
-    splits = load_splits()
-    results = {}
-    for split in splits:
-        cluster_data = ClusterData(
-            xyz=cluster_xyz[split.name],
-            sizes=cluster_analytics[split.name].sizes,
-            centroids=centroids[split.name],
-            quartiles=cluster_analytics[split.name].quartiles,
-            uniqueness=cluster_analytics[split.name].uniqueness
-        )
-
-        axlims = {}
-        for n_neighbors, nn_dict in cluster_xyz[split.name].items():
-            axlims[n_neighbors] = {}
-            for min_dist in nn_dict.keys():
-                xyz = cluster_xyz[split.name][n_neighbors][min_dist]
-                axlims[n_neighbors][min_dist] = compute_minmax(xyz)
-
-        split_results = SplitData(
-            skills=split.skills,
-            clusterdata=cluster_data,
-            axlims=axlims
-        )
-        results[split.name] = split_results
-
-    app_data = AppData(
-        splitnames=[s.name for s in splits],
-        splitdata=results
-    )
+    appdata = build_appdata_obj(centroids, cluster_analytics, cluster_xyz)
 
     with open(out_file, 'wb') as f:
         pickle.dump(app_data, f)
 
-    print("done")
+    print("done building app data")
+
+    #####
+
+    print(f"building collection '{coll_name}'")
+    print("connecting...", end=' ', flush=True)
+    db = connect_mongo(url)
+    collection = db[coll_name]
+    print("ok")
+
+    build_player_collection
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="""Build serialized data file to be used by main application.""")
+    parser = argparse.ArgumentParser(description="""Build app data file and database.""")
     parser.add_argument('centroidsfile', type=str, help="load cluster centroids from this CSV file")
     parser.add_argument('clustersfile', type=str, help="load cluster analytics from this .pkl file")
     parser.add_argument('xyzfile', type=str, help="load results of dimensionality reduction from this .pkl file")
     parser.add_argument('outfile', type=str, help="serialize app data to this .pkl file")
+    parser.add_argument('statsfile', type=str, help="load player stats from this CSV file")
+
+    parser.add_argument('clustersfile', type=str, help="load player cluster IDs from this CSV file")
+    parser.add_argument('-u', '--url', type=str, default="localhost:27017",
+                        help="use Mongo instance running at this URL (defaults to localhost:27017)")
+    parser.add_argument('-c', '--coll', type=str, default="players",
+                        help="name of collection to populate (default is 'players')")
+    parser.add_argument('-d', '--drop', action='store_true',
+                        help="if set, will forcibly drop collection before writing (default is unset)")
+
     args = parser.parse_args()
     main(args.centroidsfile, args.clustersfile, args.xyzfile, args.outfile)

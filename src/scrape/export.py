@@ -7,8 +7,7 @@ from typing import List
 
 from tqdm import tqdm
 
-from src import csv_api_stats
-from src.scrape import PlayerRecord, player_to_csv, csv_to_player
+from src.scrape import PlayerRecord, player_to_csv, csv_to_player, csv_api_stats
 from src.scrape.workers import PageJob
 
 

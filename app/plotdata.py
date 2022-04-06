@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from functools import cache
 from typing import Dict, List, Tuple
 
@@ -8,10 +9,17 @@ from numpy.typing import NDArray
 from src.app import load_boxplot_layout, SplitData
 
 
+@dataclass
+class BoxplotLayout:
+    """ Contains layout information for rendering boxplot for a specific split. """
+
+    ticklabels: List[str]
+    tickxoffset: float
+
+
 def compute_scatterplot_data(splitdata: SplitData, colorstat: str, levelrange: Tuple,
                              n_neighbors: int, min_dist: float) -> pd.DataFrame:
-    """
-    Assemble the pandas.DataFrame scatterplot is based on.
+    """ Assemble the pandas.DataFrame scatterplot is based on.
 
     :param splitdata: data for the split being displayed
     :param colorstat: skill to use for plot color and level range
@@ -45,8 +53,7 @@ def compute_scatterplot_data(splitdata: SplitData, colorstat: str, levelrange: T
 
 
 def compute_boxplot_data(splitname: str, splitdata: SplitData, clusterid=None) -> Dict[str, NDArray]:
-    """
-    Compute data to display in the boxplot for a given cluster ID.
+    """ Compute data to display in the boxplot for a given cluster ID.
 
     :param splitdata: data for the split being displayed
     :param clusterid: plot data for this cluster (otherwise generate data for empty plot)
@@ -88,6 +95,7 @@ def compute_boxplot_data(splitname: str, splitdata: SplitData, clusterid=None) -
 @cache
 def ticklabel_skill_inds(splitname: str, skills_in_split: Tuple[str]) -> List[int]:
     """ Build index for reordering skills to match tick labels along box plot x-axis. """
+
     tick_labels = load_boxplot_layout(splitname).ticklabels
     reorder_inds = [skills_in_split.index(s) for s in tick_labels]
     return reorder_inds

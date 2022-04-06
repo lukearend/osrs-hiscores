@@ -9,8 +9,8 @@ from dash_bootstrap_components import themes
 
 from src import env_var
 from src.app import load_appdata_local, load_appdata_s3, connect_mongo
-from src.app.layout import build_layout
-from src.app.callbacks import add_callbacks
+from app.layout import build_layout
+from app.callbacks import add_callbacks
 
 envmode = os.getenv("OSRS_APP_ENV", 'development')
 if envmode in ['production', 'test']:

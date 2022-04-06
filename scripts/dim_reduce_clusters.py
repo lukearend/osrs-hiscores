@@ -4,47 +4,25 @@
     Full grid search over 3 splits, 16 parameter sets takes 10 mins.
 """
 import argparse
-import pickle
-import time
 
-from codetiming import Timer
+import pandas as pd
 
-from src import load_centroid_data, load_splits
-from src.models import load_umap_params, umap_reduce
+from src.analytics.models import umap_reduce
 
 
-@Timer(text="finished dimensionality reduction (total time {:.2f} sec)")
-def main(in_file: str, out_file: str, params_file: str = None):
-    centroids = load_centroid_data(in_file)
+def main(centroids_df: pd.DataFrame, n_neighbors: int, min_dist: float) -> pd.DataFrame:
 
-    print("computing 3d embeddings...")
-    splits = load_splits()
-    params = load_umap_params(params_file)
-    njobs = len(splits) * len(params['n_neighbors']) * len(params['min_dist'])
+    print(f"running UMAP (n_neighbors = {n_neighbors}, min_dist = {min_dist:.2f})... ", end='', flush=True)
 
-    xyz = {}
-    job_i = 0
-    for split in splits:
-        xyz[split.name] = {}
-        for n_neighbors in params['n_neighbors']:
-            xyz[split.name][n_neighbors] = {}
-            for min_dist in params['min_dist']:
-                progress = f"{job_i + 1}/{njobs}".ljust(8)
-                print(f"{progress} running split '{split.name}' "
-                      f"(n_neighbors = {n_neighbors}, min_dist = {min_dist:.2f})... ", end='', flush=True)
+    # todo: centroids_df to np array
 
-                t0 = time.time()
-                X = centroids[split.name]
-                u = umap_reduce(X, d=3, n_neighbors=n_neighbors, min_dist=min_dist)
-                print(f"done ({time.time() - t0:.2f} sec)")
+    # todo: use CodeTimer with done statement?
+    # "done ({:.2f} sec)")
 
-                xyz[split.name][n_neighbors][min_dist] = u
-                job_i += 1
+    X = centroids
+    u = umap_reduce(X, d=3, n_neighbors=n_neighbors, min_dist=min_dist)
 
-    with open(out_file, 'wb') as f:
-        pickle.dump(xyz, f)
-
-    print("saved results to file")
+    # todo: np array to xyz_df
 
 
 if __name__ == '__main__':

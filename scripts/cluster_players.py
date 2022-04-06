@@ -1,51 +1,38 @@
+""" Cluster players according to account similarity. """
+
 import argparse
-import csv
-from typing import Dict
+from typing import Tuple, List
 
-from codetiming import Timer
-from numpy.typing import NDArray
-
-from src import load_splits, load_stats_data, load_centroid_data
-from src.data import split_dataset
-from src.models import cluster_l2
+import pandas as pd
 
 
-@Timer(text="done clustering players (total time {:.2f} sec)")
-def main(player_data: NDArray, centroids_per_split: NDArray) -> Dict[str, NDArray]:
-    clusterids_per_split = {}
-    for splitname, centroids in centroids_per_split.items():
-        player_vectors = split_dataset(player_data, splitname)
+def main(players_df: pd.DataFrame, k: int, use_skills: List[str] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
 
-        print(f"clustering split '{splitname}'...", end=' ', flush=True)
-        with Timer("done ({:.2f} sec)"):
-            clusterids = cluster_l2(player_vectors, centroids=centroids_per_split[splitname])
-        clusterids_per_split[splitname] = clusterids
+    # Player weight is proportional to the number of ranked skills.
+    weights = np.sum(player_vectors != -1, axis=1) / player_vectors.shape[1]
 
-    return clusterids_per_split
+    # Replace missing data, i.e. unranked stats, with 1s. This is
+    # a reasonable substitution for clustering purposes since an
+    # unranked stat is known to be relatively low.
+    player_vectors[player_vectors == -1] = 1
+
+    # Sort clusters by total level descending.
+    total_levels = np.sum(centroids, axis=1)
+    sort_inds = np.argsort(total_levels)[::-1]
+    centroids = centroids[sort_inds]
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Fit cluster centroids on player stats data.""")
-    parser.add_argument('statsfile', type=str, help="load player stats from this CSV file")
-    parser.add_argument('centroidsfile', type=str, help="load cluster centroids from this CSV file")
-    parser.add_argument('outfile', type=str, help="write cluster IDs to this file")
+    parser = argparse.ArgumentParser(description="Cluster players according to account similarity. """)
+    parser.add_argument('stats_file', type=str, help="load player stats from this file")
+    parser.add_argument('splits_file', type=str, help="load dataset splits from this file")
+    parser.add_argument('clusterids_file', type=str, help="write cluster IDs to this file")
+    parser.add_argument('centroids_file', type=str, help="write cluster centroids to this file")
+    parser.add_argument('-k', '--nclusters', required=True, help="number of clusters")
+    parser.add_argument('-v', '--verbose', action='store_true', help="if set, output progress during training")
     args = parser.parse_args()
 
-    splits = load_splits()
-    centroids_per_split = load_centroid_data(args.centroidsfile)
-    usernames, _, player_data = load_stats_data(args.statsfile, include_total=False)
-    clusterids_per_split = main(player_data, centroids_per_split, args.outfile)
-
-    print("writing player clusters to CSV...")
-    lines = []
-    splitnames = [split.name for split in splits]
-    for i, username in enumerate(usernames):
-        player_clusterids = [clusterids_per_split[s][i] for s in splitnames]
-        line = [username, *player_clusterids]
-        lines.append(line)
-
-    with open(args.outfile, 'w') as f:
-        header = ["username", *splitnames]
-        writer = csv.writer(f)
-        writer.writerow(header)
-        writer.writerows(lines)
+    # todo: read stats_file
+    # todo: read split file and iterate through splits
+    # todo: dump centroids_file
+    # todo: dump clusterids_file

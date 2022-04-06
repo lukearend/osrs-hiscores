@@ -7,10 +7,10 @@ from pymongo.database import Collection
 import numpy as np
 
 from src import osrs_skills
-from src.app.plotdata import compute_boxplot_data, compute_scatterplot_data
-from src.app.figures import get_scatterplot, get_empty_boxplot
+from app.plotdata import compute_boxplot_data, compute_scatterplot_data
+from app.figures import get_scatterplot, get_empty_boxplot
 from src.app import validate_username, format_skill, default_n_neighbors, default_min_dist, \
-    get_level_tick_marks, get_color_label, get_color_range, get_point_size, AppData
+    get_level_tick_marks, AppData
 
 
 def add_callbacks(app: Dash, app_data: AppData, player_coll: Collection) -> Dash:

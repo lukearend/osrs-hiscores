@@ -1,62 +1,54 @@
-[
-    {
-        "name": "all",
-        "skills":[
-            "attack",
-            "defence",
-            "strength",
-            "hitpoints",
-            "ranged",
-            "prayer",
-            "magic",
-            "cooking",
-            "woodcutting",
-            "fletching",
-            "fishing",
-            "firemaking",
-            "crafting",
-            "smithing",
-            "mining",
-            "herblore",
-            "agility",
-            "thieving",
-            "slayer",
-            "farming",
-            "runecraft",
-            "hunter",
-            "construction"
-        ]
-    },
-    {
-        "name": "cb",
-        "skills": [
-            "attack",
-            "defence",
-            "strength",
-            "hitpoints",
-            "ranged",
-            "prayer",
-            "magic"
-        ]
-    },
-    {   "name": "noncb",
-        "skills": [
-            "cooking",
-            "woodcutting",
-            "fletching",
-            "fishing",
-            "firemaking",
-            "crafting",
-            "smithing",
-            "mining",
-            "herblore",
-            "agility",
-            "thieving",
-            "slayer",
-            "farming",
-            "runecraft",
-            "hunter",
-            "construction"
-        ]
-    }
+{
+    "all": [
+        "attack",
+        "defence",
+        "strength",
+        "hitpoints",
+        "ranged",
+        "prayer",
+        "magic",
+        "cooking",
+        "woodcutting",
+        "fletching",
+        "fishing",
+        "firemaking",
+        "crafting",
+        "smithing",
+        "mining",
+        "herblore",
+        "agility",
+        "thieving",
+        "slayer",
+        "farming",
+        "runecraft",
+        "hunter",
+        "construction"
+    ],
+    "cb": [
+        "attack",
+        "defence",
+        "strength",
+        "hitpoints",
+        "ranged",
+        "prayer",
+        "magic"
+    ],
+    "noncb": [
+        "cooking",
+        "woodcutting",
+        "fletching",
+        "fishing",
+        "firemaking",
+        "crafting",
+        "smithing",
+        "mining",
+        "herblore",
+        "agility",
+        "thieving",
+        "slayer",
+        "farming",
+        "runecraft",
+        "hunter",
+        "construction"
+    ]
 }

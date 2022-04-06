@@ -1,3 +1,5 @@
+""" Code for building app dependencies. """
+
 from dataclasses import dataclass
 from typing import List, OrderedDict
 
@@ -24,12 +26,10 @@ class SplitData:
 
 
 def build_appdata_obj(centroids_df, xyz_df, quartiles_df, clusterids_df) -> OrderedDict[str, SplitData]:
-    print("computing cluster sizes...")
     cluster_sizes = {}
     for s, split in enumerate(splits):
         cluster_sizes[split] = get_cluster_sizes(clusterids[:, s])
 
-    print("computing cluster uniqueness...")
     cluster_uniqueness = {}
     for split in splits:
         cluster_uniqueness[split] = get_cluster_uniqueness(cluster_sizes[split])
@@ -57,11 +57,10 @@ def build_appdata_obj(centroids_df, xyz_df, quartiles_df, clusterids_df) -> Orde
         results[split.name] = split_results
 
 
-def playerdata_to_mongodoc(player):
-    pass
-
-
 def populate_collection(players_df: pd.DataFrame, clusterids_df: pd.DataFrame, collection: Collection):
+
+    # todo: decide - one collection for all, or two? let's go with two for now.
+
     nplayers = len(players_df)
     ndocs = collection.count_documents({})
     if not drop:

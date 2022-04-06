@@ -1,5 +1,5 @@
-""" Scrapes stats from the OSRS hiscores into a CSV file. Returns error
-    code 2 if CSV file already contains the requested data range. """
+""" Scrapes stats from the OSRS hiscores into a CSV file. Returns
+error code 2 if CSV file already contains the requested data range. """
 
 import argparse
 import asyncio
@@ -24,11 +24,11 @@ class NothingToDo(Exception):
     """ Raised if the script discovers the output file is already complete. """
 
 
-async def main(out_file: str, start_rank: int, stop_rank: int, nworkers: int = 28, usevpn: bool = False):
-
-    # The remote server seems to have a connection limit of 30.
-    if nworkers + N_PAGE_WORKERS > 30:
-        raise ValueError(f"too many stats workers, maximum allowed is {30 - N_PAGE_WORKERS}")
+async def main(out_file: str, start_rank: int, stop_rank: int, nworkers: int = 28,
+               use_vpn: bool = False, sudo_password: str = None):
+    """ Scrape players between the given range of ranks from the
+    OSRS hiscores into a CSV file. If `vpn_pass` is provided, the
+    VPN is used and sudo-authenticated with the given password. """
 
     # Check for existing progress.
     highest_rank = get_top_rank(out_file)
@@ -59,21 +59,18 @@ async def main(out_file: str, start_rank: int, stop_rank: int, nworkers: int = 2
     statworkers = [Worker(in_queue=uname_q, out_queue=export_q, job_counter=currentrank)
                    for _ in range(nworkers)]
 
-    if usevpn:
-        pwd = askpass()
-
     logprint(f"starting to scrape (ranks {start_rank}-{stop_rank}, {nworkers} stats workers)", level='info')
     t = Timer(text="done ({minutes:.1f} minutes)")
     t.start()
 
     while True:
-        if usevpn:
-            reset_vpn(pwd)
+        if use_vpn:
+            reset_vpn(sudo_password)
 
         # Spawn the data scraping tasks and run until requests fail.
         async with aiohttp.ClientSession() as sess:
             T = [asyncio.create_task(
-                export_records(in_queue=export_q, out_file=out_file, total=stop_rank - start_rank + 1)
+                export_records(in_queue=export_q, out_file=out_file, total=stop_rank - currentrank.value + 1)
             )]
             for w in pageworkers:
                 T.append(asyncio.create_task(
@@ -89,7 +86,7 @@ async def main(out_file: str, start_rank: int, stop_rank: int, nworkers: int = 2
                 break
             except RequestFailed as e:
                 logging.error(f"caught RequestFailed: {e}")
-                if not usevpn:
+                if not use_vpn:
                     raise
                 continue
             finally:
@@ -109,7 +106,7 @@ if __name__ == '__main__':
     parser.add_argument('--num-workers', default=28, type=int, help="number of concurrent scraping threads")
     parser.add_argument('--log-file', default=None, help="if provided, output logs to this file")
     parser.add_argument('--log-level', default='info', help="'debug'|'info'|'warning'|'error'|'critical'")
-    parser.add_argument('--usevpn', dest='usevpn', action='store_true', help="if set, will use OpenVPN")
+    parser.add_argument('--vpn', dest='vpn', action='store_true', help="if set, will use VPN")
     args = parser.parse_args()
 
     if args.log_file:
@@ -119,8 +116,16 @@ if __name__ == '__main__':
     else:
         logging.disable()
 
+    # The remote server seems to have a connection limit of 30.
+    if args.num_workers + N_PAGE_WORKERS > 30:
+        raise ValueError(f"too many stats workers, maximum allowed is {30 - N_PAGE_WORKERS}")
+
+    sudo_pwd = None
+    if args.vpn:
+        sudo_pwd = askpass()
+
     try:
-        asyncio.run(main(args.outfile, args.start_rank, args.stop_rank, args.num_workers, args.usevpn))
+        asyncio.run(main(args.outfile, args.start_rank, args.stop_rank, args.num_workers, args.vpn, sudo_pwd))
     except NothingToDo:
         logprint("nothing to do", level='info')
         sys.exit(2)
