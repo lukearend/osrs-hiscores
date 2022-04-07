@@ -1,17 +1,20 @@
 """ Condense raw stats file from scraping into a clean skills dataset. """
 
-import csv
+import argparse
 import shlex
 import subprocess
 
+import numpy as np
+import pandas as pd
 from tqdm import tqdm
 
+from src.analysis.data import dump_pkl
 from src.common import osrs_skills
-from src.scrape import csv_to_player, csv_api_stats
+from src.scrape import csv_to_player, stat_ind
 
 
 def main(in_file: str, out_file: str):
-    print("reading raw scrape file...")
+    print("reading raw scrape data...")
     stdout = subprocess.check_output(shlex.split(f"wc -l {in_file}"))  # count lines in file
     nlines = int(stdout.decode().strip().split()[0])  # stdout returns both line count and filename
     with open(in_file, 'r') as f:
@@ -22,33 +25,43 @@ def main(in_file: str, out_file: str):
 
     # Deduplicate any records with matching usernames by taking the later one.
     print("cleaning...")
-    seen = {}
-    for record in players:
-        if record.username not in seen.keys():
-            seen[record.username] = record
+    seen = {}  # mapping from usernames to players seen so far
+    for p in tqdm(players):
+        if p.username not in seen.keys():
+            seen[p.username] = p
         else:
-            existing_record = seen[record.username]
-            seen[record.username] = record if record.ts > existing_record.ts else existing_record
+            existing = seen[p.username]
+            seen[p.username] = p if p.ts > existing.ts else existing
+    players = seen.values()
 
-    # Sort accounts from best to worst and reassign ranks.
+    # Sort from best to worst and reassign ranks.
+    print("sorting...")
     players = sorted(players, reverse=True)
     for i, player in enumerate(players, start=1):
         player.rank = i
 
-    print("writing cleaned up stats file...")
-    with open(out_file, 'w') as f:
-        writer = csv.writer(f)
-        header = ['username', 'rank'] + osrs_skills(include_total=True)
-        writer.writerow(header)
+    # Cast to a pandas DataFrame.
+    print("casting to dataframe...")
+    skills = osrs_skills(include_total=True)
+    skill_lvl_inds = np.array([stat_ind(f'{s}_level') for s in skills])
 
-        stat_inds = [csv_api_stats().index(s + '_level') for s in osrs_skills(include_total=True)]
-        for i, p in tqdm(enumerate(players)):
-            player_skills = [p.stats[i] for i in stat_inds]
-            player_csv = [p.username, p.rank] + [str(i) for i in player_skills]
-            writer.writerow(player_csv)
+    unames = []
+    stats = np.zeros((len(players), len(skills)), dtype='int')
+    for i, p in tqdm(enumerate(players)):
+        stats[i, :] = p.stats[skill_lvl_inds]
+        unames.append(p.username)
+    stats[stats == -1] = 0         # missing data
+    stats = stats.astype('uint16')  # save size since all values in range 0-2277
+
+    players_df = pd.DataFrame(data=stats, index=unames, columns=skills)
+
+    dump_pkl(players_df, out_file)
+    print(f"wrote results to {out_file}")
 
 
 if __name__ == '__main__':
-    infile = '/Users/lukearend/projects/osrs-hiscores/data/raw/player-stats-raw.csv'
-    outfile = '/Users/lukearend/projects/osrs-hiscores/data/raw/player-stats.csv'
-    main(infile, outfile)
+    parser = argparse.ArgumentParser("Clean up and condense raw stats data.")
+    parser.add_argument('-i', '--in-file', required=True, help="raw CSV file from scraping process")
+    parser.add_argument('-o', '--out-file', required=True, help="output cleaned dataset to this file")
+    args = parser.parse_args()
+    main(args.in_file, args.out_file)

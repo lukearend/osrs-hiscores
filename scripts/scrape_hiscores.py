@@ -99,7 +99,7 @@ async def main(out_file: str, start_rank: int, stop_rank: int, nworkers: int = 2
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="""Download player data from the OSRS hiscores.""")
+    parser = argparse.ArgumentParser(description="Download player data from the OSRS hiscores.")
     parser.add_argument('-o', '--out-file', required=True, help="dump scraped data to this CSV file in append mode")
     parser.add_argument('--start-rank', default=1, type=int, help="start data collection at this player rank")
     parser.add_argument('--stop-rank', default=2000000, type=int, help="stop data collection at this rank")

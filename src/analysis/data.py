@@ -23,7 +23,7 @@ def dump_pkl(obj: Any, file: str):
         pickle.dump(obj, f)
 
 
-def import_players_csv(players_df: pd.DataFrame, out_file: str):
+def export_players_csv(players_df: pd.DataFrame, out_file: str):
     pass
 
 

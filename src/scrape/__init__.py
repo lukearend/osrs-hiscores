@@ -8,6 +8,8 @@ from functools import cache
 from pathlib import Path
 from typing import List
 
+import numpy as np
+
 
 @cache
 def csv_api_stats() -> List[str]:
@@ -17,8 +19,9 @@ def csv_api_stats() -> List[str]:
     with open(file, 'r') as f:
         return json.load(f)
 
+
 @cache
-def _stat_ind(name: str):
+def stat_ind(name: str) -> int:
     return csv_api_stats().index(name)
 
 
@@ -32,11 +35,14 @@ class PlayerRecord:
         :param ts: time at which record was scraped
         """
         self.username = username
-        self.stats = stats
-        self.total_level = stats[_stat_ind('total_level')]
-        self.total_xp = stats[_stat_ind('total_xp')]
-        self.rank = stats[_stat_ind('total_rank')]
+        self.total_level = stats[stat_ind('total_level')]
+        self.total_xp = stats[stat_ind('total_xp')]
+        self.rank = stats[stat_ind('total_rank')]
         self.ts = ts
+
+        stats = np.array(stats, dtype='float')  # None -> nan
+        stats[np.isnan(stats)] = -1             # nan -> -1
+        self.stats = stats.astype('int')
 
     def __lt__(self, other):
         if self.total_level < other.total_level:

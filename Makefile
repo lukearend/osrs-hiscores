@@ -5,7 +5,7 @@ ifneq (,$(wildcard .env))
 	export
 endif
 
-start_rank:=$(or $(START_RANK), 1000000)
+start_rank:=$(or $(START_RANK), 1000001)
 stop_rank:=$(or $(STOP_RANK), 1001000)
 kmeans_k:=$(or $(KMEANS_K), 25)
 umap_nn:=$(or $(UMAP_NN), 10)
@@ -46,14 +46,29 @@ download:
 test: lint
 	@source env/bin/activate && cd test && pytest . -sv --asyncio-mode=strict
 
-scrape: ## scrape hiscores
-	@source env/bin/activate && cd scripts && \
-	python scrape_hiscores.py --out-file $(raw_stats).csv \
-	                          --start-rank $(start_rank) --stop-rank $(stop_rank) --num-workers 28 \
-	                          --log-file data/raw/scrape-$(start_rank)-$(stop_rank).log \
-	                          --log-level INFO --usevpn
+params: ## print default parameters
+	@echo "running with parameters:"
+	@printf "  start rank: %-14s  (START_RANK)\n" $(start_rank)
+	@printf "  stop rank: %-15s  (STOP_RANK)\n" $(stop_rank)
+	@printf "  kmeans k = %-15s  (KMEANS_K)\n" $(kmeans_k)
+	@printf "  umap n_neighbors = %-8s (UMAP_NN)\n" $(umap_nn)
+	@printf "  umap min_dist = %-10s  (UMAP_MINDIST)\n" $(umap_mindist)
 
-clean: ## clean raw dataset
+scrape: $(raw_stats).csv ## scrape hiscores
+
+clean: $(stats).pkl
+
+$(raw_stats).csv:
+	@source env/bin/activate && cd scripts && \
+	if python scrape_hiscores.py --out-file $(raw_stats).tmp \
+	    --start-rank $(start_rank) --stop-rank $(stop_rank) --num-workers 28 \
+	    --log-file $(ROOT)/data/raw/scrape-$(start_rank)-$(stop_rank).log \
+	    --log-level INFO --vpn ; \
+	then \
+		 mv $(raw_stats).tmp $(raw_stats).csv ; \
+	fi
+
+$(stats).pkl: $(raw_stats).csv ## clean raw dataset
 	@source env/bin/activate && cd scripts && \
 	python clean_raw_data.py --in-file $(raw_stats).csv --out-file $(stats).pkl
 

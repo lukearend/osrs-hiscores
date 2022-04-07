@@ -7,19 +7,7 @@ import pandas as pd
 
 
 def main(players_df: pd.DataFrame, k: int, use_skills: List[str] = None) -> Tuple[pd.DataFrame, pd.DataFrame]:
-
-    # Player weight is proportional to the number of ranked skills.
-    weights = np.sum(player_vectors != -1, axis=1) / player_vectors.shape[1]
-
-    # Replace missing data, i.e. unranked stats, with 1s. This is
-    # a reasonable substitution for clustering purposes since an
-    # unranked stat is known to be relatively low.
-    player_vectors[player_vectors == -1] = 1
-
-    # Sort clusters by total level descending.
-    total_levels = np.sum(centroids, axis=1)
-    sort_inds = np.argsort(total_levels)[::-1]
-    centroids = centroids[sort_inds]
+    pass
 
 
 if __name__ == "__main__":
