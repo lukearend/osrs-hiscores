@@ -1,0 +1,44 @@
+#!/usr/bin/env bash
+
+if [ "$#" -ne 4 ]; then
+  echo "usage: ./upload_gdrive <rawstatsfile> <statsfile> <centroidsfile> <clusteridsfile>"
+  exit 1
+elif [ ! -f $1 ]; then
+  echo "raw stats file '$1' not found" && exit 1
+elif [ ! -f $2 ]; then
+  echo "stats file '$2' not found" && exit 1
+elif [ ! -f $3 ]; then
+  echo "centroids file '$3' not found" && exit 1
+elif [ ! -f $4 ]; then
+  echo "cluster IDs file '$4' not found" && exit 1
+fi
+raw_stats_file=$1
+stats_file=$2
+centroids_file=$3
+clusterids_file=$4
+
+# todo: integrate this with the code around it, add more args if necessary
+aws s3 cp $(appdata).pkl s3://$(OSRS_APPDATA_BUCKET)/app-data.pkl && \
+aws s3 cp $(centroids).csv s3://$(OSRS_DATASET_BUCKET)/cluster-centroids.csv && \
+aws s3 cp $(clusterids).csv s3://$(OSRS_DATASET_BUCKET)/player-clusters.csv && \
+aws s3 cp $(stats).csv s3://$(OSRS_DATASET_BUCKET)/player-stats.csv
+aws s3 cp $(stats_raw).csv s3://$(OSRS_DATASET_BUCKET)/player-stats-raw.csv
+# endtodo
+
+ROOT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)/.."
+tmp_dir="$ROOT_DIR/.tmpzip"
+trap 'rm -rf "$tmp_dir"' exit
+
+zip_dir=osrs-dataset
+
+mkdir "$tmp_dir" && cd "$tmp_dir" && mkdir $zip_dir && \
+cp "$centroids_file" $zip_dir/cluster-centroids.csv && \
+cp "$clusterids_file" $zip_dir/player-clusters.csv && \
+cp "$stats_file" $zip_dir/player-stats.csv && \
+cp "$raw_stats_file" $zip_dir/player-stats-raw.csv && \
+zip -rX $zip_dir.zip $zip_dir && \
+gdrive upload $zip_dir/cluster-centroids.csv -p $OSRS_GDRIVE_DIR --name cluster-centroids.csv && \
+gdrive upload $zip_dir/player-clusters.csv -p $OSRS_GDRIVE_DIR --name player-clusters.csv && \
+gdrive upload $zip_dir/player-stats.csv -p $OSRS_GDRIVE_DIR --name player-stats.csv && \
+gdrive upload $zip_dir/player-stats-raw.csv -p $OSRS_GDRIVE_DIR --name player-stats-raw.csv && \
+gdrive upload $zip_dir.zip -p $OSRS_GDRIVE_DIR --name $zip_dir.zip

@@ -24,10 +24,9 @@ def main(players_df: pd.DataFrame, k: int, use_skills: List[str] = None) -> Tupl
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Cluster players according to account similarity. """)
-    parser.add_argument('stats_file', type=str, help="load player stats from this file")
-    parser.add_argument('splits_file', type=str, help="load dataset splits from this file")
-    parser.add_argument('clusterids_file', type=str, help="write cluster IDs to this file")
-    parser.add_argument('centroids_file', type=str, help="write cluster centroids to this file")
+    parser.add_argument('-i', '--in-file', type=str, help="load player stats from this file")
+    parser.add_argument('--out-clusterids', type=str, help="write cluster IDs to this file")
+    parser.add_argument('--out-centroids', type=str, help="write cluster centroids to this file")
     parser.add_argument('-k', '--nclusters', required=True, help="number of clusters")
     parser.add_argument('-v', '--verbose', action='store_true', help="if set, output progress during training")
     args = parser.parse_args()

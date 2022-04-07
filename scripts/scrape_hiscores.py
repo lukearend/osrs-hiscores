@@ -100,7 +100,7 @@ async def main(out_file: str, start_rank: int, stop_rank: int, nworkers: int = 2
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="""Download player data from the OSRS hiscores.""")
-    parser.add_argument('outfile', help="dump scraped data to this CSV file in append mode")
+    parser.add_argument('-o', '--out-file', required=True, help="dump scraped data to this CSV file in append mode")
     parser.add_argument('--start-rank', default=1, type=int, help="start data collection at this player rank")
     parser.add_argument('--stop-rank', default=2000000, type=int, help="stop data collection at this rank")
     parser.add_argument('--num-workers', default=28, type=int, help="number of concurrent scraping threads")
@@ -112,7 +112,7 @@ if __name__ == '__main__':
     if args.log_file:
         logging.basicConfig(format="%(asctime)s.%(msecs)03d:%(levelname)s:%(message)s",
                             datefmt="%H:%M:%S", level=getattr(logging, args.log_level.upper()),
-                            handlers=[logging.FileHandler(filename=args.log_file, mode='w')])
+                            handlers=[logging.FileHandler(filename=args.log_file, mode='a')])
     else:
         logging.disable()
 
@@ -125,7 +125,7 @@ if __name__ == '__main__':
         sudo_pwd = askpass()
 
     try:
-        asyncio.run(main(args.outfile, args.start_rank, args.stop_rank, args.num_workers, args.vpn, sudo_pwd))
+        asyncio.run(main(args.out_file, args.start_rank, args.stop_rank, args.num_workers, args.vpn, sudo_pwd))
     except NothingToDo:
         logprint("nothing to do", level='info')
         sys.exit(2)

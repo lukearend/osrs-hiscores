@@ -24,7 +24,7 @@ class Player:
 def osrs_skills(include_total: bool = False) -> List[str]:
     """ Load the list of OSRS skill names. """
 
-    file = Path(__file__).resolve().parents[1] / "ref" / "osrs-skills.json"
+    file = Path(__file__).resolve().parents[2] / "ref" / "osrs-skills.json"
     with open(file, 'r') as f:
         skills = json.load(f)
     if include_total:
@@ -38,7 +38,7 @@ def load_splits(file: str = None) -> OrderedDict[str, List[str]]:
     Each split is a subset of skills to be used as features for clustering. """
 
     if file is None:
-        file = Path(__file__).resolve().parents[1] / "ref" / "splits.json"
+        file = Path(__file__).resolve().parents[2] / "ref" / "splits.json"
     return json.loads(file, object_pairs_hook=OrderedDict)
 
 

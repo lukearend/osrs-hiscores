@@ -1,7 +1,5 @@
 #!/usr/bin/env python3
 
-""" Preprocess and build a single file for the data to be used in Dash app. """
-
 import argparse
 import pickle
 
@@ -20,6 +18,11 @@ def compute_minmax(xyz):
 
 
 def main(centroids_file: str, cluster_analytics_file: str, clusters_xyz_file: str, out_file: str, mongo_url: str, coll_name: str, drop: bool = False):
+    # todo: this just computes quartiles
+
+
+
+
     print("building app data...", end=' ', flush=True)
     cluster_analytics = load_pkl(cluster_analytics_file)
     cluster_xyz = load_pkl(clusters_xyz_file)

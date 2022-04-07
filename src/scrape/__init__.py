@@ -13,17 +13,17 @@ from typing import List
 def csv_api_stats() -> List[str]:
     """ Load the list of header fields returned from the OSRS hiscores CSV API. """
 
-    file = Path(__file__).resolve().parents[1] / "ref" / "csv-api-stats.json"
+    file = Path(__file__).resolve().parents[2] / "ref" / "csv-api-stats.json"
     with open(file, 'r') as f:
         return json.load(f)
+
+@cache
+def _stat_ind(name: str):
+    return csv_api_stats().index(name)
 
 
 class PlayerRecord:
     """ Data record for one player scraped from the hiscores. """
-
-    @cache
-    def stat_ind(self, name: str):
-        csv_api_stats().index(name)
 
     def __init__(self, username: str, stats: List[int], ts: datetime):
         """
@@ -33,9 +33,9 @@ class PlayerRecord:
         """
         self.username = username
         self.stats = stats
-        self.total_level = stats[self.stat_ind('total_level')]
-        self.total_xp = stats[self.stat_ind('total_xp')]
-        self.rank = stats[self.stat_ind('total_rank')]
+        self.total_level = stats[_stat_ind('total_level')]
+        self.total_xp = stats[_stat_ind('total_xp')]
+        self.rank = stats[_stat_ind('total_rank')]
         self.ts = ts
 
     def __lt__(self, other):

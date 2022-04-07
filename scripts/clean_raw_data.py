@@ -12,7 +12,7 @@ from src.scrape import csv_to_player, csv_api_stats
 
 def main(in_file: str, out_file: str):
     print("reading raw scrape file...")
-    stdout = subprocess.check_output(shlex.split(f"wc -l {out_file}"))  # count lines in file
+    stdout = subprocess.check_output(shlex.split(f"wc -l {in_file}"))  # count lines in file
     nlines = int(stdout.decode().strip().split()[0])  # stdout returns both line count and filename
     with open(in_file, 'r') as f:
         _ = f.readline()  # discard header
@@ -21,6 +21,7 @@ def main(in_file: str, out_file: str):
             players.append(csv_to_player(line.strip()))
 
     # Deduplicate any records with matching usernames by taking the later one.
+    print("cleaning...")
     seen = {}
     for record in players:
         if record.username not in seen.keys():
@@ -48,6 +49,6 @@ def main(in_file: str, out_file: str):
 
 
 if __name__ == '__main__':
-    infile = '/Users/lukearend/projects/osrs-hiscores/data/raw/player-stats-raw.tmp'
+    infile = '/Users/lukearend/projects/osrs-hiscores/data/raw/player-stats-raw.csv'
     outfile = '/Users/lukearend/projects/osrs-hiscores/data/raw/player-stats.csv'
     main(infile, outfile)
