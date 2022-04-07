@@ -12,12 +12,12 @@ umap_nn:=$(or $(UMAP_NN), 10)
 umap_mindist:=$(or $(UMAP_MINDIST), 0.25)
 
 raw_stats:=$(ROOT)/data/raw/stats-raw-$(start_rank)-$(stop_rank)
-stats:=$(ROOT)/data/final/stats-$(start_rank)-$(stop_rank)
-centroids:=$(ROOT)/data/final/centroids-$(k)
-clusterids:=$(ROOT)/data/final/clusterids-$(k)
+stats:=$(ROOT)/data/processed/stats-$(start_rank)-$(stop_rank)
+centroids:=$(ROOT)/data/processed/centroids-$(k)
+clusterids:=$(ROOT)/data/processed/clusterids-$(k)
 quartiles:=$(ROOT)/data/interim/quartiles-$(k)
 xyz:=$(ROOT)/data/interim/xyz-$(k)-$(nn)-$(mindist)
-appdata:=$(ROOT)/data/final/appdata-$(k)-$(nn)-$(mindist)
+appdata:=$(ROOT)/data/processed/appdata-$(k)-$(nn)-$(mindist)
 appcoll:=players
 
 .DEFAULT_GOAL = help
