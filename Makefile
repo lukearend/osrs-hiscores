@@ -43,7 +43,7 @@ download:
 	@source env/bin/activate && cd bin && \
 	./download_dataset $(stats_raw).pkl $(stats).pkl $(centroids).pkl $(clusterids).pkl
 
-test: lint test-data
+test: lint
 	@source env/bin/activate && cd test && pytest . -sv --asyncio-mode=strict
 
 params: ## print default parameters
@@ -58,6 +58,8 @@ scrape: $(raw_stats).csv ## scrape hiscores
 
 clean: $(stats).pkl ## clean raw dataset
 
+cluster: $(clusterids).pkl $(centroids).pkl ## cluster players
+
 $(raw_stats).csv:
 	@source env/bin/activate && cd scripts && \
 	if python scrape_hiscores.py --out-file $(raw_stats).tmp \
@@ -71,8 +73,6 @@ $(raw_stats).csv:
 $(stats).pkl: $(raw_stats).csv
 	@source env/bin/activate && cd scripts && \
 	python clean_raw_data.py --in-file $(raw_stats).csv --out-file $(stats).pkl
-
-cluster: $(clusterids).pkl $(centroids).pkl ## cluster players
 
 $(clusterids).pkl $(centroids).pkl: $(stats).pkl
 	@source env/bin/activate && cd scripts && \
