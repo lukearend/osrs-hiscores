@@ -10,7 +10,6 @@ import numpy as np
 import pandas as pd
 from botocore.exceptions import NoCredentialsError
 from progressbar import progressbar
-from tqdm import tqdm
 
 
 @cache
@@ -22,6 +21,22 @@ def load_pkl(file: str) -> Any:
 def dump_pkl(obj: Any, file: str):
     with open(file, 'wb') as f:
         pickle.dump(obj, f)
+
+
+def import_players_csv(in_file) -> pd.DataFrame:
+    with open(in_file, 'r') as f:
+        reader = csv.reader(f)
+        header = next(reader)
+        skills = header[2:]  # username, rank, skills...
+
+        unames = []
+        stats = []
+        for line in reader:
+            unames.append(line[0])
+            stats.append([int(i) for i in line[2:]])
+
+    stats = np.array(stats, dtype='int')
+    return pd.DataFrame(stats, index=unames, columns=skills)
 
 
 def export_players_csv(players_df: pd.DataFrame, out_file: str):
