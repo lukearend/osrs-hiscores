@@ -124,7 +124,7 @@ ec2-%: # options: status, start, stop, connect, setup
 	@cd bin/dev && ./ec2_instance $*
 
 lint:
-	@source env/bin/activate && pycodestyle app src --ignore=E301,E302,E501 && \
+	@source env/bin/activate && pycodestyle app src --ignore=E301,E302,E402,E501 && \
 	echo "code check passed"
 
 help:

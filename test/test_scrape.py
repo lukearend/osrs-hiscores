@@ -1,6 +1,9 @@
+""" Unit test the hiscores scraping code. """
+
 import asyncio
 import os
 import random
+from pathlib import Path
 from typing import Tuple, List
 
 import aiohttp
@@ -11,7 +14,12 @@ from src.scrape import PlayerRecord, JobCounter, player_to_csv, csv_to_player, c
 from src.scrape.export import get_top_rank, get_page_jobs
 from src.scrape.requests import get_hiscores_page, get_player_stats
 from src.scrape.workers import JobQueue
-from scripts.scrape_hiscores import main
+from scripts.scrape_hiscores import main as scrape_hiscores
+from scripts.clean_raw_data import main as clean_raw_data
+
+
+STATS_RAW_FILE = Path(__file__).resolve().parent / "data" / "stats-raw.csv"
+STATS_FILE = Path(__file__).resolve().parent / "data" / "stats-clean.csv"
 
 
 @pytest.mark.asyncio
@@ -113,11 +121,15 @@ async def test_jobcounter():
 
 
 @pytest.mark.asyncio
-async def test_scrape_main():
-    out_file = 'data/scrape.csv'
+async def test_scrape_hiscores():
+    out_file = 'data/stats-raw.csv'
     start_rank = random.randint(1, 2_000_000) - 100
     end_rank = start_rank + 49
     if os.path.isfile(out_file):
         os.remove(out_file)
-    await main(out_file, start_rank=start_rank, stop_rank=end_rank, nworkers=25)
-    assert get_top_rank(out_file) == end_rank
+    await scrape_hiscores(STATS_RAW_FILE, start_rank=start_rank, stop_rank=end_rank, nworkers=25)
+    assert get_top_rank(STATS_RAW_FILE) == end_rank
+
+
+def test_clean_raw_data():
+    clean_raw_data(STATS_RAW_FILE, STATS_FILE)

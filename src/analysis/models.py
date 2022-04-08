@@ -1,11 +1,15 @@
 """ Core machine learning models. """
 
 import os
+import warnings
+
+warnings.filterwarnings("ignore", category=DeprecationWarning)  # suppress deprecation warnings from faiss imports
 
 import faiss
 import numpy as np
 import umap
 from numpy.typing import NDArray
+
 os.environ["KMP_WARNINGS"] = 'off'  # suppress OMP deprecation warning from UMAP (github.com/numba/numba/issues/5275)
 
 

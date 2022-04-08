@@ -47,7 +47,7 @@ def main(in_file: str, out_file: str):
 
     unames = []
     stats = np.zeros((len(players), len(skills)), dtype='int')
-    for i, p in tqdm(enumerate(players)):
+    for i, p in tqdm(enumerate(players), total=len(players)):
         stats[i, :] = p.stats[skill_lvl_inds]
         unames.append(p.username)
     stats[stats == -1] = 0         # missing data
