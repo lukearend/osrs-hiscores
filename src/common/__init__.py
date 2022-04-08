@@ -39,7 +39,8 @@ def load_splits(file: str = None) -> OrderedDict[str, List[str]]:
 
     if file is None:
         file = Path(__file__).resolve().parents[2] / "ref" / "splits.json"
-    return json.loads(file, object_pairs_hook=OrderedDict)
+    with open(file, 'r') as f:
+        return json.load(f, object_pairs_hook=OrderedDict)
 
 
 def connect_mongo(url: str) -> Database:

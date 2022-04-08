@@ -6,6 +6,7 @@ from functools import cache
 from typing import Any
 
 import boto3
+import numpy as np
 import pandas as pd
 from botocore.exceptions import NoCredentialsError
 from progressbar import progressbar
@@ -24,7 +25,14 @@ def dump_pkl(obj: Any, file: str):
 
 
 def export_players_csv(players_df: pd.DataFrame, out_file: str):
-    pass
+    header = ['username', 'rank'] + list(players_df.columns)
+    unames = players_df.index
+    stats = players_df.to_numpy()
+    with open(out_file, 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(header)
+        for rank, (uname, stat_row) in enumerate(zip(unames, stats), 1):
+            writer.writerow([uname, rank] + list(stat_row))
 
 
 def export_centroids_csv(centroids_df: pd.DataFrame, out_file: str):

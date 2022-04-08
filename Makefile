@@ -13,11 +13,11 @@ umap_mindist:=$(or $(UMAP_MINDIST), 0.25)
 
 raw_stats:=$(ROOT)/data/raw/stats-raw-$(start_rank)-$(stop_rank)
 stats:=$(ROOT)/data/processed/stats-$(start_rank)-$(stop_rank)
-centroids:=$(ROOT)/data/processed/centroids-$(k)
-clusterids:=$(ROOT)/data/processed/clusterids-$(k)
-quartiles:=$(ROOT)/data/interim/quartiles-$(k)
-xyz:=$(ROOT)/data/interim/xyz-$(k)-$(nn)-$(mindist)
-appdata:=$(ROOT)/data/processed/appdata-$(k)-$(nn)-$(mindist)
+centroids:=$(ROOT)/data/processed/centroids-$(kmeans_k)
+clusterids:=$(ROOT)/data/processed/clusterids-$(kmeans_k)
+quartiles:=$(ROOT)/data/interim/quartiles-$(kmeans_k)
+xyz:=$(ROOT)/data/interim/xyz-$(kmeans_k)-$(umap_nn)-$(umap_mindist)
+appdata:=$(ROOT)/data/processed/appdata-$(kmeans_k)-$(umap_nn)-$(umap_mindist)
 appcoll:=players
 
 .DEFAULT_GOAL = help
@@ -43,7 +43,7 @@ download:
 	@source env/bin/activate && cd bin && \
 	./download_dataset $(stats_raw).pkl $(stats).pkl $(centroids).pkl $(clusterids).pkl
 
-test: lint
+test: lint test-data
 	@source env/bin/activate && cd test && pytest . -sv --asyncio-mode=strict
 
 params: ## print default parameters
@@ -56,7 +56,7 @@ params: ## print default parameters
 
 scrape: $(raw_stats).csv ## scrape hiscores
 
-clean: $(stats).pkl
+clean: $(stats).pkl ## clean raw dataset
 
 $(raw_stats).csv:
 	@source env/bin/activate && cd scripts && \
@@ -68,16 +68,18 @@ $(raw_stats).csv:
 		 mv $(raw_stats).tmp $(raw_stats).csv ; \
 	fi
 
-$(stats).pkl: $(raw_stats).csv ## clean raw dataset
+$(stats).pkl: $(raw_stats).csv
 	@source env/bin/activate && cd scripts && \
 	python clean_raw_data.py --in-file $(raw_stats).csv --out-file $(stats).pkl
 
-cluster: ## cluster players
+cluster: $(clusterids).pkl $(centroids).pkl ## cluster players
+
+$(clusterids).pkl $(centroids).pkl: $(stats).pkl
 	@source env/bin/activate && cd scripts && \
-	python cluster_players.py --nclusters $* --verbose \
-	                          --in-file $(stats)-$*.pkl \
-							  --out-clusterids $(clusterids)-$*.pkl \
-                              --out-centroids $(centroids)-$*.pkl
+	python cluster_players.py --nclusters $(kmeans_k) --verbose \
+	                          --in-file $(stats).pkl \
+							  --out-clusterids $(clusterids).pkl \
+                              --out-centroids $(centroids).pkl
 
 analytics: quartiles dimreduce
 
@@ -105,6 +107,12 @@ dataset:
 
 upload:
 	@cd bin/dev && ./push_artifacts $(stats_raw) $(stats).csv $(centroids).csv $(clusterids).csv
+
+test-data: $(ROOT)/test/data/test-data.csv
+
+$(ROOT)/test/data/test-data.csv:
+	source env/bin/activate && cd bin/dev && \
+	./build_testdata --in-file $(stats).pkl --out-file $@
 
 mongo:
 	@docker pull mongo

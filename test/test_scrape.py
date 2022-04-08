@@ -114,10 +114,10 @@ async def test_jobcounter():
 
 @pytest.mark.asyncio
 async def test_scrape_main():
-    outfile = 'data/scrape.out'
+    out_file = 'data/scrape.csv'
     start_rank = random.randint(1, 2_000_000) - 100
     end_rank = start_rank + 49
-    if os.path.isfile(outfile):
-        os.remove(outfile)
-    await main(outfile, start_rank=start_rank, stop_rank=end_rank, nworkers=25)
-    assert get_top_rank(outfile) == end_rank
+    if os.path.isfile(out_file):
+        os.remove(out_file)
+    await main(out_file, start_rank=start_rank, stop_rank=end_rank, nworkers=25)
+    assert get_top_rank(out_file) == end_rank

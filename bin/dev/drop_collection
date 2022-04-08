@@ -1,15 +1,11 @@
 #!/usr/bin/env python3
+
 import argparse
-from src.app import connect_mongo
+from src.common import connect_mongo
 
-desc = """Drop a collection in the database 'osrs-hiscores' at the Mongo
-          instance specified by environment variable OSRS_MONGO_URI."""
-
-parser = argparse.ArgumentParser(description=desc)
-parser.add_argument('coll_name', metavar='collection', type=str,
-                    help="name of collection to drop")
-parser.add_argument('-u', '--url', type=str,
-                    help="expects Mongo instance at this URL (defaults to localhost:27017)")
+parser = argparse.ArgumentParser("Drop a MongoDB collection.")
+parser.add_argument('-c', '--coll', help="name of collection to drop")
+parser.add_argument('-u', '--url', help="MongoDB instance URL (default is localhost:27017)")
 
 args = parser.parse_args()
 db = connect_mongo(args.url if args.url else "localhost:27017")

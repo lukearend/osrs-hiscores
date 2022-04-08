@@ -25,7 +25,7 @@ def fit_kmeans(x: NDArray, k: int, w: NDArray, verbose=True) -> NDArray:
 
     kmeans = faiss.Kmeans(d=ndims, k=k, seed=0, niter=100, nredo=10,
                           verbose=verbose, max_points_per_centroid=npoints)
-    kmeans.train(x.astype('float32'), weights=w.astype('float32'))
+    kmeans.train(x, weights=w.astype('float32'))
 
     return kmeans.centroids
 
@@ -44,8 +44,8 @@ def cluster_l2(x: NDArray, centroids: NDArray) -> NDArray:
     npoints, ndims = x.shape
 
     index = faiss.IndexFlatL2(ndims)
-    index.add(n=len(centroids), x=centroids)
-    _, result = index.search(n=npoints, x=x, k=1, labels=None, distances=None)
+    index.add(centroids)
+    _, result = index.search(x, k=1)
 
     clusterids = [i[0] for i in result]  # index.search() returns array of length-1 arrays
     clusterids = np.array(clusterids).astype('int')
