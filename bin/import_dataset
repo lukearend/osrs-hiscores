@@ -1,0 +1,31 @@
+#!/usr/bin/env python
+
+""" Convert final dataset from CSV files to .pkl files for analysis purposes. """
+
+import argparse
+
+from src.analysis.data import import_players_csv, import_clusterids_csv, import_centroids_csv, dump_pkl
+
+
+parser = argparse.ArgumentParser(description="Convert final dataset files from CSV to .pkl.""")
+parser.add_argument('stats_csv', type=str, help="player stats CSV file")
+parser.add_argument('stats_pkl', type=str, help="export player stats to this .pkl file")
+parser.add_argument('clusterids_csv', type=str, help="player cluster IDs CSV file")
+parser.add_argument('clusterids_pkl', type=str, help="export player cluster IDs to this .pkl file")
+parser.add_argument('centroids_csv', type=str, help="cluster centroids CSV file")
+parser.add_argument('centroids_pkl', type=str, help="export cluster centroids to this .pkl file")
+args = parser.parse_args()
+
+
+print("importing player stats...")
+player_stats = import_players_csv(args.stats_csv)
+dump_pkl(player_stats, args.stats_pkl)
+
+print("importing player cluster IDs...")
+player_clusterids = import_clusterids_csv(args.clusterids_csv)
+dump_pkl(player_clusterids, args.clusterids_pkl)
+
+print("importing cluster centroids...")
+cluster_centroids = import_centroids_csv(args.centroids_csv)
+dump_pkl(cluster_centroids, args.centroids_pkl)
+print("done")

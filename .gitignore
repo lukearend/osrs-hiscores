@@ -9,6 +9,7 @@ __pycache__
 /env
 /tmp
 /volume
+/data
 /test/data
 /ref/vpn/openvpn.pid
 /ref/vpn/server.ovpn

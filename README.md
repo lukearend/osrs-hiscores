@@ -30,8 +30,8 @@ Project organization
     ├── bin              <- Utility executables.
     │
     ├── data
+    │   ├── final        <- The final, canonical data sets.
     │   ├── interim      <- Intermediate data that has been transformed.
-    │   ├── processed    <- The final, canonical data sets for modeling.
     │   └── raw          <- The original, immutable data dump.
     │
     ├── ref              <- Reference files used in data processing.

@@ -9,7 +9,7 @@ import pandas as pd
 
 from src.analysis.data import load_pkl, dump_pkl
 from src.analysis.models import fit_kmeans, cluster_l2
-from src.common import load_splits
+from src.analysis import load_splits
 
 
 def main(players: pd.DataFrame, k: int,
@@ -41,7 +41,7 @@ def main(players: pd.DataFrame, k: int,
 
         clusterids[:, i] = cluster_l2(stats, centroids)
 
-        centroids = pd.DataFrame(centroids, columns=skills)
+        centroids = pd.DataFrame(centroids, index=range(k), columns=skills)
         centroids_per_split[split] = centroids
 
     clusterids = pd.DataFrame(clusterids, index=unames, columns=splits.keys())
@@ -50,12 +50,12 @@ def main(players: pd.DataFrame, k: int,
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description="Cluster players according to account similarity. """)
+    parser = argparse.ArgumentParser(description="Cluster players according to account similarity.")
     parser.add_argument('-i', '--in-file', type=str, help="load player stats from this file")
-    parser.add_argument('--out-clusterids', type=str, help="write cluster IDs to this file")
-    parser.add_argument('--out-centroids', type=str, help="write cluster centroids to this file")
     parser.add_argument('-k', '--nclusters', type=int, required=True, help="number of clusters")
     parser.add_argument('-v', '--verbose', action='store_true', help="if set, output progress during training")
+    parser.add_argument('--out-clusterids', type=str, help="write cluster IDs to this file")
+    parser.add_argument('--out-centroids', type=str, help="write cluster centroids to this file")
     args = parser.parse_args()
 
     players_df = load_pkl(args.in_file)

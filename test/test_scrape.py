@@ -9,7 +9,7 @@ from typing import Tuple, List
 import aiohttp
 import pytest
 
-from src.common import osrs_skills
+from src.analysis import osrs_skills
 from src.scrape import PlayerRecord, JobCounter, player_to_csv, csv_to_player, csv_api_stats
 from src.scrape.export import get_top_rank, get_page_jobs
 from src.scrape.requests import get_hiscores_page, get_player_stats

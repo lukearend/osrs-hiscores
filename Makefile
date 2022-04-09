@@ -4,32 +4,18 @@ ifneq (,$(wildcard .env))
     include .env
 	export
 endif
-
-start_rank:=$(or $(START_RANK), 1000001)
-stop_rank:=$(or $(STOP_RANK), 1001000)
-kmeans_k:=$(or $(KMEANS_K), 25)
-umap_nn:=$(or $(UMAP_NN), 10)
-umap_mindist:=$(or $(UMAP_MINDIST), 0.25)
-
-raw_stats:=$(ROOT)/data/raw/stats-raw-$(start_rank)-$(stop_rank)
-stats:=$(ROOT)/data/processed/stats-$(start_rank)-$(stop_rank)
-centroids:=$(ROOT)/data/processed/centroids-$(kmeans_k)
-clusterids:=$(ROOT)/data/processed/clusterids-$(kmeans_k)
-quartiles:=$(ROOT)/data/interim/quartiles-$(kmeans_k)
-xyz:=$(ROOT)/data/interim/xyz-$(kmeans_k)-$(umap_nn)-$(umap_mindist)
-appdata:=$(ROOT)/data/processed/appdata-$(kmeans_k)-$(umap_nn)-$(umap_mindist)
-appcoll:=players
-
 .DEFAULT_GOAL = help
 
-build: init download test cluster analytics buildapp run
+build: init test download analytics buildapp run ## build app from downloaded data
 
-dev: init test scrape clean cluster analytics buildapp upload
+dev: init test dataset analytics buildapp upload
 
-run: mongo-start
+run: mongo-start ## run final app
 	@source env/bin/activate && python3 app
 
-init: env mongo
+# -------------------------------------------------------------------------------------------------
+
+init: env mongo datadir ## initialize repository
 
 env:
 	echo "building virtual environment..."
@@ -39,59 +25,96 @@ env:
 	pip3 install -r requirements.txt
 	rm -rf *.egg-info
 
-download:
-	@source env/bin/activate && cd bin && \
-	./download_dataset $(stats_raw).pkl $(stats).pkl $(centroids).pkl $(clusterids).pkl
+datadir:
+	mkdir -p data && cd data && mkdir -p raw interim final
 
-test: lint
-	@source env/bin/activate && cd test && pytest . -sv --asyncio-mode=strict
+start_rank  :=$(or $(START_RANK), 1000001)
+stop_rank   :=$(or $(STOP_RANK), 1001000)
+kmeans_k    :=$(or $(KMEANS_K), 25)
+umap_nn     :=$(or $(UMAP_NN), 10)
+umap_mindist:=$(or $(UMAP_MINDIST), 0.25)
 
 params: ## print default parameters
-	@echo "running with parameters:"
-	@printf "  start rank: %-14s  (START_RANK)\n" $(start_rank)
-	@printf "  stop rank: %-15s  (STOP_RANK)\n" $(stop_rank)
-	@printf "  kmeans k = %-15s  (KMEANS_K)\n" $(kmeans_k)
-	@printf "  umap n_neighbors = %-8s (UMAP_NN)\n" $(umap_nn)
-	@printf "  umap min_dist = %-10s  (UMAP_MINDIST)\n" $(umap_mindist)
+	@printf "running with parameters (set via these env vars):\n\n"
+	@printf "  start rank: %-10s  (START_RANK)\n" $(start_rank)
+	@printf "  stop rank: %-11s  (STOP_RANK)\n" $(stop_rank)
+	@printf "  kmeans k = %-11s  (KMEANS_K)\n" $(kmeans_k)
+	@printf "  umap n_neighbors = %-4s (UMAP_NN)\n" $(umap_nn)
+	@printf "  umap min_dist = %-6s  (UMAP_MINDIST)\n\n" $(umap_mindist)
 
-scrape: $(raw_stats).csv ## scrape hiscores
+stats_raw :=$(ROOT)/data/raw/stats-raw-$(start_rank)-$(stop_rank)
+stats     :=$(ROOT)/data/interim/stats-$(start_rank)-$(stop_rank)
+centroids :=$(ROOT)/data/interim/centroids-$(kmeans_k)
+clusterids:=$(ROOT)/data/interim/clusterids-$(kmeans_k)
+quartiles :=$(ROOT)/data/interim/quartiles-$(kmeans_k)
+xyz       :=$(ROOT)/data/interim/xyz-$(kmeans_k)-$(umap_nn)-$(umap_mindist)
+appdata   :=$(ROOT)/data/interim/appdata-$(kmeans_k)-$(umap_nn)-$(umap_mindist)
+appcoll   :=players
+stats_final     :=$(ROOT)/data/final/player-stats.csv
+clusterids_final:=$(ROOT)/data/final/player-clusterids.csv
+centroids_final :=$(ROOT)/data/final/cluster-centroids.csv
 
-clean: $(stats).pkl ## clean raw dataset
+# -------------------------------------------------------------------------------------------------
 
-cluster: $(clusterids).pkl $(centroids).pkl ## cluster players
+dataset: scrape clean cluster export
 
-$(raw_stats).csv:
+scrape: $(stats_raw).csv ## scrape hiscores data
+
+clean: $(stats).pkl ## clean raw scraped dataset
+
+cluster: $(clusterids).pkl $(centroids).pkl ## cluster players by account stats
+
+export: $(stats_final).csv $(clusterids_final).csv $(centroids_final).csv
+
+analytics: quartiles dimreduce
+
+quartiles: $(quartiles).pkl ## compute cluster stat quartiles
+
+dimreduce: $(xyz).pkl ## reduce cluster centroids to 3D
+
+buildapp: appdata appdb
+
+# -------------------------------------------------------------------------------------------------
+
+$(stats_raw).csv:
 	@source env/bin/activate && cd scripts && \
-	if python scrape_hiscores.py --out-file $(raw_stats).tmp \
+	if python scrape_hiscores.py --out-file $(stats_raw).tmp \
 	    --start-rank $(start_rank) --stop-rank $(stop_rank) --num-workers 28 \
 	    --log-file $(ROOT)/data/raw/scrape-$(start_rank)-$(stop_rank).log \
 	    --log-level INFO --vpn ; \
 	then \
-		 mv $(raw_stats).tmp $(raw_stats).csv ; \
+		 mv $(stats_raw).tmp $(stats_raw).csv ; \
 	fi
 
-$(stats).pkl: $(raw_stats).csv
+$(stats).pkl: $(stats_raw).csv
 	@source env/bin/activate && cd scripts && \
-	python clean_raw_data.py --in-file $(raw_stats).csv --out-file $(stats).pkl
+	python clean_raw_data.py --in-file $< --out-file $@
 
 $(clusterids).pkl $(centroids).pkl: $(stats).pkl
 	@source env/bin/activate && cd scripts && \
 	python cluster_players.py --nclusters $(kmeans_k) --verbose \
-	                          --in-file $(stats).pkl \
-							  --out-clusterids $(clusterids).pkl \
-                              --out-centroids $(centroids).pkl
+	                          --in-file $< \
+	                          --out-clusterids $(clusterids).pkl \
+	                          --out-centroids $(centroids).pkl
 
-analytics: quartiles dimreduce
-
-quartiles: ## compute cluster quartiles
+$(quartiles).pkl: $(stats).pkl $(clusterids).pkl
 	@source env/bin/activate && cd scripts && \
-	python compute_quartiles.py
+	python compute_quartiles.py --stats-file $(word 1,$^) \
+                                --clusterids-file $(word 2,$^) \
+                                --out-file $@
 
-dimreduce: ## reduce centroid to 3D
+$(xyz).pkl: $(centroids).pkl
 	@source env/bin/activate && cd scripts && \
-	python dim_reduce_clusters.py
+	python dim_reduce_clusters.py --in-file $< --out-file $@ \
+	                              --n-neighbors $(umap_nn) --min-dist $(umap_mindist)
 
-buildapp: appdata appdb
+$(stats_final).csv $(clusterids_final).csv $(centroids_final).csv: $(stats).pkl $(clusterids).pkl $(centroids).pkl
+	@source env/bin/activate && cd bin/dev && \
+	./export_dataset $(stats).pkl $(stats_final).csv \
+					 $(clusterids).pkl $(clusterids_final).csv \
+					 $(centroids).pkl $(centroids_final).csv ; \
+
+# -------------------------------------------------------------------------------------------------
 
 appdata: ## build app data file
 	@source env/bin/activate && cd scripts && \
@@ -101,12 +124,18 @@ appdb: ## build app database
 	@source env/bin/activate && cd scripts && \
 	python build_database.py
 
-dataset:
-	@source env/bin/activate && cd scripts && \
-	python export_dataset_csv.py
+download:
+	@source env/bin/activate && cd bin && \
+	./download_dataset $(stats_raw).csv $(stats_final).csv $(centroids_final).csv $(clusterids_final).csv
+	./import_dataset $(stats_final).csv $(stats).pkl \
+	                 $(clusterids_final).csv $(clusterids).pkl \
+	                 $(centroids_final).csv $(centroids).pkl
 
-upload:
-	@cd bin/dev && ./push_artifacts $(stats_raw) $(stats).csv $(centroids).csv $(clusterids).csv
+upload: export
+	@cd bin/dev && ./push_artifacts $(stats_raw).csv $(stats).csv $(centroids).csv $(clusterids).csv
+
+test: lint
+	@source env/bin/activate && cd pytest test
 
 test-data: $(ROOT)/test/data/test-data.csv
 

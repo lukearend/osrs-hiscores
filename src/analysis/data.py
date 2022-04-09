@@ -2,6 +2,7 @@
 
 import csv
 import pickle
+from collections import OrderedDict
 from functools import cache
 from typing import Any
 
@@ -24,37 +25,27 @@ def dump_pkl(obj: Any, file: str):
 
 
 def import_players_csv(in_file) -> pd.DataFrame:
-    with open(in_file, 'r') as f:
-        reader = csv.reader(f)
-        header = next(reader)
-        skills = header[2:]  # username, rank, skills...
-
-        unames = []
-        stats = []
-        for line in reader:
-            unames.append(line[0])
-            stats.append([int(i) for i in line[2:]])
-
-    stats = np.array(stats, dtype='int')
-    return pd.DataFrame(stats, index=unames, columns=skills)
+    return pd.read_csv(in_file, index_col='username').drop('rank', axis=1)
 
 
-def export_players_csv(players_df: pd.DataFrame, out_file: str):
-    header = ['username', 'rank'] + list(players_df.columns)
-    unames = players_df.index
-    stats = players_df.to_numpy()
-    with open(out_file, 'w') as f:
-        writer = csv.writer(f)
-        writer.writerow(header)
-        for rank, (uname, stat_row) in enumerate(zip(unames, stats), 1):
-            writer.writerow([uname, rank] + list(stat_row))
+def import_clusterids_csv(in_file) -> pd.DataFrame:
+    return pd.read_csv(in_file, index_col='player')
 
 
-def export_centroids_csv(centroids_df: pd.DataFrame, out_file: str):
+def import_centroids_csv(in_file) -> OrderedDict[str, pd.DataFrame]:
     pass
 
 
-def export_clusters_csv(clusters_df: pd.DataFrame, out_file: str):
+def export_players_csv(players_df: pd.DataFrame, out_file: str):
+    players_df.insert(0, 'rank', np.arange(len(players_df)))
+    players_df.to_csv(out_file, header=True, index=True, index_label='username')
+
+
+def export_clusterids_csv(clusterids_df: pd.DataFrame, out_file: str):
+    clusterids_df.to_csv(out_file, header=True, index=True, index_label='player')
+
+
+def export_centroids_csv(centroids_dict: OrderedDict[str, pd.DataFrame], out_file):
     pass
 
 

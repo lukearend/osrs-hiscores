@@ -9,7 +9,7 @@ import pandas as pd
 from tqdm import tqdm
 
 from src.analysis.data import dump_pkl
-from src.common import osrs_skills
+from src.analysis import osrs_skills
 from src.scrape import csv_to_player, stat_ind
 
 

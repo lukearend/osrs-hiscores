@@ -16,8 +16,10 @@ pycodestyle
 pymongo[srv]
 pytest
 pytest-asyncio
+pytest-order
 python-dotenv
 requests
 tqdm
 umap-learn
+xarray
 -e .  # install src package in editable mode

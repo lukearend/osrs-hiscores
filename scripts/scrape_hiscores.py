@@ -26,9 +26,9 @@ class NothingToDo(Exception):
 
 async def main(out_file: str, start_rank: int, stop_rank: int, nworkers: int = 28,
                use_vpn: bool = False, sudo_password: str = None):
-    """ Scrape players between the given range of ranks from the
-    OSRS hiscores into a CSV file. If `vpn_pass` is provided, the
-    VPN is used and sudo-authenticated with the given password. """
+    """ Scrape players between the given range of ranks from
+    the OSRS hiscores into a CSV file. If `use_vpn` is true,
+    then VPN is used with sudo access via `sudo_password`. """
 
     # Check for existing progress.
     highest_rank = get_top_rank(out_file)
