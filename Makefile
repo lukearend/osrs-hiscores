@@ -6,14 +6,14 @@ ifneq (,$(wildcard .env))
 endif
 .DEFAULT_GOAL = help
 
-build: init test download analytics buildapp run ## build app from downloaded data
+build: init test download analytics buildapp run ## build repo from downloaded data
 
 dev: init test dataset analytics buildapp upload
 
 run: mongo-start ## run final app
 	@source env/bin/activate && python3 app
 
-# -------------------------------------------------------------------------------------------------
+# Setup -------------------------------------------------------------------------------------------
 
 init: env mongo datadir ## initialize repository
 
@@ -25,11 +25,14 @@ env:
 	pip3 install -r requirements.txt
 	rm -rf *.egg-info
 
+mongo:
+	@docker pull mongo
+
 datadir:
 	mkdir -p data && cd data && mkdir -p raw interim final
 
-start_rank  :=$(or $(START_RANK), 1000001)
-stop_rank   :=$(or $(STOP_RANK), 1001000)
+start_rank  :=$(or $(START_RANK), 1)
+stop_rank   :=$(or $(STOP_RANK), 2000000)
 kmeans_k    :=$(or $(KMEANS_K), 25)
 umap_nn     :=$(or $(UMAP_NN), 10)
 umap_mindist:=$(or $(UMAP_MINDIST), 0.25)
@@ -50,11 +53,8 @@ quartiles :=$(ROOT)/data/interim/quartiles-$(kmeans_k)
 xyz       :=$(ROOT)/data/interim/xyz-$(kmeans_k)-$(umap_nn)-$(umap_mindist)
 appdata   :=$(ROOT)/data/interim/appdata-$(kmeans_k)-$(umap_nn)-$(umap_mindist)
 appcoll   :=players
-stats_final     :=$(ROOT)/data/final/player-stats.csv
-clusterids_final:=$(ROOT)/data/final/player-clusterids.csv
-centroids_final :=$(ROOT)/data/final/cluster-centroids.csv
 
-# -------------------------------------------------------------------------------------------------
+# Main targets ------------------------------------------------------------------------------------
 
 dataset: scrape clean cluster export
 
@@ -66,15 +66,15 @@ cluster: $(clusterids).pkl $(centroids).pkl ## cluster players by account stats
 
 export: $(stats_final).csv $(clusterids_final).csv $(centroids_final).csv
 
-analytics: quartiles dimreduce
+analytics: quartiles dimreduce buildapp
 
 quartiles: $(quartiles).pkl ## compute cluster stat quartiles
 
 dimreduce: $(xyz).pkl ## reduce cluster centroids to 3D
 
-buildapp:
+buildapp: $(appdata).pkl ## build final application data
 
-# -------------------------------------------------------------------------------------------------
+# Data pipeline -----------------------------------------------------------------------------------
 
 $(stats_raw).csv:
 	@source env/bin/activate && cd scripts && \
@@ -108,49 +108,57 @@ $(xyz).pkl: $(centroids).pkl
 	python dim_reduce_clusters.py --in-file $< --out-file $@ \
 	                              --n-neighbors $(umap_nn) --min-dist $(umap_mindist)
 
-$(stats_final).csv $(clusterids_final).csv $(centroids_final).csv: $(stats).pkl $(clusterids).pkl $(centroids).pkl
-	@source env/bin/activate && cd bin/dev && \
-	./export_dataset $(stats).pkl $(stats_final).csv \
-					 $(clusterids).pkl $(clusterids_final).csv \
-					 $(centroids).pkl $(centroids_final).csv ; \
-
-# -------------------------------------------------------------------------------------------------
-
-appdata: ## build app data file
+$(appdata).pkl: $(stats).pkl $(clusterids).pkl $(centroids).pkl $(quartiles).pkl $(xyz).pkl
 	@source env/bin/activate && cd scripts && \
-	python build_app_data.py
+	python build_app.py --stats-file $(word 1,$^) \
+	                    --clusterids-file $(word 2,$^) \
+	                    --centroids-file $(word 3,$^) \
+	                    --quartiles-file $(word 4,$^) \
+	                    --xyz-file $(word 5,$^) \
+	                    --out-file $@ --mongo-url localhost:27017 \
+	                    --collection $(appcoll) --nclusters $(kmeans_k)
 
-appdb: ## build app database
-	@source env/bin/activate && cd scripts && \
-	python build_database.py
+# Upload/download ---------------------------------------------------------------------------------
 
-download:
+stats_final     :=$(ROOT)/data/final/player-stats
+clusterids_final:=$(ROOT)/data/final/player-clusterids
+centroids_final :=$(ROOT)/data/final/cluster-centroids
+
+upload:
+	@cd bin/dev && ./push_artifacts $(stats_raw).csv $(stats_final).csv $(centroids_final).csv $(clusterids_final).csv
+
+download: ## Download player stats and clustering results data.
 	@source env/bin/activate && cd bin && \
-	./download_dataset $(stats_raw).csv $(stats_final).csv $(centroids_final).csv $(clusterids_final).csv
-	./import_dataset $(stats_final).csv $(stats).pkl \
-	                 $(clusterids_final).csv $(clusterids).pkl \
-	                 $(centroids_final).csv $(centroids).pkl
+	./download_dataset $(stats_raw).csv $(stats_final).pkl $(centroids_final).pkl $(clusterids_final).pkl
+	./export_dataset $(stats_final).pkl $(stats).csv \
+	                 $(clusterids_final).pkl $(clusterids).csv \
+	                 $(centroids_final).pkl $(centroids).csv
 
-upload: export
-	@cd bin/dev && ./push_artifacts $(stats_raw).csv $(stats).csv $(centroids).csv $(clusterids).csv
+finalize: $(stats_final).csv $(centroids_final).csv $(clusterids_final).csv
 
-test: lint
-	@source env/bin/activate && pytest test
+$(stats_final).csv $(centroids_final).csv $(clusterids_final).csv: $(stats).pkl $(clusterids).pkl $(centroids).pkl
+	@source env/bin/activate && cd bin/dev && \
+	cp $(stats).pkl $(stats_final).pkl && \
+	cp $(clusterids).pkl $(clusterids_final).pkl && \
+	cp $(centroids).pkl $(centroids_final).pkl && \
+	./export_dataset $(stats_final).pkl $(stats_final).csv \
+					 $(clusterids_final).pkl $(clusterids_final).csv \
+					 $(centroids_final).pkl $(centroids_final).csv ; \
 
-test-data: $(ROOT)/test/data/test-data.csv
+# General development -----------------------------------------------------------------------------
 
-$(ROOT)/test/data/test-data.csv:
-	source env/bin/activate && cd bin/dev && \
-	./build_testdata --in-file $(stats).pkl --out-file $@
-
-mongo:
-	@docker pull mongo
+ec2-%: # options: status, start, stop, connect, setup
+	@cd bin/dev && ./ec2_instance $*
 
 mongo-start:
 	@cd bin && ./start_mongo
 
-ec2-%: # options: status, start, stop, connect, setup
-	@cd bin/dev && ./ec2_instance $*
+test-data:
+	source env/bin/activate && cd bin/dev && \
+	./build_testdata --in-file $(stats).pkl --out-file $(ROOT)/test/data/test-data.csv
+
+test: lint ## Run test suite.
+	@source env/bin/activate && pytest test
 
 lint:
 	@source env/bin/activate && pycodestyle app src --ignore=E301,E302,E402,E501 && \

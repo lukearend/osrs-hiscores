@@ -6,7 +6,7 @@ from typing import List, Dict, Tuple, Any
 import certifi
 import pandas as pd
 import xarray as xr
-from pymongo import MongoClient
+from pymongo import MongoClient, UpdateOne
 from pymongo.collection import Collection
 
 
@@ -49,21 +49,32 @@ def connect_mongo(url: str, collection: str) -> Collection:
 
 
 def player_to_mongodoc(player: PlayerResults):
-    return {
+    doc = {
         '_id': player.username.lower(),
         'username': player.username,
         'stats': player.stats
     }
+    if player.clusterids:
+        doc['clusterids'] = {str(k): ids_dict for k, ids_dict in player.clusterids.items()}
+    else:
+        doc['clusterids'] = {}
+    return doc
 
 
-def mongodoc_to_player(doc: Dict[str, Any]) -> PlayerResults:
-    clusterid_results = {int(k): ids_dict for k, ids_dict in doc['clusterids'].items()}
+def mongo_get_player(coll: Collection, username: str) -> PlayerResults:
+    doc = coll.find_one({'_id': username.lower()})
+    if not doc:
+        return None
+    clustering_results = {int(k): ids_dict for k, ids_dict in doc['clusterids'].items()}
     return PlayerResults(
         username=doc['username'],
-        clusterids=clusterid_results,
+        clusterids=clustering_results,
         stats=doc['stats']
     )
 
 
-def update_results_doc(username: str, k: int, clusterids: Dict[str, int]):
-    return {'_id': username.lower()}, {'$set': {f'clusterids.{k}': clusterids}}
+def update_results_op(username: str, k: int, clusterids: Dict[str, int]):
+    """ Write op which adds clustering results for a new k to an existing player record. """
+
+    return UpdateOne({'_id': username.lower()},
+                     {'$set': {f'clusterids.{k}': clusterids}})

@@ -28,14 +28,6 @@ def import_players_csv(in_file) -> pd.DataFrame:
     return pd.read_csv(in_file, index_col='username').drop('rank', axis=1)
 
 
-def import_clusterids_csv(in_file) -> pd.DataFrame:
-    return pd.read_csv(in_file, index_col='player')
-
-
-def import_centroids_csv(in_file) -> OrderedDict[str, pd.DataFrame]:
-    pass
-
-
 def export_players_csv(players_df: pd.DataFrame, out_file: str):
     players_df.insert(0, 'rank', np.arange(len(players_df)))
     players_df.to_csv(out_file, header=True, index=True, index_label='username')

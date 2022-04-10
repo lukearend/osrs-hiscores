@@ -41,7 +41,7 @@ def main(in_file: str, out_file: str):
         player.rank = i
 
     # Cast to a pandas DataFrame.
-    print("casting to dataframe...")
+    print("converting to DataFrame...")
     skills = osrs_skills(include_total=True)
     skill_lvl_inds = np.array([stat_ind(f'{s}_level') for s in skills])
 
