@@ -122,11 +122,10 @@ async def test_jobcounter():
 
 @pytest.mark.asyncio
 async def test_scrape_hiscores():
-    out_file = 'data/stats-raw.csv'
     start_rank = random.randint(1, 2_000_000) - 100
-    end_rank = start_rank + 49
-    if os.path.isfile(out_file):
-        os.remove(out_file)
+    end_rank = start_rank + 99
+    if os.path.isfile(STATS_RAW_FILE):
+        os.remove(STATS_RAW_FILE)
     await scrape_hiscores(STATS_RAW_FILE, start_rank=start_rank, stop_rank=end_rank, nworkers=25)
     assert get_top_rank(STATS_RAW_FILE) == end_rank
 

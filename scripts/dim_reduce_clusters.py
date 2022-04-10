@@ -34,3 +34,4 @@ if __name__ == '__main__':
     centroids_dict = load_pkl(args.in_file)
     xyz_dict = main(centroids_dict, args.n_neighbors, args.min_dist)
     dump_pkl(xyz_dict, args.out_file)
+    print(f"wrote cluster xyz coordinates to {args.out_file}")

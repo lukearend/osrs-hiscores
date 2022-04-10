@@ -20,6 +20,7 @@ def main(players: pd.DataFrame, clusterids: pd.DataFrame,
 
     quartiles = {}
     for split, skills in splits.items():
+        skills = ['total'] + skills  # include total level when computing quartiles for each split
         split_stats = players[skills].to_numpy()
         split_clusterids = clusterids[split].to_numpy()
         nclusters = max(split_clusterids) + 1

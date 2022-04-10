@@ -2,6 +2,7 @@ aiohttp
 boto3
 botocore
 codetiming
+certifi
 dash
 dash-bootstrap-components
 beautifulsoup4
@@ -16,7 +17,6 @@ pycodestyle
 pymongo[srv]
 pytest
 pytest-asyncio
-pytest-order
 python-dotenv
 requests
 tqdm

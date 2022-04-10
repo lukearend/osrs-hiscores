@@ -72,7 +72,7 @@ quartiles: $(quartiles).pkl ## compute cluster stat quartiles
 
 dimreduce: $(xyz).pkl ## reduce cluster centroids to 3D
 
-buildapp: appdata appdb
+buildapp:
 
 # -------------------------------------------------------------------------------------------------
 
@@ -92,7 +92,7 @@ $(stats).pkl: $(stats_raw).csv
 
 $(clusterids).pkl $(centroids).pkl: $(stats).pkl
 	@source env/bin/activate && cd scripts && \
-	python cluster_players.py --nclusters $(kmeans_k) --verbose \
+	python cluster_players.py --n-clusters $(kmeans_k) --verbose \
 	                          --in-file $< \
 	                          --out-clusterids $(clusterids).pkl \
 	                          --out-centroids $(centroids).pkl
@@ -135,7 +135,7 @@ upload: export
 	@cd bin/dev && ./push_artifacts $(stats_raw).csv $(stats).csv $(centroids).csv $(clusterids).csv
 
 test: lint
-	@source env/bin/activate && cd pytest test
+	@source env/bin/activate && pytest test
 
 test-data: $(ROOT)/test/data/test-data.csv
 
