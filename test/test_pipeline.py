@@ -131,7 +131,7 @@ def test_export():
         reader = csv.reader(f)
         header = next(reader)
         assert header == ['username', 'rank'] + osrs_skills(include_total=True)
-        for nlines, line in enumerate(reader, 1):
+        for nlines, line in enumerate(reader, start=1):
             assert len(line) == len(header)
         assert nlines == 10000
 
@@ -140,7 +140,7 @@ def test_export():
         reader = csv.reader(f)
         header = next(reader)
         assert header == ['player'] + list(SPLITS.keys())
-        for nlines, line in enumerate(reader, 1):
+        for nlines, line in enumerate(reader, start=1):
             assert len(line) == len(header)
         assert nlines == 10000
 

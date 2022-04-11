@@ -27,18 +27,19 @@ def main(in_file: str, out_file: str):
     print("cleaning...")
     seen = {}  # mapping from usernames to players seen so far
     for p in tqdm(players):
-        if p.username not in seen.keys():
-            seen[p.username] = p
+        if p.username.lower() not in seen.keys():
+            seen[p.username.lower()] = p
         else:
-            existing = seen[p.username]
-            seen[p.username] = p if p.ts > existing.ts else existing
+            existing = seen[p.username.lower()]
+            seen[p.username.lower()] = p if p.ts > existing.ts else existing
+
     players = seen.values()
 
     # Sort from best to worst and reassign ranks.
     print("sorting...")
     players = sorted(players, reverse=True)
-    for i, player in enumerate(players, start=1):
-        player.rank = i
+    for n, player in enumerate(players, start=1):
+        player.rank = n
 
     # Cast to a pandas DataFrame.
     print("converting to DataFrame...")

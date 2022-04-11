@@ -17,15 +17,15 @@ parser.add_argument('centroids_csv', type=str, help="write cluster centroids to 
 args = parser.parse_args()
 
 
-print("exporting cluster centroids...")
+print(f"exporting cluster centroids to {args.centroids_csv}...")
 cluster_centroids = load_pkl(args.centroids_pkl)
 export_centroids_csv(cluster_centroids, args.centroids_csv)
 
-print("exporting player cluster IDs...")
+print(f"exporting player cluster IDs to {args.clusterids_csv}...")
 player_clusterids = load_pkl(args.clusterids_pkl)
 export_clusterids_csv(player_clusterids, args.clusterids_csv)
 
-print("exporting player stats...")
+print(f"exporting player stats to {args.stats_csv}...")
 player_stats = load_pkl(args.stats_pkl)
 export_players_csv(player_stats, args.stats_csv)
 print("done")

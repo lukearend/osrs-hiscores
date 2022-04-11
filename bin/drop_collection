@@ -1,12 +1,13 @@
 #!/usr/bin/env python3
 
 import argparse
+import os
 from src.analysis.app import connect_mongo
 
 parser = argparse.ArgumentParser("Drop a MongoDB collection.")
-parser.add_argument('-u', '--url', help="MongoDB instance URL (default localhost:27017)")
+parser.add_argument('-u', '--url', default="localhost:27017", help="MongoDB instance URL (default is localhost:27017)")
 parser.add_argument('-c', '--coll', required=True, help="name of collection to drop")
-
 args = parser.parse_args()
-connect_mongo(args.url if args.url else "localhost:27017", args.coll).drop()
+
+connect_mongo(args.url, args.coll).drop()
 print(f"dropped collection '{args.coll}'")

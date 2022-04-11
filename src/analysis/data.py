@@ -31,7 +31,7 @@ def import_players_csv(in_file) -> pd.DataFrame:
 
 
 def export_players_csv(players_df: pd.DataFrame, out_file: str):
-    players_df.insert(0, 'rank', np.arange(len(players_df)))
+    players_df.insert(0, 'rank', range(1, 1 + len(players_df)))
     players_df.to_csv(out_file, header=True, index=True, index_label='username')
 
 
@@ -61,14 +61,14 @@ def download_from_s3(bucket: str, obj_key: str, local_file: str):
     s3 = boto3.client('s3')
     response = s3.head_object(Bucket=bucket, Key=obj_key)
     size = response['ContentLength']
-    progress = progressbar.ProgressBar(maxval=size)
-    progress.start()
+    pbar = progressbar.ProgressBar(maxval=size)
+    pbar.start()
 
-    def update_progress(chunk):
-        progress.update(progress.currval + chunk)
+    def update_pbar(chunk):
+        pbar.update(pbar.currval + chunk)
 
     try:
-        s3.download_file(bucket, obj_key, local_file, Callback=update_progress)
+        s3.download_file(bucket, obj_key, local_file, Callback=update_pbar)
     except FileNotFoundError:
         print("file not found")
     except NoCredentialsError:

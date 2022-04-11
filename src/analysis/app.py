@@ -16,7 +16,7 @@ class PlayerResults:
 
     username: str
     stats: List[int]                       # includes total level
-    clusterids: Dict[int, Dict[str, int]]  # cluster ID for each split of the dataset, for each k
+    clusterids: Dict[str, int]  # cluster ID for each split of the dataset
 
 
 @dataclass
@@ -32,7 +32,7 @@ class SplitData:
     xyz_axlims: Dict[str, Tuple[float, float]]
 
 
-def connect_mongo(url: str, collection: str) -> Collection:
+def connect_mongo(url: str, collection: str = None) -> Collection:
     """ Connect to MongoDB instance at the given URL and return a collection. """
 
     is_local = any([s in url for s in ['localhost', '127.0.0.1', '0.0.0.0']])
@@ -45,6 +45,8 @@ def connect_mongo(url: str, collection: str) -> Collection:
         if is_local:
             msg += ", is the Docker container running?"
         raise ValueError(msg)
+    if collection is None:
+        return db
     return db[collection]
 
 
@@ -61,20 +63,41 @@ def player_to_mongodoc(player: PlayerResults):
     return doc
 
 
-def mongo_get_player(coll: Collection, username: str) -> PlayerResults:
-    doc = coll.find_one({'_id': username.lower()})
-    if not doc:
+# def mongo_get_player(coll: Collection, username: str) -> PlayerResults:
+#     doc = coll.find_one({'_id': username.lower()})
+#     if not doc:
+#         return None
+#     clustering_results = {int(k): ids_dict for k, ids_dict in doc['clusterids'].items()}
+#     return PlayerResults(
+#         username=doc['username'],
+#         clusterids=clustering_results,
+#         stats=doc['stats']
+#     )
+
+
+def mongo_get_player(stats_coll: Collection, clusterids_coll: Collection, username: str) -> PlayerResults:
+    stats_doc = stats_coll.find_one({'_id': username.lower()})
+    clusterids_doc = clusterids_coll.find_one({'_id': username.lower()})
+    if not stats_doc or not clusterids_doc:
         return None
-    clustering_results = {int(k): ids_dict for k, ids_dict in doc['clusterids'].items()}
     return PlayerResults(
-        username=doc['username'],
-        clusterids=clustering_results,
-        stats=doc['stats']
+        username=stats_doc['username'],
+        clusterids=clusterids_doc['clusterids'],
+        stats=stats_doc['stats']
     )
 
 
-def update_results_op(username: str, k: int, clusterids: Dict[str, int]):
-    """ Write op which adds clustering results for a new k to an existing player record. """
+def player_to_stats_doc(player):
+    return {
+        '_id': player.username.lower(),
+        'username': player.username,
+        'stats': player.stats
+    }
 
-    return UpdateOne({'_id': username.lower()},
-                     {'$set': {f'clusterids.{k}': clusterids}})
+
+def player_to_clusterids_doc(player):
+    return {
+        '_id': player.username.lower(),
+        'username': player.username,
+        'clusterids': player.clusterids
+    }

@@ -11,8 +11,7 @@ from pymongo.collection import Collection
 from tqdm import tqdm
 
 from src.analysis import load_splits
-from src.analysis.app import SplitData, connect_mongo, PlayerResults, player_to_mongodoc, update_results_op, \
-    mongo_get_player
+from src.analysis.app import SplitData, PlayerResults, connect_mongo, player_to_stats_doc, player_to_clusterids_doc
 from src.analysis.data import load_pkl, dump_pkl
 from src.analysis.results import get_cluster_sizes, get_cluster_uniqueness
 
@@ -49,45 +48,46 @@ def build_app_data(splits: OrderedDict[str, List[str]],
 
 
 def build_app_database(players: pd.DataFrame, clusterids: pd.DataFrame,
-                       collection: Collection, nclusters: int):
+                       stats_coll: Collection, clusterids_coll: Collection):
 
     batch_size = 1000
     last_uname = players.index[-1]
-    if not mongo_get_player(collection, last_uname):
-        if collection.count_documents({}) > 0:
-            raise PartialCollection
 
-        print("exporting player stats to database...")
+    if not stats_coll.find_one({'_id': last_uname.lower()}):
+        if stats_coll.count_documents({}) > 0:
+            raise PartialCollection('stats collection')
+
+        print(f"exporting player stats to database...")
         with tqdm(total=len(players)) as pbar:
             batch = []
             for uname, player_stats in players.iterrows():
                 player = PlayerResults(username=uname, stats=list(player_stats), clusterids=None)
-                batch.append(player_to_mongodoc(player))
+                batch.append(player_to_stats_doc(player))
                 if len(batch) >= batch_size:
-                    collection.insert_many(batch)
+                    stats_coll.insert_many(batch)
                     pbar.update(len(batch))
                     batch = []
             if batch:
-                collection.insert_many(batch)
+                stats_coll.insert_many(batch)
                 pbar.update(len(batch))
 
-    last_record = mongo_get_player(collection, last_uname)
-    if nclusters in last_record.clusterids:
-        return
+    if not clusterids_coll.find_one({'_id': last_uname.lower()}):
+        if clusterids_coll.count_documents({}) > 0:
+            raise PartialCollection('cluster ID collection')
 
-    print(f"exporting player cluster IDs for k={nclusters} to database...")
-    with tqdm(total=len(clusterids)) as pbar:
-        batch = []
-        for uname, player_clusterids in clusterids.iterrows():
-            op = update_results_op(uname, k=nclusters, clusterids=player_clusterids.to_dict())
-            batch.append(op)
-            if len(batch) >= batch_size:
-                collection.bulk_write(batch)
+        print(f"exporting player cluster IDs to database...")
+        with tqdm(total=len(clusterids)) as pbar:
+            batch = []
+            for uname, player_clusterids in clusterids.iterrows():
+                player = PlayerResults(username=uname, stats=None, clusterids=player_clusterids.to_dict())
+                batch.append(player_to_clusterids_doc(player))
+                if len(batch) >= batch_size:
+                    clusterids_coll.insert_many(batch)
+                    pbar.update(len(batch))
+                    batch = []
+            if batch:
+                clusterids_coll.insert_many(batch)
                 pbar.update(len(batch))
-                batch = []
-        if batch:
-            collection.bulk_write(batch)
-            pbar.update(len(batch))
 
 
 if __name__ == '__main__':
@@ -99,8 +99,8 @@ if __name__ == '__main__':
     parser.add_argument('--xyz-file', type=str, help="load cluster 3D coordinates from this file")
     parser.add_argument('--out-file', type=str, help="write application data object to this file")
     parser.add_argument('--mongo-url', type=str, help="use Mongo instance running at this URL")
-    parser.add_argument('--collection', type=str, help="export application data to this collection")
-    parser.add_argument('-k', '--nclusters', type=int, help="number of clusters for this results set")
+    parser.add_argument('--stats-coll', type=str, help="export player stats to this collection")
+    parser.add_argument('--clusterids-coll', type=str, help="export clustering results to this collection")
     args = parser.parse_args()
 
     print("loading data...")
@@ -110,12 +110,14 @@ if __name__ == '__main__':
     quartiles_dict = load_pkl(args.quartiles_file)
     xyz_dict = load_pkl(args.xyz_file)
 
-    coll = connect_mongo(args.mongo_url, args.collection)
+    db = connect_mongo(args.mongo_url)
+    stats_coll = db[args.stats_coll]
+    clusterids_coll = db[args.clusterids_coll]
     appdata = build_app_data(load_splits(), clusterids_df, centroids_dict, quartiles_dict, xyz_dict)
     try:
-        build_app_database(players_df, clusterids_df, coll, args.nclusters)
-    except PartialCollection:
-        print("found partial collection, exiting")
+        build_app_database(players_df, clusterids_df, stats_coll, clusterids_coll)
+    except PartialCollection as e:
+        print(f"found partial collection ({e}), exiting")
         sys.exit(1)
     dump_pkl(appdata, args.out_file)
     print(f"wrote app data to {args.out_file}")

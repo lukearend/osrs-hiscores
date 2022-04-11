@@ -47,9 +47,9 @@ class PlayerRecord:
     def __lt__(self, other):
         if self.total_level < other.total_level:
             return True
-        elif self.total_xp < other.total_xp:
+        elif self.total_level == other.total_level and self.total_xp < other.total_xp:
             return True
-        elif self.rank > other.rank:  # worse players have higher ranks
+        elif self.total_xp == other.total_xp and self.rank > other.rank:  # worse players have higher ranks
             return True
         return False
 
