@@ -19,7 +19,7 @@ from scripts.clean_raw_data import main as clean_raw_data
 
 
 STATS_RAW_FILE = Path(__file__).resolve().parent / "data" / "stats-raw.csv"
-STATS_FILE = Path(__file__).resolve().parent / "data" / "stats-clean.csv"
+STATS_FILE = Path(__file__).resolve().parent / "data" / "stats-clean.pkl"
 
 
 @pytest.mark.asyncio

@@ -1,3 +1,4 @@
+import csv
 from collections import OrderedDict
 from pathlib import Path
 
@@ -11,11 +12,10 @@ from scripts.dim_reduce_clusters import main as dim_reduce_clusters
 from scripts.build_app import build_app_data, build_app_database, PartialCollection
 from src.analysis.app import PlayerResults, SplitData, connect_mongo, mongo_get_player
 
-from src.analysis.data import import_players_csv
+from src.analysis.data import import_players_csv, export_players_csv, export_clusterids_csv, export_centroids_csv
 from src.analysis import osrs_skills, load_splits
 
 
-STATS_FILE = Path(__file__).resolve().parent / "data" / "test-data.csv"
 SPLITS = OrderedDict([
     ("first5", ["attack", "defence", "strength", "hitpoints", "ranged"]),
     ("last10", ["smithing", "mining", "herblore", "agility", "thieving",
@@ -40,7 +40,8 @@ def test_splits():
 
 def test_import_csv():
     global players_df
-    players_df = import_players_csv(STATS_FILE)
+    stats_file = Path(__file__).resolve().parent / "data" / "test-data.csv"
+    players_df = import_players_csv(stats_file)
     assert isinstance(players_df, pd.DataFrame)
     assert len(players_df) == 10000
     assert list(players_df.columns) == osrs_skills(include_total=True)
@@ -116,3 +117,46 @@ def test_buildapp():
     coll.delete_one({'_id': players_df.index[-1]})
     with pytest.raises(PartialCollection):
         build_app_database(players_df, clusterids_df, coll, NCLUSTERS)
+
+
+def test_export():
+    global players_df, clusterids_df, centroids_dict
+    data_dir = Path(__file__).resolve().parent / "data"
+    stats_file = data_dir / "player-stats.csv"
+    clusterids_file = data_dir / "player-clusterids.csv"
+    centroids_file = data_dir / "cluster-centroids.csv"
+
+    export_players_csv(players_df, stats_file)
+    with open(stats_file, 'r') as f:
+        reader = csv.reader(f)
+        header = next(reader)
+        assert header == ['username', 'rank'] + osrs_skills(include_total=True)
+        for nlines, line in enumerate(reader, 1):
+            assert len(line) == len(header)
+        assert nlines == 10000
+
+    export_clusterids_csv(clusterids_df, clusterids_file)
+    with open(clusterids_file, 'r') as f:
+        reader = csv.reader(f)
+        header = next(reader)
+        assert header == ['player'] + list(SPLITS.keys())
+        for nlines, line in enumerate(reader, 1):
+            assert len(line) == len(header)
+        assert nlines == 10000
+
+    export_centroids_csv(centroids_dict, centroids_file)
+    with open(centroids_file, 'r') as f:
+        reader = csv.reader(f)
+        header = next(reader)
+        assert header == ['split', 'clusterid'] + osrs_skills(include_total=False)
+        nlines = 0
+        for split in SPLITS.keys():
+            for i in range(NCLUSTERS):
+                line = next(reader)
+                assert len(line) == len(header)
+                assert line[0] == split
+                assert int(line[1]) == i
+                skill_vals = [v for v in line[2:] if v]  # drop empty columns for skills not in this split
+                assert len(skill_vals) == len(SPLITS[split])
+                nlines += 1
+        assert nlines == len(SPLITS) * NCLUSTERS
