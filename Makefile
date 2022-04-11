@@ -56,15 +56,13 @@ appcoll   :=players
 
 # Main targets ------------------------------------------------------------------------------------
 
-dataset: scrape clean cluster export
+dataset: scrape clean cluster
 
 scrape: $(stats_raw).csv ## scrape hiscores data
 
 clean: $(stats).pkl ## clean raw scraped dataset
 
 cluster: $(clusterids).pkl $(centroids).pkl ## cluster players by account stats
-
-export: $(stats_final).csv $(clusterids_final).csv $(centroids_final).csv
 
 analytics: quartiles dimreduce buildapp
 
@@ -123,6 +121,8 @@ $(appdata).pkl: $(stats).pkl $(clusterids).pkl $(centroids).pkl $(quartiles).pkl
 stats_final     :=$(ROOT)/data/final/player-stats
 clusterids_final:=$(ROOT)/data/final/player-clusterids
 centroids_final :=$(ROOT)/data/final/cluster-centroids
+
+export: $(stats_final).csv $(clusterids_final).csv $(centroids_final).csv
 
 upload:
 	@cd bin/dev && ./push_artifacts $(stats_raw).csv $(stats_final).csv $(centroids_final).csv $(clusterids_final).csv

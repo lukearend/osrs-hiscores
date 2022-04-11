@@ -12,6 +12,8 @@ import pandas as pd
 from botocore.exceptions import NoCredentialsError
 from progressbar import progressbar
 
+from src.analysis import osrs_skills
+
 
 @cache
 def load_pkl(file: str) -> Any:
@@ -38,7 +40,18 @@ def export_clusterids_csv(clusterids_df: pd.DataFrame, out_file: str):
 
 
 def export_centroids_csv(centroids_dict: OrderedDict[str, pd.DataFrame], out_file):
-    pass
+    header = ['split', 'clusterid'] + osrs_skills(include_total=False)
+    with open(out_file, 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(header)
+        for split, split_centroids in centroids_dict.items():
+            lines = []
+            for clusterid, centroid in split_centroids.iterrows():
+                skill_vals = []
+                for s in osrs_skills():
+                    skill_vals.append('' if s not in centroid.index else centroid[s])
+                lines.append([split, clusterid] + skill_vals)
+            writer.writerows(lines)
 
 
 def download_from_s3(bucket: str, obj_key: str, local_file: str):
