@@ -33,9 +33,9 @@ datadir:
 
 start_rank  :=$(or $(START_RANK), 1)
 stop_rank   :=$(or $(STOP_RANK), 2000000)
-kmeans_k    :=$(or $(KMEANS_K), 25)
+kmeans_k    :=$(or $(KMEANS_K), 1000)
 umap_nn     :=$(or $(UMAP_NN), 10)
-umap_mindist:=$(or $(UMAP_MINDIST), 0.25)
+umap_mindist:=$(or $(UMAP_MINDIST), 0.1)
 
 params: ## print default parameters
 	@printf "running with parameters (set via these env vars):\n\n"
@@ -68,7 +68,7 @@ dimreduce: $(xyz).pkl ## reduce cluster centroids to 3D
 
 app_data:=$(ROOT)/data/interim/appdata-$(kmeans_k)-$(umap_nn)-$(umap_mindist)
 stats_coll:=stats
-clusterids_coll:=clusterids-$(kmeans)
+clusterids_coll:=clusterids-$(kmeans_k)
 
 appdata: $(app_data).pkl ## build final application data
 

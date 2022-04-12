@@ -1,75 +1,49 @@
 from dataclasses import dataclass
-from functools import cache
 from typing import Dict, List, Tuple
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-from src.app import load_boxplot_layout, SplitData
+from app import ticklabel_skill_inds
+from src.analysis import osrs_skills
+from src.analysis.app import SplitData
 
 
-@dataclass
-class BoxplotLayout:
-    """ Contains layout information for rendering boxplot for a specific split. """
+def compute_scatterplot_data(split_data: SplitData, color_by_skill: str, color_axis_range: Tuple) -> pd.DataFrame:
 
-    ticklabels: List[str]
-    tickxoffset: float
+    # Display only those clusters whose median in the chosen skill is within the selected range.
+    skill_names = ['total'] + split_data.skills
+    color_col = skill_names.index(color_by_skill)
+    stat_median = split_data.cluster_quartiles[:, 2, color_col]
 
-
-def compute_scatterplot_data(splitdata: SplitData, colorstat: str, levelrange: Tuple,
-                             n_neighbors: int, min_dist: float) -> pd.DataFrame:
-    """ Assemble the pandas.DataFrame scatterplot is based on.
-
-    :param splitdata: data for the split being displayed
-    :param colorstat: skill to use for plot color and level range
-    :param levelrange: show clusters whose mean in the given skill is inside this range
-    :param n_neighbors: n_neighbors UMAP parameter
-    :param min_dist: min_dist UMAP parameter
-    :return: pandas.DataFrame with the following columns:
-             'x', 'y', 'z', 'id', 'size', 'uniqueness', 'level'
-    """
-    # When level selector is used, we display only those clusters whose median
-    # in the chosen skill is within the selected range.
-    statnames = ['total'] + splitdata.skills
-    statcol = statnames.index(colorstat)
-    stat_median = splitdata.clusterdata.quartiles[:, 2, statcol]  # median level in stat to color by
-
-    lmin, lmax = levelrange
-    show_inds = np.where(np.logical_and(lmin <= stat_median, stat_median <= lmax))[0]
-    xyz = splitdata.clusterdata.xyz[n_neighbors][min_dist][show_inds]
-    nplayers = splitdata.clusterdata.sizes[show_inds]
-    uniqueness = 100 * splitdata.clusterdata.uniqueness[show_inds]
+    cmin, cmax = color_axis_range
+    show_inds = np.where(np.logical_and(cmin <= stat_median, stat_median <= cmax))[0]
+    xyz = split_data.cluster_xyz.iloc[show_inds]
 
     return pd.DataFrame({
         'x': xyz[:, 0],
         'y': xyz[:, 1],
         'z': xyz[:, 2],
         'id': show_inds,
-        'size': nplayers,
-        'uniqueness': uniqueness,
+        'size': split_data.cluster_sizes[show_inds],
+        'uniqueness': 100 * split_data.cluster_uniqueness[show_inds],
         'level': stat_median[show_inds]
     })
 
 
-def compute_boxplot_data(splitname: str, splitdata: SplitData, clusterid=None) -> Dict[str, NDArray]:
-    """ Compute data to display in the boxplot for a given cluster ID.
+def compute_boxplot_data(split: str, split_data: SplitData, clusterid=None) -> Dict[str, NDArray]:
 
-    :param splitdata: data for the split being displayed
-    :param clusterid: plot data for this cluster (otherwise generate data for empty plot)
-    :return: dictionary where keys are boxplot quartile names and values are 1D arrays
-             giving the quartile value in each skill of the current split
-    """
-    hideval = -100  # replace nans with an off-plot value to hide them
+    hide_val = -100  # replace nans with an off-plot value to hide them
     if clusterid is None:
-        nskills = len(splitdata.skills)
         plot_data = {}
         for q in ['lowerfence', 'q1', 'median', 'q3', 'upperfence']:
-            plot_data[q] = np.full(nskills, hideval)
+            plot_data[q] = np.full(len(split_data.skills), hide_val)
         return plot_data
 
-    quartiles = splitdata.clusterdata.quartiles[clusterid]
-    quartiles = quartiles[:, 1:]  # drop total level
+    quartiles = split_data.cluster_quartiles[clusterid]
+    total_col = osrs_skills(include_total=True).index('total')
+    quartiles = np.delete(quartiles, total_col, axis=0)
 
     q0, q1, q2, q3, q4 = quartiles
     iqr = q3 - q1
@@ -78,24 +52,11 @@ def compute_boxplot_data(splitname: str, splitdata: SplitData, clusterid=None) -
 
     data = np.array([lowerfence, q1, q2, q3, upperfence])
     data = np.round(data)
-
-    # Change columns of data from canonical ordering to ordering of boxplot ticks.
-    reorder_inds = ticklabel_skill_inds(splitname, tuple(splitdata.skills))
-    data = data[:, reorder_inds]
-
-    nancols = np.isnan(data[2, :])
-    data[:, nancols] = hideval
+    data = data[:, ticklabel_skill_inds(split)]  # reorder skills in order of boxplot ticks
+    nan_cols = np.isnan(data[2, :])
+    data[:, nan_cols] = hide_val
 
     quartiles_dict = {}
     for i, q in enumerate(['lowerfence', 'q1', 'median', 'q3', 'upperfence']):
         quartiles_dict[q] = data[i, :]
     return quartiles_dict
-
-
-@cache
-def ticklabel_skill_inds(splitname: str, skills_in_split: Tuple[str]) -> List[int]:
-    """ Build index for reordering skills to match tick labels along box plot x-axis. """
-
-    tick_labels = load_boxplot_layout(splitname).ticklabels
-    reorder_inds = [skills_in_split.index(s) for s in tick_labels]
-    return reorder_inds

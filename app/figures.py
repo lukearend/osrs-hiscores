@@ -9,7 +9,7 @@ from PIL import Image
 from numpy.typing import NDArray
 from pandas import DataFrame
 
-from src.app import load_boxplot_layout, asset_dir
+from app import load_boxplot_tick_labels, assets_dir, load_boxplot_x_offsets
 
 
 def get_scatterplot(df: DataFrame, colorlims: Tuple[int], colorlabel: str,
@@ -92,8 +92,7 @@ def get_scatterplot(df: DataFrame, colorlims: Tuple[int], colorlabel: str,
 
 
 def get_empty_boxplot(split: str) -> go.Figure:
-    layout_info = load_boxplot_layout(split)
-    tick_labels = layout_info.ticklabels
+    tick_labels = load_boxplot_tick_labels(split)
     nskills = len(tick_labels)
 
     nans = np.full(nskills, np.nan)
@@ -115,9 +114,9 @@ def get_empty_boxplot(split: str) -> go.Figure:
         layout_yaxis_tickvals=[1, 20, 40, 60, 80, 99],
     )
 
-    icon_x_offset = layout_info.tickxoffset
+    icon_x_offset = load_boxplot_x_offsets(split)
     for i, skill in enumerate(tick_labels):
-        icon_path = os.path.join(asset_dir(), "icons", f"{skill}_icon.png")
+        icon_path = os.path.join(assets_dir(), "icons", f"{skill}_icon.png")
         icon = Image.open(icon_path)
         fig.add_layout_image(
             dict(

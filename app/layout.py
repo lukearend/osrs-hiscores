@@ -1,19 +1,27 @@
+
+
 import dash_bootstrap_components as dbc
 from dash import Dash, dcc, html
 
-from src.app import format_skill, default_n_neighbors, default_min_dist, get_level_tick_marks, \
-    get_color_label, get_color_range, get_point_size, load_table_layout, AppData
+from app import format_skill, get_level_tick_marks, get_color_range, \
+    get_color_label, get_point_size, load_params, load_app_data, load_table_layout
 from app.plotdata import compute_scatterplot_data
 from app.figures import get_empty_boxplot, get_scatterplot
+from src.analysis import osrs_skills
 
 
-def build_layout(app: Dash, appdata: AppData) -> Dash:
+def build_layout() -> Dash:
+    app = Dash(__name__, title="OSRS player clusters", external_stylesheets=[dbc.themes.BOOTSTRAP])
+
     init_split = 'all'
     init_skill = 'total'
     init_ptsize = 'small'
     init_level_range = [1, 2277]
-    init_n_neighbors = default_n_neighbors(init_split)
-    init_min_dist = default_min_dist(init_split)
+    init_n_neighbors = load_params()['n_neighbors'][0]
+    init_min_dist = load_params()['min_dist'][0]
+    init_k = load_params()['k'][0]
+
+    app_data = load_app_data(init_k, init_n_neighbors, init_min_dist)
 
     app.layout = dbc.Container([
         dbc.Row(
@@ -70,7 +78,7 @@ def build_layout(app: Dash, appdata: AppData) -> Dash:
                                     id='current-skill',
                                     options=[
                                         {'label': format_skill(init_skill), 'value': skill}
-                                        for skill in appdata.splitdata["all"].skills
+                                        for skill in osrs_skills(include_total=True)
                                     ],
                                     value=init_skill,
                                     clearable=False
@@ -92,7 +100,30 @@ def build_layout(app: Dash, appdata: AppData) -> Dash:
                     dbc.Row(
                         [
                             dbc.Col(
-                                html.Div(children="Structure:"),
+                                html.Div(children="# clusters:"),
+                                width=3
+                            ),
+                            dbc.Col(
+                                dcc.Dropdown(
+                                    id='kmeans-k',
+                                    options=[
+                                        {'label': str(n), 'value': n}
+                                        for n in load_params()['k']
+                                    ],
+                                    value=init_k,
+                                    clearable=False
+                                )
+                            )
+                        ],
+                        align='center'
+                    ),
+                    width=4
+                ),
+                dbc.Col(
+                    dbc.Row(
+                        [
+                            dbc.Col(
+                                html.Div(children="# neighbors:"),
                                 width=3
                             ),
                             dbc.Col(
@@ -100,7 +131,7 @@ def build_layout(app: Dash, appdata: AppData) -> Dash:
                                     id='n-neighbors',
                                     options=[
                                         {'label': str(n), 'value': n}
-                                        for n in [5, 10, 15, 20]
+                                        for n in load_params()['n_neighbors']
                                     ],
                                     value=init_n_neighbors,
                                     clearable=False
@@ -109,13 +140,13 @@ def build_layout(app: Dash, appdata: AppData) -> Dash:
                         ],
                         align='center'
                     ),
-                    width=6
+                    width=4
                 ),
                 dbc.Col(
                     dbc.Row(
                         [
                             dbc.Col(
-                                html.Div(children="Diffusion:"),
+                                html.Div(children="min dist:"),
                                 width=3
                             ),
                             dbc.Col(
@@ -123,7 +154,7 @@ def build_layout(app: Dash, appdata: AppData) -> Dash:
                                     id='min-dist',
                                     options=[
                                         {'label': f'{d:.2f}', 'value': d}
-                                        for d in [0.0, 0.1, 0.25, 0.50]
+                                        for d in load_params()['min_dist']
                                     ],
                                     value=init_min_dist,
                                     clearable=False
@@ -132,7 +163,7 @@ def build_layout(app: Dash, appdata: AppData) -> Dash:
                         ],
                         align='center'
                     ),
-                    width=6
+                    width=4
                 )
             ],
             style={'padding-bottom': '1vh'}
@@ -249,12 +280,11 @@ def build_layout(app: Dash, appdata: AppData) -> Dash:
                     id='scatter-plot',
                     clear_on_unhover=True,
                     figure=get_scatterplot(
-                        df=compute_scatterplot_data(appdata.splitdata[init_split], init_skill, init_level_range,
-                                                    init_n_neighbors, init_min_dist),
+                        df=compute_scatterplot_data(app_data[init_split], init_skill, init_level_range),
                         colorlims=get_color_range(init_skill),
                         colorlabel=get_color_label(init_skill),
                         pointsize=get_point_size(init_ptsize),
-                        axlims=appdata.splitdata["all"].axlims[init_n_neighbors][init_min_dist]
+                        axlims=app_data[init_split].xyz_axlims
                     ),
                 ),
                 width=7

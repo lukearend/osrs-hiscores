@@ -1,13 +1,12 @@
 """ Utilities for loading and writing data. """
 
 import csv
+import json
 import pickle
 from collections import OrderedDict
-from functools import cache
 from typing import Any
 
 import boto3
-import numpy as np
 import pandas as pd
 from botocore.exceptions import NoCredentialsError
 from progressbar import progressbar
@@ -15,7 +14,11 @@ from progressbar import progressbar
 from src.analysis import osrs_skills
 
 
-@cache
+def load_json(file: str) -> Any:
+    with open(file, 'r') as f:
+        return json.load(f)
+
+
 def load_pkl(file: str) -> Any:
     with open(file, 'rb') as f:
         return pickle.load(f)
