@@ -95,6 +95,8 @@ def ticklabel_skill_inds(split: str) -> List[int]:
 @cache
 def load_app_data(k, n_neighbors, min_dist) -> Dict[str, SplitData]:
     base = Path(__file__).resolve().parents[1] / "data" / "interim" / "appdata"
+    if min_dist == 0:
+        min_dist = 0.0
     return load_pkl(f"{base}-{k}-{n_neighbors}-{min_dist}.pkl")
 
 

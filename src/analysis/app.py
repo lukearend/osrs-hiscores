@@ -6,6 +6,7 @@ from typing import List, Dict, Tuple, Any
 import certifi
 import pandas as pd
 import xarray as xr
+from numpy.typing import NDArray
 from pymongo import MongoClient, UpdateOne
 from pymongo.collection import Collection
 
@@ -27,8 +28,8 @@ class SplitData:
     cluster_quartiles: xr.DataArray  # shape (5, nclusters, nskills + 1), includes total level
     cluster_centroids: pd.DataFrame  # shape (nclusters, nskills)
     cluster_xyz: pd.DataFrame        # shape (nclusters, 3)
-    cluster_sizes: List[int]         # length nclusters
-    cluster_uniqueness: List[float]  # length nclusters
+    cluster_sizes: NDArray           # length nclusters
+    cluster_uniqueness: NDArray      # length nclusters
     xyz_axlims: Dict[str, Tuple[float, float]]
 
 

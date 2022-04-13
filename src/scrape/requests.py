@@ -108,7 +108,17 @@ def parse_stats_csv(username: str, raw_csv: str) -> PlayerRecord:
     """ Transform raw CSV data for a player into a normalized data record. """
 
     stats_csv = raw_csv.strip().replace('\n', ',')  # stat groups are separated by newlines
-    stats = [int(i) for i in stats_csv.split(',')]
+    stats = []
+    for stat_group in stats_csv.split(' '):
+        stat_group = [int(i) for i in stat_group.split(',')]
+
+        # CSV API returns -1, 1, -1 for the (rank, level, xp) tuple if data for the skill is missing.
+        if len(stat_group) == 3:
+            if stat_group[0] < 0 and stat_group[2] < 0:
+                stat_group[1] = -1  # change level from 1 to -1 to differentiate from true level 1s
+
+        stats += stat_group
+
     stats = [None if i < 0 else i for i in stats]
     assert len(stats) == len(csv_api_stats()), f"the API returned an unexpected number of stats: {stats}"
     return PlayerRecord(username=username, stats=stats, ts=datetime.utcnow())

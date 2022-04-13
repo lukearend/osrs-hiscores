@@ -7,10 +7,10 @@ from numpy.typing import NDArray
 def get_cluster_sizes(cluster_ids: NDArray) -> NDArray:
     """ Compute the number of occurrences for each cluster ID in an array. """
 
-    ids, counts = np.unique(cluster_ids.astype('int'), return_counts=True)
+    ids, counts = np.unique(cluster_ids, return_counts=True)
     sizes = np.zeros(max(ids) + 1)
     sizes[ids] = counts
-    return sizes
+    return sizes.astype('int')
 
 
 def get_cluster_uniqueness(cluster_sizes: NDArray) -> NDArray:

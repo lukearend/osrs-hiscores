@@ -10,5 +10,5 @@ from src.analysis.app import connect_mongo
 
 db = connect_mongo(url=os.getenv("OSRS_MONGO_URI", "localhost:27017"))
 app = build_layout()
-app = add_callbacks(app, db)
+add_callbacks(app, db)
 app.run_server(debug=True)

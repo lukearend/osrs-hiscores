@@ -137,9 +137,9 @@ finalize: $(stats_final).csv $(centroids_final).csv $(clusterids_final).csv
 
 $(stats_final).csv $(centroids_final).csv $(clusterids_final).csv: $(stats).pkl $(clusterids).pkl $(centroids).pkl
 	@source env/bin/activate && cd bin/dev && \
-	./export_dataset $(stats).pkl $(stats_final).csv \
-					 $(clusterids).pkl $(clusterids_final).csv \
-					 $(centroids).pkl $(centroids_final).csv
+	./export_dataset $(word 1,$^) $(stats_final).csv \
+					 $(word 2,$^) $(clusterids_final).csv \
+					 $(word 3,$^) $(centroids_final).csv
 
 # General development -----------------------------------------------------------------------------
 

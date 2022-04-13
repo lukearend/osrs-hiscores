@@ -4,6 +4,7 @@ import numpy as np
 from dash import Dash, no_update
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
+from plotly import graph_objects as go
 from pymongo.database import Database
 
 from app import skill_upper, load_app_data, format_skill, validate_username, get_level_tick_marks, CLUSTERIDS_COLL, \
@@ -14,6 +15,7 @@ from src.analysis import osrs_skills
 
 
 def add_callbacks(app: Dash, player_db: Database) -> Dash:
+
 
     @app.callback(
         Output('scatter-plot', 'figure'),
@@ -56,6 +58,7 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
             crosshairs=highlight_xyz
         )
 
+
     @app.callback(
         Output('current-skill', 'options'),
         Output('current-skill', 'value'),
@@ -82,6 +85,7 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
             })
         new_skill = current_skill if current_skill in skills_in_split else 'total'
         return options, new_skill
+
 
     @app.callback(
         Output('level-range', 'min'),
@@ -110,6 +114,7 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
 
         return 1, 99, new_range, marks
 
+
     @app.callback(
         Output('query-event', 'data'),
         Input('username-text', 'value'),
@@ -119,13 +124,13 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
 
         if not username:
             return {
-                'query': '',
+                'username': '',
                 'response': None
             }
 
         if not validate_username(username):
             return {
-                'query': username,
+                'username': username,
                 'response': 400  # invalid
             }
 
@@ -133,7 +138,7 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
         clusterids = player_db[f'{CLUSTERIDS_COLL}-{kmeans_k}'].find_one({'_id': username.lower()})
         if not stats or not clusterids:
             return {
-                'query': username,
+                'username': username,
                 'response': 404  # not found
             }
         return {
@@ -144,6 +149,7 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
                 'stats': stats['stats']
             }
         }
+
 
     @app.callback(
         Output('player-query-text', 'children'),
@@ -172,6 +178,7 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
 
         return f"Cluster {cluster_id} ({cluster_size} players, {uniqueness:.2%} unique)"
 
+
     @app.callback(
         Output('current-player', 'data'),
         Input('query-event', 'data')
@@ -195,6 +202,7 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
             'clusterid': response['clusterids'],
             'stats': stats
         }
+
 
     @app.callback(
         Output('current-cluster', 'data'),
@@ -221,15 +229,16 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
         data = load_app_data(kmeans_k, n_neighbors, min_dist)
         cluster_size = data[current_split].cluster_sizes[cluster_id]
         uniqueness = data[current_split].cluster_uniqueness[cluster_id]
-        skill_medians = data[current_split].cluster_quartiles.loc[cluster_id, 50, :]  # 50th percentile
-        centroid = skill_medians.drop('total')
+        medians = data[current_split].cluster_quartiles.loc[50, cluster_id, :]  # 50th percentile
+        centroid = medians.where(medians.skill != 'total', drop=True)
         return {
             'id': cluster_id,
             'size': cluster_size,
             'uniqueness': uniqueness,
-            'centroid': [None if np.isnan(v) else round(v) for v in centroid],
-            'total_level': skill_medians['total']
+            'centroid': [None if np.isnan(v) else round(v.item()) for v in centroid],
+            'total_level': medians.loc['total'].item()
         }
+
 
     @app.callback(
         Output('player-table-title', 'children'),
@@ -243,6 +252,7 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
 
         table_vals = [str(v) for v in player_data['stats']]
         return tuple([f"Player '{player_data['username']}'", *table_vals])
+
 
     @app.callback(
         Output('cluster-table-title', 'children'),
@@ -265,12 +275,13 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
         table_vals[total_col] = cluster_data['total_level']
 
         data = load_app_data(kmeans_k, n_neighbors, min_dist)
-        for i, skill in data[current_split].skills:
+        for i, skill in enumerate(data[current_split].skills):
             skill_level = cluster_data['centroid'][i]
             table_i = table_skills.index(skill)
             table_vals[table_i] = skill_level
 
-        return tuple([f"Cluster {cluster_data['id']}"] + table_vals)
+        return tuple([f"Cluster {cluster_data['id']}", *table_vals])
+
 
     @app.callback(
         Output('box-plot', 'figure'),
@@ -279,24 +290,24 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
     def redraw_box_plot(current_split: str) -> go.Figure:
         return get_empty_boxplot(current_split)
 
+
     @app.callback(
         Output('box-plot', 'extendData'),
+        Input('box-plot', 'figure'),
         Input('current-cluster', 'data'),
         State('current-split', 'value'),
-        Input('box-plot', 'figure'),
         State('kmeans-k', 'value'),
         State('n-neighbors', 'value'),
         State('min-dist', 'value')
     )
-    def update_box_plot(current_cluster: Dict[str, Any], current_split: str,
+    def update_box_plot(_, current_cluster: Dict[str, Any], current_split: str,
                         kmeans_k: int, n_neighbors: int, min_dist: float) -> Dict[str, Any]:
 
-        app_data = load_app_data(kmeans_k, n_neighbors, min_dist)
-        split_data = app_data[current_split]
+        data = load_app_data(kmeans_k, n_neighbors, min_dist)[current_split]
         if current_cluster is None:
-            plot_data = compute_boxplot_data(current_split, split_data, clusterid=None)
+            plot_data = compute_boxplot_data(current_split, data, clusterid=None)
         else:
-            plot_data = compute_boxplot_data(current_split, split_data, clusterid=current_cluster['id'])
+            plot_data = compute_boxplot_data(current_split, data, clusterid=current_cluster['id'])
         return [
             {
                 'lowerfence': [plot_data['lowerfence']],
@@ -307,6 +318,7 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
             },
             [0], len(plot_data['median'])
         ]
+
 
     @app.callback(
         Output('box-plot-text', 'children'),

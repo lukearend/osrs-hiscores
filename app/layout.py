@@ -1,5 +1,3 @@
-
-
 import dash_bootstrap_components as dbc
 from dash import Dash, dcc, html
 
@@ -101,7 +99,7 @@ def build_layout() -> Dash:
                         [
                             dbc.Col(
                                 html.Div(children="# clusters:"),
-                                width=3
+                                width=4
                             ),
                             dbc.Col(
                                 dcc.Dropdown(
@@ -124,7 +122,7 @@ def build_layout() -> Dash:
                         [
                             dbc.Col(
                                 html.Div(children="# neighbors:"),
-                                width=3
+                                width=4
                             ),
                             dbc.Col(
                                 dcc.Dropdown(
@@ -147,7 +145,7 @@ def build_layout() -> Dash:
                         [
                             dbc.Col(
                                 html.Div(children="min dist:"),
-                                width=3
+                                width=4
                             ),
                             dbc.Col(
                                 dcc.Dropdown(
