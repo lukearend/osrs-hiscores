@@ -24,10 +24,10 @@ def compute_scatterplot_data(split_data: SplitData, color_by_skill: str, color_a
         'y': xyz['y'],
         'z': xyz['z'],
         'id': show_inds,
-        'size': np.array(split_data.cluster_sizes)[show_inds],
-        'uniqueness': 100 * np.array(split_data.cluster_uniqueness)[show_inds],
+        'size': split_data.cluster_sizes[show_inds],
+        'uniqueness': 100 * split_data.cluster_uniqueness[show_inds],
         'level': stat_median[show_inds]
-    })  # todo: remove np.array for 'size' and 'uniqueness' when using newly generated appdata (with np arrays instead of lists)
+    })
 
 
 def compute_boxplot_data(split: str, split_data: SplitData, clusterid=None) -> Dict[str, NDArray]:

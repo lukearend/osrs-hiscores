@@ -70,15 +70,18 @@ def get_scatterplot(df: DataFrame, colorlims: Tuple[int], colorlabel: str,
             xaxis=dict(
                 title='', showticklabels=False, showgrid=False,
                 zeroline=False, range=[xmin, xmax],
-                backgroundcolor='rgb(230, 230, 230)'),
+                backgroundcolor='rgb(230, 230, 230)'
+            ),
             yaxis=dict(
                 title='', showticklabels=False, showgrid=False,
                 zeroline=False, range=[ymin, ymax],
-                backgroundcolor='rgb(220, 220, 220)'),
+                backgroundcolor='rgb(220, 220, 220)'
+            ),
             zaxis=dict(
                 title='', showticklabels=False, showgrid=False,
                 zeroline=False, range=[zmin, zmax],
-                backgroundcolor='rgb(200, 200, 200)')
+                backgroundcolor='rgb(200, 200, 200)'
+            )
         ),
         coloraxis_colorbar=dict(
             title=dict(
