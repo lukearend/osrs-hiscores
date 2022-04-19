@@ -7,9 +7,11 @@ from collections import OrderedDict
 from typing import Any
 
 import boto3
+import numpy as np
 import pandas as pd
 from botocore.exceptions import NoCredentialsError
 from progressbar import progressbar
+from tqdm import tqdm
 
 from src.analysis import osrs_skills
 
@@ -35,7 +37,17 @@ def import_players_csv(in_file) -> pd.DataFrame:
 
 def export_players_csv(players_df: pd.DataFrame, out_file: str):
     players_df.insert(0, 'rank', range(1, 1 + len(players_df)))
-    players_df.to_csv(out_file, header=True, index=True, index_label='username')
+    with open(out_file, 'w') as f:
+        writer = csv.writer(f)
+        writer.writerow(['username'] + list(players_df.columns))
+        for username, stats in tqdm(players_df.iterrows(), total=len(players_df)):
+            line = [username]
+            for n in stats:
+                if n == 0:
+                    line.append('')
+                else:
+                    line.append(n)
+            writer.writerow(line)
 
 
 def export_clusterids_csv(clusterids_df: pd.DataFrame, out_file: str):

@@ -81,7 +81,7 @@ $(stats_raw).csv:
 	    --log-file $(ROOT)/data/raw/scrape-$(start_rank)-$(stop_rank).log \
 	    --log-level INFO --vpn ; \
 	then \
-		 mv $(stats_raw).tmp $(stats_raw).csv fi
+		 mv $(stats_raw).tmp $(stats_raw).csv ; fi
 
 $(stats).pkl: $(stats_raw).csv
 	@source env/bin/activate && cd scripts && \
@@ -133,13 +133,19 @@ download: ## Download player stats and clustering results data.
 	                 $(clusterids_final).pkl $(clusterids).csv \
 	                 $(centroids_final).pkl $(centroids).csv
 
-finalize: $(stats_final).csv $(centroids_final).csv $(clusterids_final).csv
+export: $(stats_final).csv $(centroids_final).csv $(clusterids_final).csv
 
-$(stats_final).csv $(centroids_final).csv $(clusterids_final).csv: $(stats).pkl $(clusterids).pkl $(centroids).pkl
+$(stats_final).csv: $(stats).pkl
 	@source env/bin/activate && cd bin/dev && \
-	./export_dataset $(word 1,$^) $(stats_final).csv \
-					 $(word 2,$^) $(clusterids_final).csv \
-					 $(word 3,$^) $(centroids_final).csv
+	./pkl_to_csv $< $@ --type players
+
+$(centroids_final).csv: $(centroids).pkl
+	@source env/bin/activate && cd bin/dev && \
+	./pkl_to_csv $< $@ --type centroids
+
+$(clusterids_final).csv: $(clusterids).pkl
+	@source env/bin/activate && cd bin/dev && \
+	./pkl_to_csv $< $@ --type clusterids
 
 # General development -----------------------------------------------------------------------------
 

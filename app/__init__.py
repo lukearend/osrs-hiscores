@@ -101,7 +101,7 @@ def load_app_data(k, n_neighbors, min_dist) -> Dict[str, SplitData]:
 
 
 def load_app_data_s3(bucket: str, obj_key: str) -> Dict[str, SplitData]:
-    print("downloading app data...", end=' ', flush=True)
+    print("downloading app data...")
     s3 = boto3.client('s3')
     f = BytesIO()
     s3.download_fileobj(bucket, obj_key, f)

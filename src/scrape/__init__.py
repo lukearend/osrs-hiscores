@@ -38,11 +38,8 @@ class PlayerRecord:
         self.total_level = stats[stat_ind('total_level')]
         self.total_xp = stats[stat_ind('total_xp')]
         self.rank = stats[stat_ind('total_rank')]
+        self.stats = np.array(stats).astype('int')
         self.ts = ts
-
-        stats = np.array(stats, dtype='float')  # None -> nan
-        stats[np.isnan(stats)] = -1             # nan -> -1
-        self.stats = stats.astype('int')
 
     def __lt__(self, other):
         if self.total_level < other.total_level:
@@ -111,7 +108,7 @@ def player_to_csv(player) -> str:
 
 def csv_to_player(csv_line):
     username, *stats, ts = csv_line.split(',')
-    stats = [int(v) if v else None for v in stats]
+    stats = [int(v) if v else -1 for v in stats]
     assert len(stats) == len(csv_api_stats()), f"CSV row contained an unexpected number of stats: '{csv_line}'"
     return PlayerRecord(username=username, stats=stats, ts=datetime.fromisoformat(ts))
 
