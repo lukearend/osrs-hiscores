@@ -16,14 +16,6 @@ STATS_COLL = 'stats'
 CLUSTERIDS_COLL = 'clusterids'
 
 
-def default_n_neighbors(split):
-    return {'all': 5, 'cb': 15, 'noncb': 5}[split]
-
-
-def default_min_dist(split):
-    return {'all': 0.25, 'cb': 0.25, 'noncb': 0.0}[split]
-
-
 def skill_upper(skill):
     return skill[0].upper() + skill[1:]
 

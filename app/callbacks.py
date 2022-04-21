@@ -176,8 +176,8 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
 
         split_data = load_app_data(kmeans_k, n_neighbors, min_dist)[current_split]
         cluster_id = response['clusterids'][current_split]
-        cluster_size = split_data.cluster_sizes[cluster_id - 1]
-        uniqueness = split_data.cluster_uniqueness[cluster_id - 1]
+        cluster_size = split_data.cluster_sizes[cluster_id]
+        uniqueness = split_data.cluster_uniqueness[cluster_id]
 
         return f"Cluster {cluster_id} ({cluster_size} players, {uniqueness:.2%} unique)"
 
@@ -212,31 +212,33 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
         Output('last-clicked-ts', 'data'),
         Input('scatter-plot', 'clickData'),
         Input('current-split', 'value'),
-        State('current-split', 'value'),
+        Input('kmeans-k', 'value'),
         State('clicked-cluster', 'data'),
+        State('current-split', 'value'),
+        State('kmeans-k', 'value'),
         State('last-clicked-ts', 'data')
     )
     def set_clicked_cluster(click_data: Dict[str, Any],
                             new_split: str,
-                            current_split: str,
+                            new_k: int,
                             current_cluster: int,
+                            current_split: str,
+                            current_k: int,
                             last_clicked_ts: float) -> int:
+
+        if new_split != current_split or new_k != current_k:
+            return None, no_update
 
         if click_data is None:
             raise PreventUpdate
+        clicked_cluster = click_data['points'][0]['customdata'][0]
 
         now = datetime.now().timestamp()
-        if new_split != current_split:
-            return None, now
-
-        if last_clicked_ts:
-            print(now - last_clicked_ts)
-
-        clicked_cluster = click_data['points'][0]['customdata'][0]
         debounce = True if last_clicked_ts and now - last_clicked_ts < 0.3 else False
         if debounce and current_cluster in [None, clicked_cluster]:
             raise PreventUpdate
-        elif current_cluster == clicked_cluster:
+
+        if current_cluster == clicked_cluster:
             return None, now
         return clicked_cluster, now
 
@@ -293,7 +295,7 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
         if player_data is None:  # e.g. search box cleared
             return tuple(["Player stats"] + len(osrs_skills(include_total=True)) * [''])
 
-        table_vals = [str(v) for v in player_data['stats']]
+        table_vals = [str(n) if n > 0 else '-' for n in player_data['stats']]
         return tuple([f"Player '{player_data['username']}'", *table_vals])
 
 
@@ -313,7 +315,7 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
         if cluster_data is None:
             return ("Cluster stats", *['' for _ in table_skills])
 
-        table_vals = np.array(len(table_skills) * ['-'], dtype='object')
+        table_vals = np.array(len(table_skills) * [''], dtype='object')
         total_col = table_skills.index('total')
         table_vals[total_col] = cluster_data['total_level']
 
@@ -321,7 +323,7 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
         for i, skill in enumerate(split_data.skills):
             skill_level = cluster_data['centroid'][i]
             table_i = table_skills.index(skill)
-            table_vals[table_i] = skill_level
+            table_vals[table_i] = skill_level if skill_level > 0 else '-'
 
         return tuple([f"Cluster {cluster_data['id']}", *table_vals])
 

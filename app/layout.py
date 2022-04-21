@@ -15,9 +15,9 @@ def build_layout() -> Dash:
     init_skill = 'total'
     init_ptsize = 'small'
     init_level_range = [1, 2277]
-    init_n_neighbors = load_params()['n_neighbors'][0]
-    init_min_dist = load_params()['min_dist'][0]
-    init_k = load_params()['k'][0]
+    init_n_neighbors = load_params()['n_neighbors'][2]
+    init_min_dist = load_params()['min_dist'][2]
+    init_k = load_params()['k'][-1]
 
     app_data = load_app_data(init_k, init_n_neighbors, init_min_dist)
 

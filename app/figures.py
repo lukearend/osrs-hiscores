@@ -40,7 +40,7 @@ def get_scatterplot(df: DataFrame,
     ])
     fig.update_traces(hovertemplate=hover_box)
 
-    point_sizes = size_factor * np.sqrt(df['size']) * 0.15
+    point_sizes = size_factor * np.sqrt(np.minimum(15000, df['size'])) * 0.15
     fig.update_traces(
         marker=dict(
             size=point_sizes,
