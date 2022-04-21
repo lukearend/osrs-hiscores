@@ -101,22 +101,26 @@ def test_buildapp():
         for axlimits in split_data.xyz_axlims.values():
             assert axlimits[0] <= axlimits[1]
 
-    coll = connect_mongo("localhost:27017", "test")
-    coll.drop()
-    build_app_database(players_df, clusterids_df, coll, NCLUSTERS)
-    assert coll.count_documents({}) == len(players_df)
+    db = connect_mongo("localhost:27017")
+    stats_coll = db['test-stats']
+    clusterids_coll = db['test-clusterids']
+    stats_coll.drop()
+    clusterids_coll.drop()
+    build_app_database(players_df, clusterids_df, stats_coll, clusterids_coll)
+    assert stats_coll.count_documents({}) == len(players_df)
+    assert clusterids_coll.count_documents({}) == len(players_df)
 
-    for uname in [d['username'] for d in coll.find({}, limit=5)]:
-        player = mongo_get_player(coll, uname)
+    for uname in [d['username'] for d in stats_coll.find({}, limit=5)]:
+        player = mongo_get_player(stats_coll, clusterids_coll, uname)
         assert isinstance(player, PlayerResults)
         assert len(player.stats) == len(osrs_skills(include_total=True))
-        for split, clusterid in player.clusterids[NCLUSTERS].items():
+        for split, clusterid in player.clusterids.items():
             assert split in SPLITS
             assert isinstance(clusterid, int)
 
-    coll.delete_one({'_id': players_df.index[-1]})
+    stats_coll.delete_one({'_id': players_df.index[-1]})
     with pytest.raises(PartialCollection):
-        build_app_database(players_df, clusterids_df, coll, NCLUSTERS)
+        build_app_database(players_df, clusterids_df, stats_coll, clusterids_coll)
 
 
 def test_export():

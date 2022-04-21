@@ -18,6 +18,7 @@ def main(in_file: str, out_file: str):
     stdout = subprocess.check_output(shlex.split(f"wc -l {in_file}"))  # count lines in file
     nlines = int(stdout.decode().strip().split()[0])  # stdout has both line count and filename
     with open(in_file, 'r') as f:
+        f.readline()  # discard header
         players = []
         for line in tqdm(f.readlines(), total=nlines - 1):
             players.append(csv_to_player(line.strip()))
