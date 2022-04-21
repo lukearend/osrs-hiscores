@@ -103,7 +103,7 @@ if __name__ == '__main__':
     parser.add_argument('--clusterids-coll', type=str, help="export clustering results to this collection")
     args = parser.parse_args()
 
-    print("loading data...")
+    print("building app data...")
     players_df = load_pkl(args.stats_file)
     clusterids_df = load_pkl(args.clusterids_file)
     centroids_dict = load_pkl(args.centroids_file)
