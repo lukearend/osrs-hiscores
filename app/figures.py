@@ -12,8 +12,14 @@ from pandas import DataFrame
 from app import load_boxplot_tick_labels, assets_dir, load_boxplot_x_offsets
 
 
-def get_scatterplot(df: DataFrame, colorlims: Tuple[int], colorlabel: str,
-                    pointsize: int, axlims: Dict[str, NDArray], crosshairs: Tuple = None) -> go.Figure:
+def get_scatterplot(df: DataFrame,
+                    colorbar_label: str,
+                    colorbar_limits: Tuple[int],
+                    axis_limits: Dict[str, NDArray],
+                    size_factor: int,
+                    player_crosshairs: Tuple = None,
+                    clicked_crosshairs: Tuple = None) -> go.Figure:
+
     # While go.Scatter3d (from graph objects module) would be preferred,
     # it doesn't allow color and hover data formatting using a dataframe.
     fig = px.scatter_3d(
@@ -22,7 +28,7 @@ def get_scatterplot(df: DataFrame, colorlims: Tuple[int], colorlabel: str,
         y='y',
         z='z',
         color='level',
-        range_color=colorlims,
+        range_color=colorbar_limits,
         hover_name=[f"Cluster {i}" for i in df['id']],
         custom_data=['id', 'size', 'uniqueness']
     )
@@ -34,7 +40,7 @@ def get_scatterplot(df: DataFrame, colorlims: Tuple[int], colorlabel: str,
     ])
     fig.update_traces(hovertemplate=hover_box)
 
-    point_sizes = pointsize * np.sqrt(df['size']) * 0.15
+    point_sizes = size_factor * np.sqrt(df['size']) * 0.15
     fig.update_traces(
         marker=dict(
             size=point_sizes,
@@ -43,12 +49,12 @@ def get_scatterplot(df: DataFrame, colorlims: Tuple[int], colorlabel: str,
         )
     )
 
-    xmin, xmax = axlims['x']
-    ymin, ymax = axlims['y']
-    zmin, zmax = axlims['z']
+    xmin, xmax = axis_limits['x']
+    ymin, ymax = axis_limits['y']
+    zmin, zmax = axis_limits['z']
 
-    if crosshairs is not None:
-        x, y, z = crosshairs
+    if player_crosshairs is not None:
+        x, y, z = player_crosshairs
         fig.add_trace(
             go.Scatter3d(
                 x=[xmin, xmax, None, x, x, None, x, x],
@@ -56,7 +62,22 @@ def get_scatterplot(df: DataFrame, colorlims: Tuple[int], colorlabel: str,
                 z=[z, z, None, z, z, None, zmin, zmax],
                 mode='lines',
                 line_color='white',
-                line_width=2,
+                line_width=3,
+                showlegend=False,
+                hoverinfo='skip'
+            )
+        )
+
+    if clicked_crosshairs is not None:
+        x, y, z = clicked_crosshairs
+        fig.add_trace(
+            go.Scatter3d(
+                x=[xmin, xmax, None, x, x, None, x, x],
+                y=[y, y, None, ymin, ymax, None, y, y],
+                z=[z, z, None, z, z, None, zmin, zmax],
+                mode='lines',
+                line_color='red',
+                line_width=3,
                 showlegend=False,
                 hoverinfo='skip'
             )
@@ -85,16 +106,18 @@ def get_scatterplot(df: DataFrame, colorlims: Tuple[int], colorlabel: str,
         ),
         coloraxis_colorbar=dict(
             title=dict(
-                text=colorlabel,
+                text=colorbar_label,
                 side='right'
             ),
             xanchor='right'
         )
     )
+
     return fig
 
 
 def get_empty_boxplot(split: str) -> go.Figure:
+
     tick_labels = load_boxplot_tick_labels(split)
     nskills = len(tick_labels)
 
@@ -121,16 +144,16 @@ def get_empty_boxplot(split: str) -> go.Figure:
     for i, skill in enumerate(tick_labels):
         icon_path = os.path.join(assets_dir(), "icons", f"{skill}_icon.png")
         icon = Image.open(icon_path)
-        fig.add_layout_image(
-            dict(
-                source=icon,
-                xref="x",
-                yref="y",
-                x=i - icon_x_offset,
-                y=-2,
-                sizex=1,
-                sizey=12,
-                sizing="contain",
-                layer="above")
-        )
+        fig.add_layout_image(dict(
+            source=icon,
+            xref="x",
+            yref="y",
+            x=i - icon_x_offset,
+            y=-2,
+            sizex=1,
+            sizey=12,
+            sizing="contain",
+            layer="above"
+        ))
+
     return fig

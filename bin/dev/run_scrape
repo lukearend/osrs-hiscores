@@ -1,18 +1,20 @@
 #!/usr/bin/env bash
 
-ROOTDIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)/../.."
+ROOTDIR="$(cd $(dirname "$0") && pwd)/../.."
 outfile="$ROOTDIR/data/raw/player-stats-raw.csv"
-cd "$ROOTDIR" && source env/bin/activate && \
+cd "$ROOTDIR" && source env/bin/activate
 
 function scrape {
-  python scripts/scrape_hiscores.py "$outfile" --start-rank 1 --stop-rank 2000000 \
-    --num-workers 28 --log-file /tmp/scrape.log --log-level INFO --usevpn
+    python scripts/scrape_hiscores.py "$outfile" --start-rank 1 --stop-rank 2000000 \
+        --num-workers 28 --log-file /tmp/scrape.log --log-level INFO --usevpn
 }
 
 while true; do
-  scrape ; retcode=$?; if [ $retcode == 0 ] || [ $retcode == 2 ]; then
-    exit 0
-  else
-    echo "script failed, restarting..."
-  fi
+    scrape
+    retcode=$?
+    if [ $retcode == 0 ] || [ $retcode == 2 ]; then
+        exit 0
+    else
+        echo "script failed, restarting..."
+    fi
 done

@@ -6,7 +6,6 @@ import argparse
 
 from src.analysis.data import load_pkl, export_players_csv, export_clusterids_csv, export_centroids_csv
 
-
 parser = argparse.ArgumentParser(description="Export final dataset .""")
 parser.add_argument('in_pkl', help=".pkl file to convert to CSV")
 parser.add_argument('out_csv', help="write converted output to this CSV file")
@@ -14,13 +13,11 @@ parser.add_argument('--type', required=True, choices=['centroids', 'clusterids',
                     help="type of conversion to apply")
 args = parser.parse_args()
 
-
 contents, export_fn = {
     'centroids': ('cluster centroids', export_centroids_csv),
     'clusterids': ('player cluster IDs', export_clusterids_csv),
     'players': ('player stats', export_players_csv)
 }[args.type]
-
 
 print(f"exporting {contents} to {args.out_csv}...")
 in_obj = load_pkl(args.in_pkl)

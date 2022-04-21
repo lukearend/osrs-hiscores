@@ -68,8 +68,11 @@ def load_params() -> Dict[str, List[Number]]:
 
 
 @cache
-def load_table_layout() -> List[List[str]]:
-    return load_json(assets_dir() / 'table_layout.json')
+def load_table_layout(flat: bool = False) -> List[List[str]]:
+    layout = load_json(assets_dir() / 'table_layout.json')
+    if flat:
+        layout = [skill for row in layout for skill in row]
+    return layout
 
 
 @cache

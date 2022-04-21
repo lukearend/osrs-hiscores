@@ -240,6 +240,8 @@ def build_layout() -> Dash:
 
         dcc.Store(id='current-player'),
         dcc.Store(id='current-cluster'),
+        dcc.Store(id='clicked-cluster'),
+        dcc.Store(id='last-clicked-ts'),
         dbc.Row([
             dbc.Col(
                 [
@@ -279,10 +281,10 @@ def build_layout() -> Dash:
                     clear_on_unhover=True,
                     figure=get_scatterplot(
                         df=compute_scatterplot_data(app_data[init_split], init_skill, init_level_range),
-                        colorlims=get_color_range(init_skill),
-                        colorlabel=get_color_label(init_skill),
-                        pointsize=get_point_size(init_ptsize),
-                        axlims=app_data[init_split].xyz_axlims
+                        colorbar_limits=get_color_range(init_skill),
+                        colorbar_label=get_color_label(init_skill),
+                        size_factor=get_point_size(init_ptsize),
+                        axis_limits=app_data[init_split].xyz_axlims
                     ),
                 ),
                 width=7
