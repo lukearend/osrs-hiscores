@@ -23,8 +23,8 @@ def main(players: pd.DataFrame,
     clusterids = np.zeros((len(players), len(splits)), dtype='int')
 
     for i, (split, skills) in enumerate(splits.items()):
-        print(f"clustering split {split}...")
         nclusters = k_per_split[split]
+        print(f"clustering split '{split}' with k = {nclusters}...")
         stats = players[skills]  # take a subset of skills as features
         stats = stats.to_numpy()
 
@@ -42,10 +42,10 @@ def main(players: pd.DataFrame,
         sort_inds = np.argsort(total_levels)[::-1]
         centroids = centroids[sort_inds]
 
-        clusterids[:, i] = cluster_l2(stats, centroids)
-
         centroids = pd.DataFrame(centroids, index=range(nclusters), columns=skills)
         centroids_per_split[split] = centroids
+
+        clusterids[:, i] = cluster_l2(stats, centroids)
 
     clusterids = pd.DataFrame(clusterids, index=unames, columns=splits.keys())
 
@@ -62,7 +62,7 @@ if __name__ == "__main__":
     parser.add_argument('--verbose', action='store_true', help="if set, output progress during training")
     args = parser.parse_args()
 
-    splits = load_json(args.splits_file).items()
+    splits = load_json(args.splits_file)
     k_per_split = {split: params['k'] for split, params in load_json(args.params_file).items()}
     for split in splits.keys():
         if split not in k_per_split:

@@ -17,7 +17,7 @@ def main(centroids: OrderedDict[str, pd.DataFrame],
 
     xyz = {}
     for split, split_centroids in centroids.items():
-        print(f"running dimensionality reduction for split '{split}'...")
+        print(f"reducing dimensionality for split '{split}' (n_neighbors = {n_neighbors}, min_dist = {min_dist})...")
         split_xyz = umap_reduce(split_centroids.to_numpy(), 3, n_neighbors[split], min_dist[split])
         split_xyz = pd.DataFrame(split_xyz, index=split_centroids.index, columns=('x', 'y', 'z'))
         xyz[split] = split_xyz

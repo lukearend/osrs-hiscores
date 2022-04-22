@@ -15,11 +15,12 @@ build: init test download export quartiles dimreduce appdata app ## Build app fr
 
 all: init test scrape clean cluster quartiles dimreduce appdata export upload ## Build repo results from scratch.
 
-app: mongo-start ## Run visualization app.
-	@source env/bin/activate && python3 app
+app: ## Run visualization app.
+	bin/mongo-start && @source env/bin/activate && python3 app
 
-init: env mongo ## Initialize repository.
+init: env ## Initialize repository.
 	mkdir -p data/raw data/interim data/final
+	docker pull mongo
 
 env:
 	@echo "building virtual environment..."
@@ -83,12 +84,6 @@ mongo_url:=$(or $(OSRS_MONGO_URI), localhost:27017)
 app_coll:=$(or $(OSRS_MONGO_COLL), players)
 
 appdata: $(app_data).pkl ## Build final application data.
-
-mongo:
-	docker pull mongo
-
-mongo-start:
-	@cd bin && ./start_mongo
 
 $(app_data).pkl: $(stats).pkl $(clusterids).pkl $(centroids).pkl $(quartiles).pkl $(xyz).pkl
 	@source env/bin/activate && cd scripts && \
