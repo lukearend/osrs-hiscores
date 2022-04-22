@@ -21,9 +21,9 @@ SPLITS = OrderedDict([
     ("last10", ["smithing", "mining", "herblore", "agility", "thieving",
                 "slayer", "farming", "runecraft", "hunter", "construction"])
 ])
-NCLUSTERS = 50
-UMAP_NN = 5
-UMAP_MINDIST = 0.25
+NCLUSTERS_PER_SPLIT = {"first5": 50, "last10": 25}
+UMAP_NN_PER_SPLIT = {"first5": 5, "last10": 10}
+UMAP_MINDIST_PER_SPLIT = {"first5": 0.25, "last10": 0.10}
 
 
 global players_df
@@ -49,14 +49,15 @@ def test_import_csv():
 
 def test_cluster():
     global players_df, clusterids_df, centroids_dict
-    clusterids_df, centroids_dict = cluster_players(players_df, nclusters=NCLUSTERS, splits=SPLITS, verbose=False)
+    clusterids_df, centroids_dict = cluster_players(
+        players_df, k_per_split=NCLUSTERS_PER_SPLIT, splits=SPLITS, verbose=False)
     assert isinstance(clusterids_df, pd.DataFrame)
     assert len(clusterids_df) == len(players_df)
     assert tuple(clusterids_df.columns) == tuple(SPLITS.keys())
     for split, skills_in_split in SPLITS.items():
         split_centroids = centroids_dict[split]
         assert isinstance(split_centroids, pd.DataFrame)
-        assert list(split_centroids.index) == list(range(NCLUSTERS))
+        assert list(split_centroids.index) == list(range(NCLUSTERS_PER_SPLIT[split]))
         assert list(split_centroids.columns) == skills_in_split
 
 
@@ -68,17 +69,17 @@ def test_quartiles():
         assert isinstance(split_quartiles, xr.DataArray)
         assert list(split_quartiles.dims) == ["percentile", "clusterid", "skill"]
         assert list(split_quartiles.coords["percentile"]) == [0, 25, 50, 75, 100]
-        assert list(split_quartiles.coords["clusterid"]) == list(range(NCLUSTERS))
+        assert list(split_quartiles.coords["clusterid"]) == list(range(NCLUSTERS_PER_SPLIT[split]))
         assert list(split_quartiles.coords["skill"]) == ['total'] + SPLITS[split]
 
 
 def test_dimreduce():
     global centroids_dict, xyz_dict
-    xyz_dict = dim_reduce_clusters(centroids_dict, n_neighbors=5, min_dist=0.25)
+    xyz_dict = dim_reduce_clusters(centroids_dict, n_neighbors=UMAP_NN_PER_SPLIT, min_dist=UMAP_MINDIST_PER_SPLIT)
     assert xyz_dict.keys() == SPLITS.keys()
     for split, split_xyz in xyz_dict.items():
         assert isinstance(split_xyz, pd.DataFrame)
-        assert list(split_xyz.index) == list(range(NCLUSTERS))
+        assert list(split_xyz.index) == list(range(NCLUSTERS_PER_SPLIT[split]))
         assert tuple(split_xyz.columns) == ('x', 'y', 'z')
 
 
@@ -87,40 +88,39 @@ def test_buildapp():
     app_data = build_app_data(SPLITS, clusterids_df, centroids_dict, quartiles_dict, xyz_dict)
     assert app_data.keys() == SPLITS.keys()
     for split, split_data in app_data.items():
+        nclusters = NCLUSTERS_PER_SPLIT[split]
         assert isinstance(split_data, SplitData)
         assert split_data.skills == SPLITS[split]
         assert isinstance(split_data.cluster_quartiles, xr.DataArray)
         assert isinstance(split_data.cluster_centroids, pd.DataFrame)
         assert isinstance(split_data.cluster_xyz, pd.DataFrame)
-        assert split_data.cluster_quartiles.shape == (5, NCLUSTERS, len(split_data.skills) + 1)
-        assert split_data.cluster_centroids.shape == (NCLUSTERS, len(split_data.skills))
-        assert split_data.cluster_xyz.shape == (NCLUSTERS, 3)
-        assert len(split_data.cluster_sizes) == NCLUSTERS
-        assert len(split_data.cluster_uniqueness) == NCLUSTERS
+        assert split_data.cluster_quartiles.shape == (5, nclusters, len(split_data.skills) + 1)
+        assert split_data.cluster_centroids.shape == (nclusters, len(split_data.skills))
+        assert split_data.cluster_xyz.shape == (nclusters, 3)
+        assert len(split_data.cluster_sizes) == nclusters
+        assert len(split_data.cluster_uniqueness) == nclusters
         assert tuple(split_data.xyz_axlims.keys()) == ('x', 'y', 'z')
         for axlimits in split_data.xyz_axlims.values():
             assert axlimits[0] <= axlimits[1]
 
-    db = connect_mongo("localhost:27017")
-    stats_coll = db['test-stats']
-    clusterids_coll = db['test-clusterids']
-    stats_coll.drop()
-    clusterids_coll.drop()
-    build_app_database(players_df, clusterids_df, stats_coll, clusterids_coll)
-    assert stats_coll.count_documents({}) == len(players_df)
-    assert clusterids_coll.count_documents({}) == len(players_df)
+    coll = connect_mongo("localhost:27017", 'test')
+    coll.drop()
+    build_app_database(players_df, clusterids_df, coll)
+    assert coll.count_documents({}) == len(players_df)
 
-    for uname in [d['username'] for d in stats_coll.find({}, limit=5)]:
-        player = mongo_get_player(stats_coll, clusterids_coll, uname)
+    for uname in [d['username'] for d in coll.find({}, limit=5)]:
+        player = mongo_get_player(coll, uname)
         assert isinstance(player, PlayerResults)
         assert len(player.stats) == len(osrs_skills(include_total=True))
         for split, clusterid in player.clusterids.items():
             assert split in SPLITS
             assert isinstance(clusterid, int)
 
-    stats_coll.delete_one({'_id': players_df.index[-1]})
+    coll.delete_one({'_id': players_df.index[-1]})
     with pytest.raises(PartialCollection):
-        build_app_database(players_df, clusterids_df, stats_coll, clusterids_coll)
+        build_app_database(players_df, clusterids_df, coll)
+
+    coll.drop()
 
 
 def test_export():
@@ -155,7 +155,8 @@ def test_export():
         assert header == ['split', 'clusterid'] + osrs_skills(include_total=False)
         nlines = 0
         for split in SPLITS.keys():
-            for i in range(NCLUSTERS):
+            nclusters = NCLUSTERS_PER_SPLIT[split]
+            for i in range(nclusters):
                 line = next(reader)
                 assert len(line) == len(header)
                 assert line[0] == split
@@ -163,4 +164,4 @@ def test_export():
                 skill_vals = [v for v in line[2:] if v]  # drop empty columns for skills not in this split
                 assert len(skill_vals) == len(SPLITS[split])
                 nlines += 1
-        assert nlines == len(SPLITS) * NCLUSTERS
+        assert nlines == sum(NCLUSTERS_PER_SPLIT.values())

@@ -1,26 +1,27 @@
 #!/usr/bin/env bash
 
 if ! [ -f ~/.openvpn ]; then
-  cat >&2 << EOF
+    cat >&2 <<EOF
 
 Expects valid OpenVPN service credentials in the file \`~/.openvpn\`,
 where the first line is auth username and the second line is password.
 This script then connects using the config created by \`ref/vpn/mkserver\`,
 which chooses one of the server IP addresses listed in \`ref/vpn/servers\`.
 EOF
-  exit 1
+    exit 1
 fi
 
 VPN_DIR="$(cd "$(dirname "$0")" && pwd)/../ref/vpn"
 cd "$VPN_DIR" && echo "resetting vpn..."
 sudo -Sv || exit 1 # request sudo if we don't have it
 
-restart () {
-  sudo pkill openvpn >/dev/null 2>&1 ; sleep 1
-  ./mkserver && \
-  sudo openvpn --config server.ovpn --auth-user-pass ~/.openvpn --writepid openvpn.pid --daemon
-  sleep 2 && echo -n "setting up tunnel... " && sleep 3
-  ps -p $(cat openvpn.pid) >/dev/null 2>&1
+restart() {
+    sudo pkill openvpn >/dev/null 2>&1
+    sleep 1
+    ./mkserver &&
+        sudo openvpn --config server.ovpn --auth-user-pass ~/.openvpn --writepid openvpn.pid --daemon
+    sleep 2 && echo -n "setting up tunnel... " && sleep 3
+    ps -p $(cat openvpn.pid) >/dev/null 2>&1
 }
 
 until restart; do echo "setup failed, retrying"; done

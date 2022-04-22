@@ -64,41 +64,12 @@ def player_to_mongodoc(player: PlayerResults):
     return doc
 
 
-# def mongo_get_player(coll: Collection, username: str) -> PlayerResults:
-#     doc = coll.find_one({'_id': username.lower()})
-#     if not doc:
-#         return None
-#     clustering_results = {int(k): ids_dict for k, ids_dict in doc['clusterids'].items()}
-#     return PlayerResults(
-#         username=doc['username'],
-#         clusterids=clustering_results,
-#         stats=doc['stats']
-#     )
-
-
-def mongo_get_player(stats_coll: Collection, clusterids_coll: Collection, username: str) -> PlayerResults:
-    stats_doc = stats_coll.find_one({'_id': username.lower()})
-    clusterids_doc = clusterids_coll.find_one({'_id': username.lower()})
-    if not stats_doc or not clusterids_doc:
+def mongo_get_player(coll: Collection, username: str) -> PlayerResults:
+    doc = coll.find_one({'_id': username.lower()})
+    if not doc:
         return None
     return PlayerResults(
-        username=stats_doc['username'],
-        clusterids=clusterids_doc['clusterids'],
-        stats=stats_doc['stats']
+        username=doc['username'],
+        clusterids=doc['clusterids'],
+        stats=doc['stats']
     )
-
-
-def player_to_stats_doc(player):
-    return {
-        '_id': player.username.lower(),
-        'username': player.username,
-        'stats': player.stats
-    }
-
-
-def player_to_clusterids_doc(player):
-    return {
-        '_id': player.username.lower(),
-        'username': player.username,
-        'clusterids': player.clusterids
-    }

@@ -1,19 +1,21 @@
 """ Cluster players according to account similarity. """
 
 import argparse
+import json
 from collections import OrderedDict
 from typing import Tuple, List, Dict
 
 import numpy as np
 import pandas as pd
 
-from src.analysis.data import load_pkl, dump_pkl
+from src.analysis.data import load_pkl, dump_pkl, load_json
 from src.analysis.models import fit_kmeans, cluster_l2
 from src.analysis import load_splits
 
 
-def main(players: pd.DataFrame, nclusters: int,
+def main(players: pd.DataFrame,
          splits: OrderedDict[str, List[str]],
+         k_per_split: OrderedDict[str, int],
          verbose: bool = True) -> Tuple[Dict[str, pd.DataFrame], pd.DataFrame]:
 
     unames = players.index
@@ -22,6 +24,7 @@ def main(players: pd.DataFrame, nclusters: int,
 
     for i, (split, skills) in enumerate(splits.items()):
         print(f"clustering split {split}...")
+        nclusters = k_per_split[split]
         stats = players[skills]  # take a subset of skills as features
         stats = stats.to_numpy()
 
@@ -51,15 +54,22 @@ def main(players: pd.DataFrame, nclusters: int,
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Cluster players according to account similarity.")
-    parser.add_argument('-i', '--in-file', type=str, help="load player stats from this file")
-    parser.add_argument('-k', '--n-clusters', type=int, required=True, help="number of clusters")
-    parser.add_argument('-v', '--verbose', action='store_true', help="if set, output progress during training")
-    parser.add_argument('--out-clusterids', type=str, help="write cluster IDs to this file")
-    parser.add_argument('--out-centroids', type=str, help="write cluster centroids to this file")
+    parser.add_argument('--in-file', required=True, type=str, help="load player stats from this file")
+    parser.add_argument('--out-clusterids', required=True, type=str, help="write cluster IDs to this file")
+    parser.add_argument('--out-centroids', required=True, type=str, help="write cluster centroids to this file")
+    parser.add_argument('--params-file', type=str, help="load number of clusters per split from this file")
+    parser.add_argument('--splits-file', type=str, help="load skills in each split from this file")
+    parser.add_argument('--verbose', action='store_true', help="if set, output progress during training")
     args = parser.parse_args()
 
+    splits = load_json(args.splits_file).items()
+    k_per_split = {split: params['k'] for split, params in load_json(args.params_file).items()}
+    for split in splits.keys():
+        if split not in k_per_split:
+            raise ValueError(f"params file is missing k parameter for split '{split}'")
+
     players_df = load_pkl(args.in_file)
-    clusterids_df, centroids_dict = main(players_df, nclusters=args.n_clusters, splits=load_splits(), verbose=args.verbose)
+    clusterids_df, centroids_dict = main(players_df, k_per_split=k_per_split, splits=load_splits(), verbose=args.verbose)
     dump_pkl(clusterids_df, args.out_clusterids)
     print(f"wrote player cluster IDs to {args.out_clusterids}")
     dump_pkl(centroids_dict, args.out_centroids)
