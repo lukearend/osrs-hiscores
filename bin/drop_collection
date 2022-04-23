@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import os
 from src.analysis.app import connect_mongo
 
 parser = argparse.ArgumentParser("Drop a MongoDB collection.")

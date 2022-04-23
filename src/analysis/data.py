@@ -7,7 +7,6 @@ from collections import OrderedDict
 from typing import Any
 
 import boto3
-import numpy as np
 import pandas as pd
 from botocore.exceptions import NoCredentialsError
 from progressbar import progressbar

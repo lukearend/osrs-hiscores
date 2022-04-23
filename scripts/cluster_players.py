@@ -1,7 +1,6 @@
 """ Cluster players according to account similarity. """
 
 import argparse
-import json
 from collections import OrderedDict
 from typing import Tuple, List, Dict
 
@@ -42,10 +41,9 @@ def main(players: pd.DataFrame,
         sort_inds = np.argsort(total_levels)[::-1]
         centroids = centroids[sort_inds]
 
+        clusterids[:, i] = cluster_l2(stats, centroids)
         centroids = pd.DataFrame(centroids, index=range(nclusters), columns=skills)
         centroids_per_split[split] = centroids
-
-        clusterids[:, i] = cluster_l2(stats, centroids)
 
     clusterids = pd.DataFrame(clusterids, index=unames, columns=splits.keys())
 

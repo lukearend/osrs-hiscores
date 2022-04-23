@@ -103,9 +103,13 @@ download: ## Download raw stats and clustering results.
 	@source env/bin/activate && cd bin && \
 	./download_dataset $(stats_raw).csv $(stats).pkl $(clusterids).pkl $(centroids).pkl
 
-upload: ## Upload
-	@cd bin/dev && ./push_artifacts $(stats_raw).csv $(stats).pkl $(clusterids).pkl $(centroids).pkl \
-                                    $(app_data).pkl $(stats_final) $(clusterids_final) $(centroids_final)
+upload: push-aws push-gdrive ## Upload project artifacts to AWS and Google Drive.
+
+push-aws: $(stats_raw).csv $(stats).pkl $(clusterids).pkl $(centroids).pkl
+	@source env/bin/activate && cd bin/dev && ./push_aws $^
+
+push-gdrive: $(stats_raw).csv $(stats_final).csv $(centroids_final).csv $(clusterids_final).csv
+	@source env/bin/activate && cd bin/dev && ./push_gdrive $^
 
 $(stats_final).csv: $(stats).pkl
 	@source env/bin/activate && cd bin/dev && \

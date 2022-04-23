@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 """ Reduce dimensionality of cluster centroids to 3D using UMAP. """
+
 import argparse
 from collections import OrderedDict
 
@@ -17,8 +18,10 @@ def main(centroids: OrderedDict[str, pd.DataFrame],
 
     xyz = {}
     for split, split_centroids in centroids.items():
-        print(f"reducing dimensionality for split '{split}' (n_neighbors = {n_neighbors}, min_dist = {min_dist})...")
-        split_xyz = umap_reduce(split_centroids.to_numpy(), 3, n_neighbors[split], min_dist[split])
+        nn = n_neighbors[split]
+        mindist = min_dist[split]
+        print(f"reducing dimensionality for split '{split}' (n_neighbors = {nn}, min_dist = {mindist})...")
+        split_xyz = umap_reduce(split_centroids.to_numpy(), d=3, n_neighbors=nn, min_dist=mindist)
         split_xyz = pd.DataFrame(split_xyz, index=split_centroids.index, columns=('x', 'y', 'z'))
         xyz[split] = split_xyz
 
