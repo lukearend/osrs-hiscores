@@ -27,4 +27,4 @@ for file in [args.stats_file, args.clusterids_file, args.centroids_file]:
         continue
 
     with open(file, 'wb') as f:
-        f.write(download_s3_obj(args.bucket, s3_keys[file]))
+        f.write(download_s3_obj(args.s3_bucket, s3_keys[file]))
