@@ -7,7 +7,7 @@ from pathlib import Path
 from typing import List, OrderedDict, Dict, Any
 
 
-@lru_cache
+@lru_cache()
 def osrs_skills(include_total: bool = False) -> List[str]:
     """ Load the list of OSRS skills in an order for use throughout the project. """
 
@@ -19,7 +19,7 @@ def osrs_skills(include_total: bool = False) -> List[str]:
     return skills
 
 
-@lru_cache
+@lru_cache()
 def load_splits(file: str = None) -> OrderedDict[str, List[str]]:
     """ Load the 'skill splits' of the dataset for use throughout the project.
     Each split is a subset of skills to be used as features for clustering. """

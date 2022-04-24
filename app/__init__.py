@@ -13,18 +13,18 @@ def assets_dir() -> Path:
     return Path(__file__).resolve().parent / 'assets'
 
 
-@lru_cache
+@lru_cache()()
 def load_table_layout(flat: bool = False) -> List[List[str]]:
     layout = load_json(assets_dir() / 'table_layout.json')
     return [skill for row in layout for skill in row] if flat else layout
 
 
-@lru_cache
+@lru_cache()
 def load_boxplot_offsets() -> float:
     return load_json(assets_dir() / 'boxplot_offsets.json')
 
 
-@lru_cache
+@lru_cache()
 def load_boxplot_icon(skill) -> Image:
     path = os.path.join(assets_dir(), "icons", f"{skill}_icon.png")
     return Image.open(path)
