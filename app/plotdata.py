@@ -1,10 +1,11 @@
+""" Code for assembling plot data. """
+
 from typing import Dict, Tuple
 
 import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-from app import ticklabel_skill_inds
 from src.analysis.app import SplitData
 
 
@@ -30,7 +31,7 @@ def compute_scatterplot_data(split_data: SplitData, color_by_skill: str, color_a
     })
 
 
-def compute_boxplot_data(split: str, split_data: SplitData, clusterid=None) -> Dict[str, NDArray]:
+def compute_boxplot_data(split_data: SplitData, clusterid=None) -> Dict[str, NDArray]:
 
     hide_val = -100  # replace nans with an off-plot value to hide them
     if clusterid is None:
@@ -48,10 +49,7 @@ def compute_boxplot_data(split: str, split_data: SplitData, clusterid=None) -> D
     upperfence = np.minimum(q3 + 1.5 * iqr, q4)
 
     data = np.array([lowerfence, q1, q2, q3, upperfence])
-    data = np.round(data)
-    data = data[:, ticklabel_skill_inds(split)]  # reorder skills in order of boxplot ticks
-    nan_cols = np.isnan(data[2, :])
-    data[:, nan_cols] = hide_val
+    data[np.isnan(data)] = hide_val
 
     quartiles_dict = {}
     for i, q in enumerate(['lowerfence', 'q1', 'median', 'q3', 'upperfence']):

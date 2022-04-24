@@ -1,25 +1,21 @@
+""" Static layout of application page. """
+
 import dash_bootstrap_components as dbc
 from dash import Dash, dcc, html
 
-from app import format_skill, get_level_tick_marks, get_color_range, \
-    get_color_label, get_point_size, load_params, load_app_data, load_table_layout
+from app import load_table_layout, format_skill, get_level_tick_marks, get_color_range, get_color_label, get_point_size
 from app.plotdata import compute_scatterplot_data
 from app.figures import get_empty_boxplot, get_scatterplot
 from src.analysis import osrs_skills
 
 
-def build_layout() -> Dash:
+def build_layout(app_data) -> Dash:
     app = Dash(__name__, title="OSRS player clusters", external_stylesheets=[dbc.themes.BOOTSTRAP])
 
     init_split = 'all'
     init_skill = 'total'
     init_ptsize = 'small'
     init_level_range = [1, 2277]
-    init_n_neighbors = load_params()['n_neighbors'][2]
-    init_min_dist = load_params()['min_dist'][2]
-    init_k = load_params()['k'][-1]
-
-    app_data = load_app_data(init_k, init_n_neighbors, init_min_dist)
 
     app.layout = dbc.Container([
         dbc.Row(
@@ -89,81 +85,6 @@ def build_layout() -> Dash:
                 )
             ],
             align='center',
-            style={'padding-bottom': '1vh'}
-        ),
-
-        dbc.Row(
-            [
-                dbc.Col(
-                    dbc.Row(
-                        [
-                            dbc.Col(
-                                html.Div(children="# clusters:"),
-                                width=4
-                            ),
-                            dbc.Col(
-                                dcc.Dropdown(
-                                    id='kmeans-k',
-                                    options=[
-                                        {'label': str(n), 'value': n}
-                                        for n in load_params()['k']
-                                    ],
-                                    value=init_k,
-                                    clearable=False
-                                )
-                            )
-                        ],
-                        align='center'
-                    ),
-                    width=4
-                ),
-                dbc.Col(
-                    dbc.Row(
-                        [
-                            dbc.Col(
-                                html.Div(children="# neighbors:"),
-                                width=4
-                            ),
-                            dbc.Col(
-                                dcc.Dropdown(
-                                    id='n-neighbors',
-                                    options=[
-                                        {'label': str(n), 'value': n}
-                                        for n in load_params()['n_neighbors']
-                                    ],
-                                    value=init_n_neighbors,
-                                    clearable=False
-                                )
-                            )
-                        ],
-                        align='center'
-                    ),
-                    width=4
-                ),
-                dbc.Col(
-                    dbc.Row(
-                        [
-                            dbc.Col(
-                                html.Div(children="min dist:"),
-                                width=4
-                            ),
-                            dbc.Col(
-                                dcc.Dropdown(
-                                    id='min-dist',
-                                    options=[
-                                        {'label': f'{d:.2f}', 'value': d}
-                                        for d in load_params()['min_dist']
-                                    ],
-                                    value=init_min_dist,
-                                    clearable=False
-                                )
-                            )
-                        ],
-                        align='center'
-                    ),
-                    width=4
-                )
-            ],
             style={'padding-bottom': '1vh'}
         ),
 
@@ -267,7 +188,7 @@ def build_layout() -> Dash:
                             dcc.Graph(
                                 id='box-plot',
                                 style={'height': '20vh'},
-                                figure=get_empty_boxplot(init_split)
+                                figure=get_empty_boxplot(init_split, app_data[init_split].skills)
                             )
                         ]),
                         align='center'
@@ -316,7 +237,7 @@ def build_level_table(name: str) -> dbc.Col:
                 ],
                 align='center',
                 justify='center',
-                className='g-1'  # almost no gutter between icon and number
+                className='g-1'  # very small gutter between icon and number
             )
             table_row.append(dbc.Col(table_elem, width=4))
 

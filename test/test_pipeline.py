@@ -9,7 +9,7 @@ import xarray as xr
 from scripts.cluster_players import main as cluster_players
 from scripts.compute_quartiles import main as compute_quartiles
 from scripts.dim_reduce_clusters import main as dim_reduce_clusters
-from scripts.build_app import build_app_data, build_app_database, PartialCollection
+from scripts.build_app import build_app_data, build_app_database
 from src.analysis.app import PlayerResults, SplitData, connect_mongo, mongo_get_player
 
 from src.analysis.data import import_players_csv, export_players_csv, export_clusterids_csv, export_centroids_csv
@@ -115,10 +115,6 @@ def test_buildapp():
         for split, clusterid in player.clusterids.items():
             assert split in SPLITS
             assert isinstance(clusterid, int)
-
-    coll.delete_one({'_id': players_df.index[-1]})
-    with pytest.raises(PartialCollection):
-        build_app_database(players_df, clusterids_df, coll)
 
     coll.drop()
 

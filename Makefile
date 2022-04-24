@@ -4,7 +4,6 @@ ROOT:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 ifneq (,$(wildcard .env))
     include .env
-	export
 endif
 
 .DEFAULT_GOAL = help
@@ -14,9 +13,6 @@ endif
 build: init test download export quartiles dimreduce appdata app ## Build app from downloaded data.
 
 all: init test scrape clean cluster quartiles dimreduce appdata export upload ## Build repo results from scratch.
-
-app: ## Run visualization app.
-	bin/mongo-start && @source env/bin/activate && python3 app
 
 init: env ## Initialize repository.
 	mkdir -p data/raw data/interim data/final
@@ -46,10 +42,9 @@ $(stats_raw).csv:
 	mv $(stats_raw).tmp $(stats_raw).csv
 
 $(stats).pkl: $(stats_raw).csv
-	@source env/bin/activate && cd scripts && \
-	python clean_raw_data.py --in-file $< --out-file $@
+	@source env/bin/activate && python scripts/clean_raw_data.py --in-file $< --out-file $@
 
-# Clustering and dimensionality reduction ---------------------------------------------------------
+# Clustering and analysis -------------------------------------------------------------------------
 
 splits:=$(ROOT)/ref/skill-splits.json
 params:=$(ROOT)/ref/split-params.json
@@ -75,9 +70,9 @@ $(quartiles).pkl: $(stats).pkl $(clusterids).pkl
 
 $(xyz).pkl: $(centroids).pkl
 	@source env/bin/activate && cd scripts && \
-	python dim_reduce_clusters.py --in-file $< --out-file $@ --params-file $(params)
+	python scripts/dim_reduce_clusters.py --in-file $< --out-file $@ --params-file $(params)
 
-# Application data/database -----------------------------------------------------------------------
+# Dash application --------------------------------------------------------------------------------
 
 app_data:=$(ROOT)/data/interim/appdata
 mongo_url:=$(or $(OSRS_MONGO_URI), localhost:27017)
@@ -87,46 +82,55 @@ appdata: $(app_data).pkl ## Build final application data.
 
 $(app_data).pkl: $(stats).pkl $(clusterids).pkl $(centroids).pkl $(quartiles).pkl $(xyz).pkl
 	@source env/bin/activate && cd scripts && \
-	python build_app.py --stats-file $(word 1,$^) --clusterids-file $(word 2,$^) --centroids-file $(word 3,$^)
-	                    --quartiles-file $(word 4,$^) --xyz-file $(word 5,$^) --out-file $@
-	                    --mongo-url $(mongo_url) --collection $(app_coll)
+	python build_app.py --splits-file $(splits) --stats-file $(word 1,$^) \
+	                    --clusterids-file $(word 2,$^) --centroids-file $(word 3,$^) \
+	                    --quartiles-file $(word 4,$^) --xyz-file $(word 5,$^) \
+                        --out-file $@ --mongo-url $(mongo_url) --collection $(app_coll)
+
+app: ## Run application.
+	@bin/start_mongo && source env/bin/activate && \
+	python app --mongo-url $(mongo_url) --collection $(app_coll) --data-file $(app_data).pkl --debug
 
 # Importing and exporting data --------------------------------------------------------------------
 
+s3_bucket:=$(or, $(OSRS_DATASET_BUCKET), osrshiscores)
 stats_final:=$(ROOT)/data/final/player-stats.csv
 clusterids_final:=$(ROOT)/data/final/player-clusterids.csv
 centroids_final:=$(ROOT)/data/final/cluster-centroids.csv
 
-export: $(stats_final) $(clusterids_final) $(centroids_final) ## Export stats and clustering results to CSV.
+download: ## Download scraped and clustered data.
+	@source env/bin/activate && bin/dev && \
+	download_dataset $(s3_bucket) $(stats).pkl $(clusterids).pkl $(centroids).pkl
 
-download: ## Download raw stats and clustering results.
-	@source env/bin/activate && cd bin && \
-	./download_dataset $(stats_raw).csv $(stats).pkl $(clusterids).pkl $(centroids).pkl
+upload: push-aws push-gdrive
 
-upload: push-aws push-gdrive ## Upload project artifacts to AWS and Google Drive.
+export: $(stats_final) $(clusterids_final) $(centroids_final) ## Export result files to CSV.
 
-push-aws: $(stats_raw).csv $(stats).pkl $(clusterids).pkl $(centroids).pkl
-	@source env/bin/activate && cd bin/dev && ./push_aws $^
+$(stats_final): $(stats).pkl
+	@source env/bin/activate && bin/dev/pkl_to_csv $< $@ --type players
+
+$(clusterids_final): $(clusterids).pkl
+	@source env/bin/activate && bin/dev/pkl_to_csv $< $@ --type clusterids
+
+$(centroids_final): $(centroids).pkl
+	@source env/bin/activate && bin/dev/pkl_to_csv $< $@ --type centroids
+
+push-aws: $(stats_raw).csv $(stats).pkl $(clusterids).pkl $(centroids).pkl $(app_data).pkl
+	aws s3 cp $(appdata) "s3://$(OSRS_APPDATA_BUCKET)/$(OSRS_APPDATA_S3_KEY)" &&
+	aws s3 cp $(centroids) "s3://$(OSRS_DATASET_BUCKET)/centroids.pkl" &&
+	aws s3 cp $(clusterids) "s3://$(OSRS_DATASET_BUCKET)/clusterids.pkl" &&
+	aws s3 cp $(stats) "s3://$(OSRS_DATASET_BUCKET)/stats.pkl"
 
 push-gdrive: $(stats_raw).csv $(stats_final).csv $(centroids_final).csv $(clusterids_final).csv
-	@source env/bin/activate && cd bin/dev && ./push_gdrive $^
-
-$(stats_final).csv: $(stats).pkl
-	@source env/bin/activate && cd bin/dev && \
-	./pkl_to_csv $< $@ --type players
-
-$(centroids_final).csv: $(centroids).pkl
-	@source env/bin/activate && cd bin/dev && \
-	./pkl_to_csv $< $@ --type centroids
-
-$(clusterids_final).csv: $(clusterids).pkl
-	@source env/bin/activate && cd bin/dev && \
-	./pkl_to_csv $< $@ --type clusterids
+	gdrive upload "$centroids" -p $OSRS_GDRIVE_DIR --name cluster-centroids.csv &&
+	gdrive upload "$clusterids" -p $OSRS_GDRIVE_DIR --name player-clusters.csv &&
+	gdrive upload "$stats" -p $OSRS_GDRIVE_DIR --name player-stats.csv &&
+	gdrive upload "$stats_raw" -p $OSRS_GDRIVE_DIR --name stats-raw.csv &&
 
 # Other utilities ---------------------------------------------------------------------------------
 
-ec2-%: # options: status, start, stop, connect, setup
-	@cd bin/dev && ./ec2_instance $*
+ec2-%: # status, start, stop, connect, setup
+	@source .env && cd bin/dev/ec2_instance $*
 
 test: lint ## Run test suite.
 	@source env/bin/activate && pytest test

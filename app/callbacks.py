@@ -1,3 +1,5 @@
+""" Dynamic behavior of application. """
+
 from datetime import datetime
 from typing import List, Dict, Any, Tuple
 
@@ -6,22 +8,19 @@ from dash import Dash, no_update
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from plotly import graph_objects as go
-from pymongo.database import Database
+from pymongo.collection import Collection
 
-from app import skill_upper, load_app_data, format_skill, validate_username, get_level_tick_marks, CLUSTERIDS_COLL, \
-    STATS_COLL, load_table_layout
+from app import load_table_layout, format_skill, skill_upper, validate_username, get_level_tick_marks
 from app.plotdata import compute_boxplot_data, compute_scatterplot_data
 from app.figures import get_scatterplot, get_empty_boxplot
 from src.analysis import osrs_skills
+from src.analysis.app import SplitData, mongo_get_player
 
 
-def add_callbacks(app: Dash, player_db: Database) -> Dash:
+def add_callbacks(app: Dash, app_data: Dict[str, SplitData], player_coll: Collection) -> Dash:
 
     @app.callback(
         Output('scatter-plot', 'figure'),
-        Input('kmeans-k', 'value'),
-        Input('n-neighbors', 'value'),
-        Input('min-dist', 'value'),
         Input('current-split', 'value'),
         Input('current-skill', 'value'),
         Input('current-player', 'data'),
@@ -29,15 +28,14 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
         Input('level-range', 'value'),
         Input('point-size', 'value')
     )
-    def redraw_scatterplot(kmeans_k: int, n_neighbors: int, min_dist: float,
-                           current_split: str,
+    def redraw_scatterplot(current_split: str,
                            current_skill: str,
                            current_player: Dict[str, Any],
                            clicked_cluster: int,
                            level_range: List[int],
-                           point_size: str):
+                           point_size: str) -> go.Figure:
 
-        split_data = load_app_data(kmeans_k, n_neighbors, min_dist)[current_split]
+        split_data = app_data[current_split]
         df = compute_scatterplot_data(split_data, current_skill, level_range)
 
         if current_player is None:
@@ -67,17 +65,13 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
         Output('current-skill', 'value'),
         Input('current-split', 'value'),
         State('current-skill', 'value'),
-        State('kmeans-k', 'value'),
-        State('n-neighbors', 'value'),
-        State('min-dist', 'value')
     )
-    def set_split(current_split: str, current_skill: str,
-                  kmeans_k: int, n_neighbors: int, min_dist: float):
+    def set_split(current_split: str, current_skill: str) -> Tuple[List[str], str]:
 
         if not current_split:
             raise PreventUpdate
 
-        split_data = load_app_data(kmeans_k, n_neighbors, min_dist)[current_split]
+        split_data = app_data[current_split]
         skills_in_split = ['total'] + split_data.skills
         options = []
         for skill in osrs_skills(include_total=True):
@@ -98,7 +92,7 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
         Input('current-skill', 'value'),
         State('level-range', 'value')
     )
-    def set_skill(new_skill, current_range):
+    def set_skill(new_skill, current_range) -> Tuple[int, int, int, Dict[int, str]]:
 
         if not new_skill:
             raise PreventUpdate
@@ -121,9 +115,8 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
     @app.callback(
         Output('query-event', 'data'),
         Input('username-text', 'value'),
-        Input('kmeans-k', 'value')
     )
-    def query_player(username, kmeans_k):
+    def query_player(username) -> Dict[str, Any]:
 
         if not username:
             return {
@@ -137,9 +130,8 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
                 'response': 400  # invalid
             }
 
-        stats = player_db[STATS_COLL].find_one({'_id': username.lower()})
-        clusterids = player_db[f'{CLUSTERIDS_COLL}-{kmeans_k}'].find_one({'_id': username.lower()})
-        if not stats or not clusterids:
+        player = mongo_get_player(player_coll, username)
+        if not player:
             return {
                 'username': username,
                 'response': 404  # not found
@@ -147,9 +139,9 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
         return {
             'username': username,
             'response': {
-                'username': stats['username'],
-                'clusterids': clusterids['clusterids'],
-                'stats': stats['stats']
+                'username': player.username,
+                'clusterids': player.clusterids,
+                'stats': player.stats
             }
         }
 
@@ -158,12 +150,8 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
         Output('player-query-text', 'children'),
         Input('query-event', 'data'),
         Input('current-split', 'value'),
-        State('kmeans-k', 'value'),
-        State('n-neighbors', 'value'),
-        State('min-dist', 'value')
     )
-    def set_query_text(query: Dict[str, Any], current_split: str,
-                       kmeans_k: int, n_neighbors: int, min_dist: float):
+    def set_query_text(query: Dict[str, Any], current_split: str) -> str:
 
         username = query['username']
         response = query['response']
@@ -174,7 +162,7 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
         elif response == 404:
             return f"no player '{username}' in dataset"
 
-        split_data = load_app_data(kmeans_k, n_neighbors, min_dist)[current_split]
+        split_data = app_data[current_split]
         cluster_id = response['clusterids'][current_split]
         cluster_size = split_data.cluster_sizes[cluster_id]
         uniqueness = split_data.cluster_uniqueness[cluster_id]
@@ -186,7 +174,7 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
         Output('current-player', 'data'),
         Input('query-event', 'data')
     )
-    def set_current_player(query: Dict[str, Any]):
+    def set_current_player(query: Dict[str, Any]) -> Dict[str, Any]:
 
         response = query['response']
         if response is None:
@@ -212,21 +200,17 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
         Output('last-clicked-ts', 'data'),
         Input('scatter-plot', 'clickData'),
         Input('current-split', 'value'),
-        Input('kmeans-k', 'value'),
         State('clicked-cluster', 'data'),
         State('current-split', 'value'),
-        State('kmeans-k', 'value'),
         State('last-clicked-ts', 'data')
     )
     def set_clicked_cluster(click_data: Dict[str, Any],
                             new_split: str,
-                            new_k: int,
                             current_cluster: int,
                             current_split: str,
-                            current_k: int,
-                            last_clicked_ts: float) -> int:
+                            last_clicked_ts: float) -> Tuple[int, int]:
 
-        if new_split != current_split or new_k != current_k:
+        if new_split != current_split:
             return None, no_update
 
         if click_data is None:
@@ -249,15 +233,11 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
         Input('current-split', 'value'),
         Input('scatter-plot', 'hoverData'),
         State('clicked-cluster', 'data'),
-        State('kmeans-k', 'value'),
-        State('n-neighbors', 'value'),
-        State('min-dist', 'value')
     )
     def set_current_cluster(player_data: Dict[str, Any],
                             current_split: str,
                             hover_data: Dict[str, Any],
-                            clicked_cluster: int,
-                            kmeans_k: int, n_neighbors: int, min_dist: float) -> Dict[str, any]:
+                            clicked_cluster: int) -> Dict[str, any]:
 
         if hover_data is not None:
             point = hover_data['points'][0]
@@ -271,7 +251,7 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
         else:
             return None
 
-        split_data = load_app_data(kmeans_k, n_neighbors, min_dist)[current_split]
+        split_data = app_data[current_split]
         cluster_size = split_data.cluster_sizes[cluster_id]
         uniqueness = split_data.cluster_uniqueness[cluster_id]
         medians = split_data.cluster_quartiles.loc[50, cluster_id, :]  # 50th percentile
@@ -290,7 +270,7 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
         *[Output(f'player-table-{s}', 'children') for s in osrs_skills(include_total=True)],
         Input('current-player', 'data')
     )
-    def update_player_table(player_data: Dict[str, Any]) -> Tuple[str]:
+    def update_player_table(player_data: Dict[str, Any]) -> Tuple[str, ...]:
 
         if player_data is None:  # e.g. search box cleared
             return tuple(["Player stats"] + len(osrs_skills(include_total=True)) * [''])
@@ -304,22 +284,18 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
         *[Output(f'cluster-table-{s}', 'children') for s in load_table_layout(flat=True)],
         Input('current-cluster', 'data'),
         State('current-split', 'value'),
-        State('kmeans-k', 'value'),
-        State('n-neighbors', 'value'),
-        State('min-dist', 'value')
     )
-    def update_cluster_table(cluster_data: Dict[str, Any], current_split: str,
-                             kmeans_k: int, n_neighbors: int, min_dist: float) -> Tuple[str]:
+    def update_cluster_table(cluster_data: Dict[str, Any], current_split: str) -> Tuple[str, ...]:
 
         table_skills = load_table_layout(flat=True)
         if cluster_data is None:
-            return ("Cluster stats", *['' for _ in table_skills])
+            return tuple(["Cluster stats", *['' for _ in table_skills]])
 
         table_vals = np.array(len(table_skills) * [''], dtype='object')
         total_col = table_skills.index('total')
         table_vals[total_col] = cluster_data['total_level']
 
-        split_data = load_app_data(kmeans_k, n_neighbors, min_dist)[current_split]
+        split_data = app_data[current_split]
         for i, skill in enumerate(split_data.skills):
             skill_level = cluster_data['centroid'][i]
             table_i = table_skills.index(skill)
@@ -333,7 +309,7 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
         Input('current-split', 'value')
     )
     def redraw_box_plot(current_split: str) -> go.Figure:
-        return get_empty_boxplot(current_split)
+        return get_empty_boxplot(current_split, app_data[current_split].skills)
 
 
     @app.callback(
@@ -345,14 +321,13 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
         State('n-neighbors', 'value'),
         State('min-dist', 'value')
     )
-    def update_box_plot(_, current_cluster: Dict[str, Any], current_split: str,
-                        kmeans_k: int, n_neighbors: int, min_dist: float) -> Dict[str, Any]:
+    def update_box_plot(_, current_cluster: Dict[str, Any], current_split: str) -> Dict[str, Any]:
 
-        split_data = load_app_data(kmeans_k, n_neighbors, min_dist)[current_split]
+        split_data = app_data[current_split]
         if current_cluster is None:
-            plot_data = compute_boxplot_data(current_split, split_data, clusterid=None)
+            plot_data = compute_boxplot_data(split_data, clusterid=None)
         else:
-            plot_data = compute_boxplot_data(current_split, split_data, clusterid=current_cluster['id'])
+            plot_data = compute_boxplot_data(split_data, clusterid=current_cluster['id'])
         return [
             {
                 'lowerfence': [plot_data['lowerfence']],
@@ -372,5 +347,7 @@ def add_callbacks(app: Dash, player_db: Database) -> Dash:
     def update_box_plot_text(cluster: Dict[str, Any]) -> str:
         if cluster is None:
             return "Cluster level ranges"
-        return f"Cluster {cluster['id']} level ranges " \
-               f"({cluster['size']} {'player' if cluster['size'] == 1 else 'players'})"
+        players = 'player' if cluster['size'] == 1 else 'players'
+        return f"Cluster {cluster['id']} level ranges ({cluster['size']} {players})"
+
+    return app

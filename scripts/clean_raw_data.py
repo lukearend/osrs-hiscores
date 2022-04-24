@@ -61,7 +61,7 @@ def main(in_file: str, out_file: str):
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser("Clean up and condense raw stats data.")
+    parser = argparse.ArgumentParser(description="Clean up and condense raw stats data.")
     parser.add_argument('-i', '--in-file', required=True, help="raw CSV file from scraping process")
     parser.add_argument('-o', '--out-file', required=True, help="output cleaned dataset to this file")
     args = parser.parse_args()

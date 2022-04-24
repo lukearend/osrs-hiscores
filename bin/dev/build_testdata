@@ -6,9 +6,9 @@ import numpy as np
 
 from src.analysis.data import load_pkl, export_players_csv
 
-parser = argparse.ArgumentParser(description="Build a small dataset for unit tests.""")
-parser.add_argument('-i', '--in-file', type=str, help="player stats .pkl file")
-parser.add_argument('-o', '--out-file', type=str, help="write small dataset to this CSV file")
+parser = argparse.ArgumentParser(description="Build a small dataset for unit tests.")
+parser.add_argument('--in-file', required=True, help="player stats .pkl file")
+parser.add_argument('--out-file', required=True, help="write small dataset to this CSV file")
 args = parser.parse_args()
 
 players = load_pkl(args.in_file)

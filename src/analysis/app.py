@@ -16,7 +16,7 @@ class PlayerResults:
     """ Stats and clustering results for a player. """
 
     username: str
-    stats: List[int]                       # includes total level
+    stats: List[int]            # includes total level
     clusterids: Dict[str, int]  # cluster ID for each split of the dataset
 
 

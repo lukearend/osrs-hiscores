@@ -1,32 +1,30 @@
 #!/usr/bin/env python3
-"""
-todo:
-this script should use argparse and take in the namnes of files to download as command line arguments
-when run with no arguments or help, -h or --help, it should print the help text.
-"""
+
+""" Download scraping and clustering results data. """
+
+import argparse
 import os
-from pathlib import Path
-from dotenv import find_dotenv, load_dotenv
-from src import env_var
-from src.data import download_from_s3
 
-centroids_file = Path(__name__).resolve().parents[1] / "data" / "processed" / "cluster-centroids.csv"
-clusters_file = Path(__name__).resolve().parents[1] / "data" / "processed" / "player-clusters.csv"
-stats_file = Path(__name__).resolve().parents[1] / "data" / "processed" / "player-stats.csv"
+from src.analysis.data import download_s3_obj
 
-def lazy_download(bucket, key, file):
+
+parser = argparse.ArgumentParser(description="Download pre-computed scraping and clustering results.")
+parser.add_argument('s3_bucket', help="download files from this S3 bucket")
+parser.add_argument('stats_file', help="write player stats to this file")
+parser.add_argument('clusterids_file', help="write player cluster IDs to this file")
+parser.add_argument('centroids_file', help="write cluster centroids to this file")
+args = parser.parse_args()
+
+
+s3_keys = {
+    args.stats_file: 'stats.pkl',
+    args.clusterids_file: 'clusterids.pkl',
+    args.centroids_file: 'centroids.pkl'
+}
+for file in [args.stats_file, args.clusterids_file, args.centroids_file]:
     if os.path.exists(file):
-        print(f"{file} already exists")
-    else:
-        download_from_s3(bucket, key, str(file))
+        print(f"{file} already exists, skipping download")
+        continue
 
-load_dotenv(find_dotenv())
-bucket = env_var("OSRS_DATASET_BUCKET")
-lazy_download(bucket, "cluster-centroids.csv", str(centroids_file))
-lazy_download(bucket, "player-clusters.csv", str(clusters_file))
-lazy_download(bucket, "player-stats.csv", str(stats_file))
-
-
-
-
-
+    with open(file, 'wb') as f:
+        f.write(download_s3_obj(args.bucket, s3_keys[file]))

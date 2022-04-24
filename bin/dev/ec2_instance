@@ -1,31 +1,19 @@
 #!/usr/bin/env bash
-ROOTDIR="$(cd $(dirname "$0") && pwd)/../.."
-cd "$ROOTDIR" && if [ -f .env ]; then
-  source .env
-fi
 
-arg=$1
-usage="usage: ./ec2_instance [status|start|stop|connect|setup]"
+ipaddr=$(aws ec2 describe-instances --instance-id "$EC2_INSTANCE_ID" |
+    jq -r '.Reservations[0].Instances[0].PublicIpAddress')
 
-ipaddr=$(aws ec2 describe-instances --instance-id "$EC2_INSTANCE_ID" | \
-          jq -r '.Reservations[0].Instances[0].PublicIpAddress')
-
-if [ "$arg" == 'status' ] # check instance status
-then
-	aws ec2 describe-instance-status --instance-ids "$EC2_INSTANCE_ID"
-elif [ "$arg" == 'start' ] # start instance
-then
-	aws ec2 start-instances --instance-ids "$EC2_INSTANCE_ID"
-elif [ "$arg" == 'stop' ] # stop instance
-then
-	aws ec2 stop-instances --instance-ids "$EC2_INSTANCE_ID"
-elif [ "$arg" == 'connect' ] # connect to instance through SSH
-then
-	ssh -i "$EC2_PEM_FILE" "ec2-user@$ipaddr"
-elif [ "$arg" == 'setup' ] # copy setup script up to instance
-then
-  scp bin/dev/ec2_setup "ec2-user@$ipaddr:/home/ec2-user/"
+if [ "$1" == 'status' ]; then # check instance status
+    aws ec2 describe-instance-status --instance-ids "$EC2_INSTANCE_ID"
+elif [ "$1" == 'start' ]; then # start instance
+    aws ec2 start-instances --instance-ids "$EC2_INSTANCE_ID"
+elif [ "$1" == 'stop' ]; then # stop instance
+    aws ec2 stop-instances --instance-ids "$EC2_INSTANCE_ID"
+elif [ "$1" == 'connect' ]; then # connect to instance through SSH
+    ssh -i "$EC2_PEM_FILE" "ec2-user@$ipaddr"
+elif [ "$1" == 'setup' ]; then # copy setup script up to instance
+    scp bin/dev/ec2_setup "ec2-user@$ipaddr:/home/ec2-user/"
 else
-  echo "$usage"
-  exit 1
+    echo "usage: ./ec2_instance [status|start|stop|connect|setup]"
+    exit 1
 fi

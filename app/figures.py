@@ -1,15 +1,15 @@
-import os
-from typing import Tuple, Dict
+""" Code for Plotly figures. """
+
+from typing import Tuple, Dict, List
 
 import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 
-from PIL import Image
 from numpy.typing import NDArray
 from pandas import DataFrame
 
-from app import load_boxplot_tick_labels, assets_dir, load_boxplot_x_offsets
+from app import load_boxplot_offsets, load_boxplot_icon
 
 
 def get_scatterplot(df: DataFrame,
@@ -116,11 +116,9 @@ def get_scatterplot(df: DataFrame,
     return fig
 
 
-def get_empty_boxplot(split: str) -> go.Figure:
+def get_empty_boxplot(split: str, split_skills: List[str]) -> go.Figure:
 
-    tick_labels = load_boxplot_tick_labels(split)
-    nskills = len(tick_labels)
-
+    nskills = len(split_skills)
     nans = np.full(nskills, np.nan)
     fig = go.Figure(
         data=[
@@ -140,18 +138,17 @@ def get_empty_boxplot(split: str) -> go.Figure:
         layout_yaxis_tickvals=[1, 20, 40, 60, 80, 99],
     )
 
-    icon_x_offset = load_boxplot_x_offsets(split)
-    for i, skill in enumerate(tick_labels):
-        icon_path = os.path.join(assets_dir(), "icons", f"{skill}_icon.png")
-        icon = Image.open(icon_path)
+    x_offset, y_offset = load_boxplot_offsets()[split]  # icons need different offsets for different splits
+    for i, skill in enumerate(split_skills):
+        icon = load_boxplot_icon(skill)
         fig.add_layout_image(dict(
             source=icon,
             xref="x",
             yref="y",
-            x=i - icon_x_offset,
-            y=-2,
+            x=i + x_offset,
+            y=y_offset,
             sizex=1,
-            sizey=12,
+            sizey=12,  # todo: can I divide y_offset in file by 12 and set this to 1?
             sizing="contain",
             layer="above"
         ))

@@ -1,19 +1,41 @@
 import string
-import pickle
+import os
 from functools import cache
-from io import BytesIO
-from numbers import Number
 from pathlib import Path
-from typing import List, Dict
+from typing import List
 
-import boto3
+from PIL import Image
 
-from src.analysis.app import SplitData
-from src.analysis.data import load_json, load_pkl
+from src.analysis.data import load_json
 
 
-STATS_COLL = 'stats'
-CLUSTERIDS_COLL = 'clusterids'
+def assets_dir() -> Path:
+    return Path(__file__).resolve().parent / 'assets'
+
+
+@cache
+def load_table_layout(flat: bool = False) -> List[List[str]]:
+    layout = load_json(assets_dir() / 'table_layout.json')
+    return [skill for row in layout for skill in row] if flat else layout
+
+
+@cache
+def load_boxplot_offsets() -> float:
+    return load_json(assets_dir() / 'boxplot_offsets.json')
+
+
+@cache
+def load_boxplot_icon(skill) -> Image:
+    path = os.path.join(assets_dir(), "icons", f"{skill}_icon.png")
+    return Image.open(path)
+
+
+def validate_username(username):
+    if len(username) > 12:
+        return False
+    if username.strip(string.ascii_lowercase + string.ascii_uppercase + string.digits + ' -_'):
+        return False
+    return True
 
 
 def skill_upper(skill):
@@ -40,65 +62,3 @@ def get_level_tick_marks(skill):
     if skill == 'total':
         return {i: str(i) for i in [1, 250, 500, 750, 1000, 1250, 1500, 1750, 2000, 2277]}
     return {i: str(i) for i in [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 99]}
-
-
-def validate_username(username):
-    if len(username) > 12:
-        return False
-    if username.strip(string.ascii_lowercase + string.ascii_uppercase + string.digits + ' -_'):
-        return False
-    return True
-
-
-def assets_dir() -> Path:
-    return Path(__file__).resolve().parent / 'assets'
-
-
-@cache
-def load_params() -> Dict[str, List[Number]]:
-    return load_json(assets_dir() / 'params.json')
-
-
-@cache
-def load_table_layout(flat: bool = False) -> List[List[str]]:
-    layout = load_json(assets_dir() / 'table_layout.json')
-    if flat:
-        layout = [skill for row in layout for skill in row]
-    return layout
-
-
-@cache
-def load_boxplot_tick_labels(split: str) -> List[str]:
-    return load_json(assets_dir() / 'boxplot_ticklabels.json')[split]
-
-
-@cache
-def load_boxplot_x_offsets(split: str) -> float:
-    return load_json(assets_dir() / 'boxplot_offsets.json')[split]
-
-
-@cache
-def ticklabel_skill_inds(split: str) -> List[int]:
-    k = load_params()['k'][0]
-    nn = load_params()['n_neighbors'][0]
-    min_dist = load_params()['min_dist'][0]
-    split_skills = load_app_data(k, nn, min_dist)[split].skills
-    tick_labels = load_boxplot_tick_labels(split)
-    return [split_skills.index(skill) for skill in tick_labels]
-
-
-@cache
-def load_app_data(k, n_neighbors, min_dist) -> Dict[str, SplitData]:
-    base = Path(__file__).resolve().parents[1] / "data" / "interim" / "appdata"
-    if min_dist == 0:
-        min_dist = 0.0
-    return load_pkl(f"{base}-{k}-{n_neighbors}-{min_dist}.pkl")
-
-
-def load_app_data_s3(bucket: str, obj_key: str) -> Dict[str, SplitData]:
-    print("downloading app data...")
-    s3 = boto3.client('s3')
-    f = BytesIO()
-    s3.download_fileobj(bucket, obj_key, f)
-    f.seek(0)
-    return pickle.load(f)

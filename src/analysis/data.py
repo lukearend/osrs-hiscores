@@ -1,6 +1,7 @@
 """ Utilities for loading and writing data. """
 
 import csv
+import io
 import json
 import pickle
 from collections import OrderedDict
@@ -68,8 +69,8 @@ def export_centroids_csv(centroids_dict: OrderedDict[str, pd.DataFrame], out_fil
             writer.writerows(lines)
 
 
-def download_from_s3(bucket: str, obj_key: str, local_file: str):
-    """ Download object from an S3 bucket, writing it to a local file. """
+def download_s3_obj(bucket: str, obj_key: str) -> bytes:
+    """ Download object from an S3 bucket to a file handle, with a progress bar. """
 
     print(f"downloading s3://{bucket}/{obj_key}")
     s3 = boto3.client('s3')
@@ -82,8 +83,12 @@ def download_from_s3(bucket: str, obj_key: str, local_file: str):
         pbar.update(pbar.currval + chunk)
 
     try:
-        s3.download_file(bucket, obj_key, local_file, Callback=update_pbar)
+        f = io.BytesIO()
+        s3.download_fileobj(bucket, obj_key, f, Callback=update_pbar)
     except FileNotFoundError:
         print("file not found")
     except NoCredentialsError:
         print("credentials not available")
+
+    f.seek(0)  # put cursor back at beginning of file
+    return f.read()

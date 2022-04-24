@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import sys
 from collections import OrderedDict
 from typing import List
 
@@ -10,14 +9,9 @@ import xarray as xr
 from pymongo.collection import Collection
 from tqdm import tqdm
 
-from src.analysis import load_splits
 from src.analysis.app import SplitData, PlayerResults, connect_mongo, player_to_mongodoc
-from src.analysis.data import load_pkl, dump_pkl
+from src.analysis.data import load_pkl, dump_pkl, load_json
 from src.analysis.results import get_cluster_sizes, get_cluster_uniqueness
-
-
-class PartialCollection(Exception):
-    """ Raised upon finding a partially exported collection. """
 
 
 def build_app_data(splits: OrderedDict[str, List[str]],
@@ -56,7 +50,8 @@ def build_app_database(players: pd.DataFrame,
 
     if not collection.find_one({'_id': last_uname.lower()}):
         if collection.count_documents({}) > 0:
-            raise PartialCollection
+            print("found partial collection, dropping")
+            coll.drop()
 
         print(f"exporting player stats to database...")
         with tqdm(total=len(players)) as pbar:
@@ -75,18 +70,20 @@ def build_app_database(players: pd.DataFrame,
 
 
 if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="""Build data file and database for application to use.""")
-    parser.add_argument('--stats-file', type=str, help="load player stats from this file")
-    parser.add_argument('--clusterids-file', type=str, help="load player cluster IDs from this file")
-    parser.add_argument('--centroids-file', type=str, help="load cluster centroids from this file")
-    parser.add_argument('--quartiles-file', type=str, help="load cluster quartiles from this file")
-    parser.add_argument('--xyz-file', type=str, help="load cluster 3D coordinates from this file")
-    parser.add_argument('--out-file', type=str, help="write application data object to this file")
-    parser.add_argument('--mongo-url', type=str, help="use Mongo instance running at this URL")
-    parser.add_argument('--collection', type=str, help="export player stats to this collection")
+    parser = argparse.ArgumentParser(description="Build data file and database for application to use.")
+    parser.add_argument('--stats-file', help="load player stats from this file")
+    parser.add_argument('--splits-file', help="load skills in each split from this file")
+    parser.add_argument('--clusterids-file', help="load player cluster IDs from this file")
+    parser.add_argument('--centroids-file', help="load cluster centroids from this file")
+    parser.add_argument('--quartiles-file', help="load cluster quartiles from this file")
+    parser.add_argument('--xyz-file', help="load cluster 3D coordinates from this file")
+    parser.add_argument('--out-file', help="write application data object to this file")
+    parser.add_argument('--mongo-url', help="use Mongo instance running at this URL")
+    parser.add_argument('--collection', help="export player stats to this collection")
     args = parser.parse_args()
 
     print("building app data...")
+    splits = load_json(args.splits_file)
     players_df = load_pkl(args.stats_file)
     clusterids_df = load_pkl(args.clusterids_file)
     centroids_dict = load_pkl(args.centroids_file)
@@ -94,11 +91,7 @@ if __name__ == '__main__':
     xyz_dict = load_pkl(args.xyz_file)
 
     coll = connect_mongo(args.mongo_url, args.collection)
-    appdata = build_app_data(load_splits(), clusterids_df, centroids_dict, quartiles_dict, xyz_dict)
-    try:
-        build_app_database(players_df, clusterids_df, coll)
-    except PartialCollection as e:
-        print(f"found partial collection, exiting")
-        sys.exit(1)
+    appdata = build_app_data(splits, clusterids_df, centroids_dict, quartiles_dict, xyz_dict)
+    build_app_database(players_df, clusterids_df, coll)
     dump_pkl(appdata, args.out_file)
     print(f"wrote app data to {args.out_file}")
