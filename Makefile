@@ -93,39 +93,39 @@ app: ## Run application.
 
 # Importing and exporting data --------------------------------------------------------------------
 
-s3_bucket:=$(or, $(OSRS_DATASET_BUCKET), osrshiscores)
+dataset_bucket:=osrshiscores
 stats_final:=$(ROOT)/data/final/player-stats.csv
 clusterids_final:=$(ROOT)/data/final/player-clusterids.csv
 centroids_final:=$(ROOT)/data/final/cluster-centroids.csv
 
 download: ## Download scraped and clustered data.
 	@source env/bin/activate && bin/dev && \
-	download_dataset $(s3_bucket) $(stats).pkl $(clusterids).pkl $(centroids).pkl
+	download_dataset $(dataset_bucket) $(stats).pkl $(clusterids).pkl $(centroids).pkl
 
 upload: push-aws push-gdrive
 
 export: $(stats_final) $(clusterids_final) $(centroids_final) ## Export result files to CSV.
 
 $(stats_final): $(stats).pkl
-	@source env/bin/activate && bin/dev/pkl_to_csv $< $@ --type players
+	@source env/bin/activate && bin/dev/pkl_to_csv --in-file $< --out-file $@ --type players
 
 $(clusterids_final): $(clusterids).pkl
-	@source env/bin/activate && bin/dev/pkl_to_csv $< $@ --type clusterids
+	@source env/bin/activate && bin/dev/pkl_to_csv --in-file $< --out-file $@ --type clusterids
 
 $(centroids_final): $(centroids).pkl
-	@source env/bin/activate && bin/dev/pkl_to_csv $< $@ --type centroids
+	@source env/bin/activate && bin/dev/pkl_to_csv --in-file $< --out-file $@ --type centroids
 
 push-aws: $(stats_raw).csv $(stats).pkl $(clusterids).pkl $(centroids).pkl $(app_data).pkl
-	aws s3 cp $(appdata) "s3://$(OSRS_APPDATA_BUCKET)/$(OSRS_APPDATA_S3_KEY)" &&
-	aws s3 cp $(centroids) "s3://$(OSRS_DATASET_BUCKET)/centroids.pkl" &&
-	aws s3 cp $(clusterids) "s3://$(OSRS_DATASET_BUCKET)/clusterids.pkl" &&
-	aws s3 cp $(stats) "s3://$(OSRS_DATASET_BUCKET)/stats.pkl"
+	aws s3 cp $(app_data).pkl "s3://$(OSRS_APPDATA_BUCKET)/$(OSRS_APPDATA_S3_KEY)"
+	aws s3 cp $(centroids).pkl "s3://$(dataset_bucket)/centroids.pkl"
+	aws s3 cp $(clusterids).pkl "s3://$(dataset_bucket)/clusterids.pkl"
+	aws s3 cp $(stats).pkl "s3://$(dataset_bucket)/stats.pkl"
 
 push-gdrive: $(stats_raw).csv $(stats_final).csv $(centroids_final).csv $(clusterids_final).csv
-	gdrive upload "$centroids" -p $OSRS_GDRIVE_DIR --name cluster-centroids.csv &&
-	gdrive upload "$clusterids" -p $OSRS_GDRIVE_DIR --name player-clusters.csv &&
-	gdrive upload "$stats" -p $OSRS_GDRIVE_DIR --name player-stats.csv &&
-	gdrive upload "$stats_raw" -p $OSRS_GDRIVE_DIR --name stats-raw.csv &&
+	gdrive upload "$centroids" -p $(OSRS_GDRIVE_DIR) --name cluster-centroids.csv
+	gdrive upload "$clusterids" -p $(OSRS_GDRIVE_DIR) --name player-clusters.csv
+	gdrive upload "$stats" -p $(OSRS_GDRIVE_DIR) --name player-stats.csv
+	gdrive upload "$stats_raw" -p $(OSRS_GDRIVE_DIR) --name stats-raw.csv
 
 # Other utilities ---------------------------------------------------------------------------------
 

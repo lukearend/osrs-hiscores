@@ -1,7 +1,6 @@
 #!/usr/bin/env python3
 
 import argparse
-import os
 from collections import OrderedDict
 from typing import List
 
@@ -46,7 +45,6 @@ def build_app_database(players: pd.DataFrame,
                        clusterids: pd.DataFrame,
                        collection: Collection):
 
-    batch_size = 1000
     if collection.count_documents({}) > 0:
         print("found partial collection, dropping")
         coll.drop()
@@ -58,7 +56,7 @@ def build_app_database(players: pd.DataFrame,
             player_clusterids=clusterids.loc[uname].to_dict()
             player = PlayerResults(username=uname, stats=list(player_stats), clusterids=player_clusterids)
             batch.append(player_to_mongodoc(player))
-            if len(batch) >= batch_size:
+            if len(batch) >= 5000:
                 collection.insert_many(batch)
                 pbar.update(len(batch))
                 batch = []

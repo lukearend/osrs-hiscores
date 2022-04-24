@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
 
 if ! docker start osrs-hiscores >/dev/null 2>&1; then
-    docker run -d --name osrs-hiscores -p 27017:27017 -v volume:/data/db mongo
+    docker run -d --name osrs-hiscores -p 27017:27017 mongo
 fi

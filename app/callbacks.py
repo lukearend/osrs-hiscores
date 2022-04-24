@@ -203,8 +203,7 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitData], player_coll: Collec
         State('clicked-cluster', 'data'),
         State('last-clicked-ts', 'data')
     )
-    def set_clicked_cluster(click_data: Dict[str, Any],
-                            current_split: str,
+    def set_clicked_cluster(click_data: Dict[str, Any], _,
                             current_cluster: int,
                             last_clicked_ts: float) -> Tuple[int, int]:
 
