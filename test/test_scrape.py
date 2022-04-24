@@ -96,7 +96,7 @@ async def test_jobqueue():
     await q.put(4)
     await q.put(3)
     with pytest.raises(asyncio.TimeoutError):
-        await asyncio.wait_for(q.put(2), timeout=0.1)
+        await asyncio.wait_for(q.put(2), timeout=0.25)
     await q.put(2, force=True)
     assert await q.get() == 1
     assert await q.get() == 2
@@ -110,13 +110,13 @@ async def test_jobcounter():
     assert jc.value == 5
 
     async def call_next():
-        await asyncio.sleep(0.25)
+        await asyncio.sleep(0.5)
         jc.next()
-    asyncio.create_task(call_next())
 
+    asyncio.create_task(call_next())                           # call next() in 0.5 sec
     with pytest.raises(asyncio.TimeoutError):
-        await asyncio.wait_for(jc.await_next(), timeout=0.1)
-    await asyncio.wait_for(jc.await_next(), timeout=0.25)
+        await asyncio.wait_for(jc.await_next(), timeout=0.25)  # timeout after 0.25 sec waiting for next()
+    await asyncio.wait_for(jc.await_next(), timeout=1)         # get next() after remaining 0.25 sec
     assert jc.value == 6
 
 
