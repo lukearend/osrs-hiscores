@@ -7,7 +7,6 @@ from collections import OrderedDict
 
 import pandas as pd
 
-from src.analysis import load_splits
 from src.analysis.data import load_pkl, dump_pkl, load_json
 from src.analysis.models import umap_reduce
 

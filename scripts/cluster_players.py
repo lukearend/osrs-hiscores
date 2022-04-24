@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """ Cluster players according to account similarity. """
 
 import argparse

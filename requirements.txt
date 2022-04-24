@@ -17,7 +17,6 @@ pycodestyle
 pymongo[srv]
 pytest
 pytest-asyncio
-python-dotenv
 requests
 tqdm
 umap-learn

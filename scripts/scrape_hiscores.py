@@ -1,5 +1,6 @@
-""" Scrapes stats from the OSRS hiscores into a CSV file. Returns
-error code 2 if CSV file already contains the requested data range. """
+#!/usr/bin/env python3
+
+""" Scrapes stats from the OSRS hiscores into a CSV file. """
 
 import argparse
 import asyncio

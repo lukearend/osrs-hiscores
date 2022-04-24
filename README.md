@@ -82,7 +82,7 @@ Run `make help` to see a list of all top-level targets.
 Dependencies
 ------------
 
-* Python 3.8+ (download [here](https://www.python.org/downloads/))
+* Python 3.7+ (download [here](https://www.python.org/downloads/))
 * Docker (download [here](https://docs.docker.com/get-docker/))
 
 Methods

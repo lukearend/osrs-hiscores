@@ -1,3 +1,5 @@
+#!/usr/bin/env python3
+
 """ Condense raw stats file from scraping into a clean skills dataset. """
 
 import argparse

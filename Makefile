@@ -94,9 +94,9 @@ app: ## Run application.
 # Importing and exporting data --------------------------------------------------------------------
 
 dataset_bucket:=osrshiscores
-stats_final:=$(ROOT)/data/final/player-stats.csv
-clusterids_final:=$(ROOT)/data/final/player-clusterids.csv
-centroids_final:=$(ROOT)/data/final/cluster-centroids.csv
+stats_final:=$(ROOT)/data/final/player-stats
+clusterids_final:=$(ROOT)/data/final/player-clusterids
+centroids_final:=$(ROOT)/data/final/cluster-centroids
 
 download: ## Download scraped and clustered data.
 	@source env/bin/activate && bin/dev && \
@@ -104,40 +104,40 @@ download: ## Download scraped and clustered data.
 
 upload: push-aws push-gdrive
 
-export: $(stats_final) $(clusterids_final) $(centroids_final) ## Export result files to CSV.
+export: $(stats_final).csv $(clusterids_final).csv $(centroids_final).csv ## Export result files to CSV.
 
-$(stats_final): $(stats).pkl
+$(stats_final).csv: $(stats).pkl
 	@source env/bin/activate && bin/dev/pkl_to_csv --in-file $< --out-file $@ --type players
 
-$(clusterids_final): $(clusterids).pkl
+$(clusterids_final).csv: $(clusterids).pkl
 	@source env/bin/activate && bin/dev/pkl_to_csv --in-file $< --out-file $@ --type clusterids
 
-$(centroids_final): $(centroids).pkl
+$(centroids_final).csv: $(centroids).pkl
 	@source env/bin/activate && bin/dev/pkl_to_csv --in-file $< --out-file $@ --type centroids
 
 push-aws: $(stats_raw).csv $(stats).pkl $(clusterids).pkl $(centroids).pkl $(app_data).pkl
-	aws s3 cp $(app_data).pkl "s3://$(OSRS_APPDATA_BUCKET)/$(OSRS_APPDATA_S3_KEY)"
-	aws s3 cp $(centroids).pkl "s3://$(dataset_bucket)/centroids.pkl"
-	aws s3 cp $(clusterids).pkl "s3://$(dataset_bucket)/clusterids.pkl"
-	aws s3 cp $(stats).pkl "s3://$(dataset_bucket)/stats.pkl"
+	@aws s3 cp $(app_data).pkl "s3://$(OSRS_APPDATA_BUCKET)/$(OSRS_APPDATA_S3_KEY)"
+	@aws s3 cp $(centroids).pkl "s3://$(dataset_bucket)/centroids.pkl"
+	@aws s3 cp $(clusterids).pkl "s3://$(dataset_bucket)/clusterids.pkl"
+	@aws s3 cp $(stats).pkl "s3://$(dataset_bucket)/stats.pkl"
 
 push-gdrive: $(stats_raw).csv $(stats_final).csv $(centroids_final).csv $(clusterids_final).csv
-	gdrive upload "$centroids" -p $(OSRS_GDRIVE_DIR) --name cluster-centroids.csv
-	gdrive upload "$clusterids" -p $(OSRS_GDRIVE_DIR) --name player-clusters.csv
-	gdrive upload "$stats" -p $(OSRS_GDRIVE_DIR) --name player-stats.csv
-	gdrive upload "$stats_raw" -p $(OSRS_GDRIVE_DIR) --name stats-raw.csv
+	@gdrive upload $(word 3,$^) -p $(OSRS_GDRIVE_DIR) --name cluster-centroids.csv
+	@gdrive upload $(word 4,$^) -p $(OSRS_GDRIVE_DIR) --name player-clusters.csv
+	@gdrive upload $(word 2,$^) -p $(OSRS_GDRIVE_DIR) --name player-stats.csv
+	@gdrive upload $(word 1,$^) -p $(OSRS_GDRIVE_DIR) --name stats-raw.csv
 
 # Other utilities ---------------------------------------------------------------------------------
 
 ec2-%: # status, start, stop, connect, setup
-	@source .env && cd bin/dev/ec2_instance $*
+	@bin/dev/ec2_instance $*
 
 test: lint ## Run test suite.
-	@source env/bin/activate && pytest test
+	@source env/bin/activate && pytest test -sv --asyncio-mode strict
 
 lint:
-	@source env/bin/activate && pycodestyle app src --ignore=E301,E302,E303,E402,E501 && \
-	echo "code check passed"
+	@source env/bin/activate && pycodestyle app src --ignore=E301,E302,E303,E402,E501
+	@echo "code check passed"
 
 help: ## Print this help.
 	@grep -E '^[0-9a-zA-Z%_-]+:.*?## .*$$' $(firstword $(MAKEFILE_LIST)) | \

@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 
+""" Build application data and database. """
+
 import argparse
 from collections import OrderedDict
 from typing import List
