@@ -1,24 +1,19 @@
-aiohttp
-boto3
-botocore
-codetiming
-certifi
-dash
-dash-bootstrap-components
-beautifulsoup4
-faiss-cpu
-jupyter
-jupyter_contrib_nbextensions
-matplotlib
-numpy
-pandas
-progressbar
-pycodestyle
-pymongo[srv]
-pytest
-pytest-asyncio
-requests
-tqdm
-umap-learn
-xarray
--e .  # install src package in editable mode
+aiohttp>=3.8.1
+beautifulsoup4>=4.11.1
+boto3>=1.21.46
+codetiming>=1.3.0
+certifi>=2021.10.8
+dash>=2.3.1
+dash-bootstrap-components>=1.1.0
+faiss-cpu==1.7.2
+numpy>=1.21.6
+pandas>=1.3.5,<1.4 # 1.4 serialization not compatible with 1.3.5
+progressbar>=2.5
+pycodestyle>=2.8.0
+pymongo[srv]>=4.1.1
+pytest>=7.1.2
+pytest-asyncio>=0.18.3
+tqdm>=4.64.0
+umap-learn==0.5.3
+xarray>=0.20.2
+-e . # install this project as a package in editable mode
