@@ -4,14 +4,14 @@ import asyncio
 import json
 import logging
 from datetime import datetime
-from functools import cache
+from functools import lru_cache
 from pathlib import Path
 from typing import List
 
 import numpy as np
 
 
-@cache
+@lru_cache
 def csv_api_stats() -> List[str]:
     """ Load the list of header fields returned from the OSRS hiscores CSV API. """
 
@@ -20,7 +20,7 @@ def csv_api_stats() -> List[str]:
         return json.load(f)
 
 
-@cache
+@lru_cache
 def stat_ind(name: str) -> int:
     return csv_api_stats().index(name)
 
