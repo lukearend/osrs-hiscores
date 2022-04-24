@@ -133,7 +133,7 @@ ec2-%: # status, start, stop, connect, setup
 	@bin/dev/ec2_instance $*
 
 test: lint ## Run test suite.
-	@source env/bin/activate && pytest test -sv --asyncio-mode strict
+	@bin/start_mongo && source env/bin/activate && pytest test -sv --asyncio-mode strict
 
 lint:
 	@source env/bin/activate && pycodestyle app src --ignore=E301,E302,E303,E402,E501
