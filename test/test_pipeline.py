@@ -3,7 +3,6 @@ from collections import OrderedDict
 from pathlib import Path
 
 import pandas as pd
-import pytest
 import xarray as xr
 
 from scripts.cluster_players import main as cluster_players

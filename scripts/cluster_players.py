@@ -3,8 +3,8 @@
 """ Cluster players according to account similarity. """
 
 import argparse
-from collections import OrderedDict
-from typing import Tuple, List, Dict
+import collections
+from typing import Tuple, List, Dict, OrderedDict
 
 import numpy as np
 import pandas as pd
@@ -20,7 +20,7 @@ def main(players: pd.DataFrame,
          verbose: bool = True) -> Tuple[Dict[str, pd.DataFrame], pd.DataFrame]:
 
     unames = players.index
-    centroids_per_split = OrderedDict()
+    centroids_per_split = collections.OrderedDict()
     clusterids = np.zeros((len(players), len(splits)), dtype='int')
 
     for i, (split, skills) in enumerate(splits.items()):

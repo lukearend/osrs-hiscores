@@ -1,10 +1,11 @@
 """ Common knowledge. """
 
+import collections
 import json
 
 from functools import lru_cache
 from pathlib import Path
-from typing import List, OrderedDict, Dict, Any
+from typing import List, OrderedDict
 
 
 @lru_cache()
@@ -27,4 +28,4 @@ def load_splits(file: str = None) -> OrderedDict[str, List[str]]:
     if file is None:
         file = Path(__file__).resolve().parents[2] / "ref" / "skill-splits.json"
     with open(file, 'r') as f:
-        return json.load(f, object_pairs_hook=OrderedDict)
+        return json.load(f, object_pairs_hook=collections.OrderedDict)

@@ -3,7 +3,7 @@
 """ Reduce dimensionality of cluster centroids to 3D using UMAP. """
 
 import argparse
-from collections import OrderedDict
+from typing import OrderedDict
 
 import pandas as pd
 

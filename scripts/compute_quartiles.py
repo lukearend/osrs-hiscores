@@ -3,8 +3,7 @@
 """ Compute quartiles for each skill across the players in each cluster. """
 
 import argparse
-from collections import OrderedDict
-from typing import List
+from typing import List, OrderedDict
 
 import numpy as np
 import pandas as pd

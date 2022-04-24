@@ -4,8 +4,7 @@ import csv
 import io
 import json
 import pickle
-from collections import OrderedDict
-from typing import Any
+from typing import OrderedDict, Any
 
 import boto3
 import pandas as pd

@@ -3,8 +3,8 @@
 """ Build application data and database. """
 
 import argparse
-from collections import OrderedDict
-from typing import List
+import collections
+from typing import List, OrderedDict
 
 import pandas as pd
 import xarray as xr
@@ -22,7 +22,7 @@ def build_app_data(splits: OrderedDict[str, List[str]],
                    quartiles: OrderedDict[str, xr.DataArray],
                    xyz: OrderedDict[str, pd.DataFrame]) -> OrderedDict[str, SplitData]:
 
-    app_data = OrderedDict()
+    app_data = collections.OrderedDict()
     for split, skills_in_split in splits.items():
         cluster_xyz = xyz[split]
         cluster_sizes = get_cluster_sizes(clusterids[split])
