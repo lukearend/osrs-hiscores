@@ -99,7 +99,7 @@ clusterids_final:=$(ROOT)/data/final/player-clusterids
 centroids_final:=$(ROOT)/data/final/cluster-centroids
 
 download: ## Download scraped and clustered data.
-	@source env/bin/activate && bin/dev && \
+	@source env/bin/activate && cd bin/dev && \
 	download_dataset $(dataset_bucket) $(stats).pkl $(clusterids).pkl $(centroids).pkl
 
 upload: push-aws push-gdrive
