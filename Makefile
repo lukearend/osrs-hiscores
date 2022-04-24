@@ -44,6 +44,8 @@ $(stats_raw).csv:
 $(stats).pkl: $(stats_raw).csv
 	@source env/bin/activate && python scripts/clean_raw_data.py --in-file $< --out-file $@
 
+.SECONDARY: $(stats_raw).csv # don't require $(stats_raw).csv if $(stats).pkl already exists
+
 # Clustering and analysis -------------------------------------------------------------------------
 
 splits:=$(ROOT)/ref/skill-splits.json
