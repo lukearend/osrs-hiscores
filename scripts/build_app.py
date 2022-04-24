@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import argparse
+import os
 from collections import OrderedDict
 from typing import List
 
@@ -46,27 +47,24 @@ def build_app_database(players: pd.DataFrame,
                        collection: Collection):
 
     batch_size = 1000
-    last_uname = players.index[-1]
+    if collection.count_documents({}) > 0:
+        print("found partial collection, dropping")
+        coll.drop()
 
-    if not collection.find_one({'_id': last_uname.lower()}):
-        if collection.count_documents({}) > 0:
-            print("found partial collection, dropping")
-            coll.drop()
-
-        print(f"exporting player stats to database...")
-        with tqdm(total=len(players)) as pbar:
-            batch = []
-            for uname, player_stats in players.iterrows():
-                player_clusterids=clusterids.loc[uname].to_dict()
-                player = PlayerResults(username=uname, stats=list(player_stats), clusterids=player_clusterids)
-                batch.append(player_to_mongodoc(player))
-                if len(batch) >= batch_size:
-                    collection.insert_many(batch)
-                    pbar.update(len(batch))
-                    batch = []
-            if batch:
+    print(f"exporting player stats to database...")
+    with tqdm(total=len(players)) as pbar:
+        batch = []
+        for uname, player_stats in players.iterrows():
+            player_clusterids=clusterids.loc[uname].to_dict()
+            player = PlayerResults(username=uname, stats=list(player_stats), clusterids=player_clusterids)
+            batch.append(player_to_mongodoc(player))
+            if len(batch) >= batch_size:
                 collection.insert_many(batch)
                 pbar.update(len(batch))
+                batch = []
+        if batch:
+            collection.insert_many(batch)
+            pbar.update(len(batch))
 
 
 if __name__ == '__main__':
@@ -90,8 +88,11 @@ if __name__ == '__main__':
     quartiles_dict = load_pkl(args.quartiles_file)
     xyz_dict = load_pkl(args.xyz_file)
 
-    coll = connect_mongo(args.mongo_url, args.collection)
     appdata = build_app_data(splits, clusterids_df, centroids_dict, quartiles_dict, xyz_dict)
-    build_app_database(players_df, clusterids_df, coll)
     dump_pkl(appdata, args.out_file)
     print(f"wrote app data to {args.out_file}")
+
+    coll = connect_mongo(args.mongo_url, args.collection)
+    last_uname = players_df.index[-1]
+    if not coll.find_one({'_id': last_uname.lower()}):
+        build_app_database(players_df, clusterids_df, coll)

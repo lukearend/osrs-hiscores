@@ -4,7 +4,7 @@ from datetime import datetime
 from typing import List, Dict, Any, Tuple
 
 import numpy as np
-from dash import Dash, no_update
+from dash import Dash, no_update, callback_context
 from dash.dependencies import Input, Output, State
 from dash.exceptions import PreventUpdate
 from plotly import graph_objects as go
@@ -201,30 +201,33 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitData], player_coll: Collec
         Input('scatter-plot', 'clickData'),
         Input('current-split', 'value'),
         State('clicked-cluster', 'data'),
-        State('current-split', 'value'),
         State('last-clicked-ts', 'data')
     )
     def set_clicked_cluster(click_data: Dict[str, Any],
-                            new_split: str,
-                            current_cluster: int,
                             current_split: str,
+                            current_cluster: int,
                             last_clicked_ts: float) -> Tuple[int, int]:
 
-        if new_split != current_split:
+        trigger = callback_context.triggered[0]['prop_id']
+        if trigger == 'current-split.value':
             return None, no_update
 
-        if click_data is None:
-            raise PreventUpdate
-        clicked_cluster = click_data['points'][0]['customdata'][0]
+        elif trigger == 'scatter-plot.clickData':
+            if click_data is None:
+                raise PreventUpdate
 
-        now = datetime.now().timestamp()
-        debounce = True if last_clicked_ts and now - last_clicked_ts < 0.3 else False
-        if debounce and current_cluster in [None, clicked_cluster]:
-            raise PreventUpdate
+            clicked_cluster = click_data['points'][0]['customdata'][0]
 
-        if current_cluster == clicked_cluster:
-            return None, now
-        return clicked_cluster, now
+            now = datetime.now().timestamp()
+            debounce = True if last_clicked_ts and now - last_clicked_ts < 0.3 else False
+            if clicked_cluster == current_cluster or current_cluster is None and debounce:
+                raise PreventUpdate
+
+            if current_cluster == clicked_cluster:
+                return None, now
+            return clicked_cluster, now
+
+        raise PreventUpdate
 
 
     @app.callback(
@@ -317,9 +320,6 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitData], player_coll: Collec
         Input('box-plot', 'figure'),
         Input('current-cluster', 'data'),
         State('current-split', 'value'),
-        State('kmeans-k', 'value'),
-        State('n-neighbors', 'value'),
-        State('min-dist', 'value')
     )
     def update_box_plot(_, current_cluster: Dict[str, Any], current_split: str) -> Dict[str, Any]:
 

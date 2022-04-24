@@ -1,4 +1,4 @@
-""" Code related to exporting of scraped data. """
+""" Code for exporting scraped data. """
 
 import asyncio
 import csv

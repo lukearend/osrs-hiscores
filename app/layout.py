@@ -122,7 +122,7 @@ def build_layout(app_data) -> Dash:
                                 dcc.Input(
                                     id='username-text',
                                     type='text',
-                                    placeholder="input username",
+                                    placeholder="e.g. 'snakeylime'",
                                     maxLength=12,
                                     debounce=True
                                 ),

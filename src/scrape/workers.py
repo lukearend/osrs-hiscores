@@ -1,4 +1,4 @@
-""" Workers for performing jobs in the scraping pipeline. """
+""" Workers that perform data scraping. """
 
 import asyncio
 import logging

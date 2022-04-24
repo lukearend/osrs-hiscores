@@ -9,6 +9,7 @@ from typing import List
 import numpy as np
 import pandas as pd
 import xarray as xr
+from tqdm import tqdm
 
 from src.analysis.data import load_pkl, dump_pkl
 from src.analysis.results import compute_stat_quartiles
@@ -27,7 +28,7 @@ def main(players: pd.DataFrame, clusterids: pd.DataFrame,
 
         print(f"computing quartiles for split '{split}'...")
         split_quartiles = np.zeros((5, nclusters, len(skills)))
-        for i in range(nclusters):
+        for i in tqdm(range(nclusters)):
             this_cluster_inds = split_clusterids == i
             this_cluster_stats = split_stats[this_cluster_inds]
             split_quartiles[:, i, :] = compute_stat_quartiles(this_cluster_stats)

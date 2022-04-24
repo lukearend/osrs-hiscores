@@ -10,9 +10,9 @@ endif
 
 # Top-level ---------------------------------------------------------------------------------------
 
-build: init test download export quartiles dimreduce appdata app ## Build app from downloaded data.
+build: init test download export appdata app ## Build app from downloaded data.
 
-all: init test scrape clean cluster quartiles dimreduce appdata export upload ## Build repo results from scratch.
+all: init test appdata export upload ## Build repo results from scratch.
 
 init: env ## Initialize repository.
 	mkdir -p data/raw data/interim data/final
@@ -70,13 +70,13 @@ $(quartiles).pkl: $(stats).pkl $(clusterids).pkl
 
 $(xyz).pkl: $(centroids).pkl
 	@source env/bin/activate && cd scripts && \
-	python scripts/dim_reduce_clusters.py --in-file $< --out-file $@ --params-file $(params)
+	python dim_reduce_clusters.py --in-file $< --out-file $@ --params-file $(params)
 
 # Dash application --------------------------------------------------------------------------------
 
 app_data:=$(ROOT)/data/interim/appdata
 mongo_url:=$(or $(OSRS_MONGO_URI), localhost:27017)
-app_coll:=$(or $(OSRS_MONGO_COLL), players)
+app_coll:=$(or $(OSRS_APPDATA_COLL), players)
 
 appdata: $(app_data).pkl ## Build final application data.
 
