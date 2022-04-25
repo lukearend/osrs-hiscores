@@ -83,14 +83,14 @@ app_coll:=$(or $(OSRS_APPDATA_COLL), players)
 appdata: $(app_data).pkl ## Build final application data.
 
 $(app_data).pkl: $(stats).pkl $(clusterids).pkl $(centroids).pkl $(quartiles).pkl $(xyz).pkl
-	@source env/bin/activate && cd scripts && \
+	@source env/bin/activate && bin/start_mongo && cd scripts && \
 	python build_app.py --splits-file $(splits) --stats-file $(word 1,$^) \
 	                    --clusterids-file $(word 2,$^) --centroids-file $(word 3,$^) \
 	                    --quartiles-file $(word 4,$^) --xyz-file $(word 5,$^) \
                         --out-file $@ --mongo-url $(mongo_url) --collection $(app_coll)
 
 app: ## Run application.
-	@bin/start_mongo && source env/bin/activate && \
+	@source env/bin/activate && bin/start_mongo && \
 	python app --mongo-url $(mongo_url) --collection $(app_coll) --data-file $(app_data).pkl --debug
 
 # Importing and exporting data --------------------------------------------------------------------
@@ -134,7 +134,7 @@ ec2-%: # status, start, stop, connect, setup
 	@bin/dev/ec2_instance $*
 
 test: lint ## Run test suite.
-	@bin/start_mongo && source env/bin/activate && pytest test -sv --asyncio-mode strict
+	@source env/bin/activate && bin/start_mongo && pytest test -sv --asyncio-mode strict
 
 lint:
 	@source env/bin/activate && pycodestyle app src --ignore=E301,E302,E303,E402,E501

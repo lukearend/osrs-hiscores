@@ -66,7 +66,7 @@ The stages of the data pipeline are driven by a [Makefile](https://opensource.co
 1. `make init`: set up project environment and install dependencies.
 2. `make scrape`: scrape data from the official OSRS hiscores. The scraping process takes about 12 hours.
 3. `make clean`: transform raw output from the scraping process into a cleaned data set.
-4. `make cluster`: cluster players into groups of similar accounts according to their stats. The clustering algorithm used is [k-means](https://en.wikipedia.org/wiki/K-means_clustering), implemented by the [faiss](https://github.com/facebookresearch/faiss) library. Running the clustering process for 2 million players and 2000 clusters takes about 6 hours on a 2021 M1 Macbook Pro.
+4. `make cluster`: cluster players into groups of similar accounts according to their stats. The clustering algorithm used is [k-means](https://en.wikipedia.org/wiki/K-means_clustering), implemented by the [faiss](https://github.com/facebookresearch/faiss) library. Running the clustering process for 2 million players and 2000 clusters takes about 2.5 hours on a 2021 M1 Macbook Pro.
 5. `make dimreduce`: map cluster centroids from high-dimensional space to 3D for visualization purposes. Uses [UMAP](https://umap-learn.readthedocs.io/en/latest/index.html#) for dimensionality reduction.
 6. `make quartiles`: Compute quartiles for each cluster based on the player population it contains.
 7. `make appdata`: build application data and database from analytic results. By default, this target will launch a [MongoDB](https://www.mongodb.com/) instance inside a [Docker](https://www.docker.com/) container at the URL `localhost:27017`. If the environment variable `OSRS_MONGO_URI` is set, the Mongo instance will run at that URL instead.
