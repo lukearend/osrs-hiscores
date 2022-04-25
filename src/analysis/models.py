@@ -3,7 +3,6 @@
 import os
 
 import faiss
-
 import numpy as np
 import umap
 from numpy.typing import NDArray
