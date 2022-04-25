@@ -96,3 +96,5 @@ if __name__ == '__main__':
     last_uname = players_df.index[-1]
     if not coll.find_one({'_id': last_uname.lower()}):
         build_app_database(players_df, clusterids_df, coll)
+    else:
+        print("database collection is already populated")

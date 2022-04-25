@@ -4,7 +4,12 @@
 
 import argparse
 import pickle
+import warnings
 from typing import Dict
+
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=UserWarning)  # supress dash_core_components deprecation warning
+    import dash_auth
 
 from pymongo.collection import Collection
 
@@ -14,9 +19,15 @@ from src.analysis.app import connect_mongo, SplitData
 from src.analysis.data import load_pkl, download_s3_obj
 
 
+VALID_USERNAME_PASSWORD_PAIRS = {
+    'hello': 'world'
+}
+
+
 def main(app_coll: Collection, app_data: Dict[str, SplitData], debug: bool = True):
     app = build_layout(app_data)
     app = add_callbacks(app, app_data, app_coll)
+    dash_auth.BasicAuth(app, VALID_USERNAME_PASSWORD_PAIRS)
     app.run_server(debug=debug)
 
 

@@ -1,11 +1,9 @@
 """ Core machine learning models. """
 
 import os
-import warnings
-
-warnings.filterwarnings("ignore", category=DeprecationWarning)  # suppress deprecation warnings from faiss imports
 
 import faiss
+
 import numpy as np
 import umap
 from numpy.typing import NDArray

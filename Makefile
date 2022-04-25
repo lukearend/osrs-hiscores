@@ -12,7 +12,7 @@ endif
 
 build: init test download export appdata app ## Build app from downloaded data.
 
-all: init test appdata export upload ## Build repo results from scratch.
+all: init test scrape cluster appdata export upload ## Build repo results from scratch.
 
 init: env ## Initialize repository.
 	mkdir -p data/raw data/interim data/final

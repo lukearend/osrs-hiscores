@@ -13,7 +13,7 @@ def assets_dir() -> Path:
     return Path(__file__).resolve().parent / 'assets'
 
 
-@lru_cache()()
+@lru_cache()
 def load_table_layout(flat: bool = False) -> List[List[str]]:
     layout = load_json(assets_dir() / 'table_layout.json')
     return [skill for row in layout for skill in row] if flat else layout
