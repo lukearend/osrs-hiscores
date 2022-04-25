@@ -14,4 +14,5 @@ docker run hello-world
 if ! [ -d osrs-hiscores ]; then
     git clone git@github.com:lukearend/osrs-hiscores.git
 fi
-cd osrs-hiscores && make init
+
+echo "Setup complete. Log out and back in for user group change to take effect."

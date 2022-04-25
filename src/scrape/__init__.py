@@ -20,13 +20,9 @@ def csv_api_stats() -> List[str]:
         return json.load(f)
 
 
-@lru_cache()
-def stat_ind(name: str) -> int:
-    return csv_api_stats().index(name)
-
-
 class PlayerRecord:
     """ Data record for one player scraped from the hiscores. """
+    assert csv_api_stats()[:3] == ['total_rank', 'total_level', 'total_xp']
 
     def __init__(self, username: str, stats: List[int], ts: datetime):
         """
@@ -35,9 +31,11 @@ class PlayerRecord:
         :param ts: time at which record was scraped
         """
         self.username = username
-        self.total_level = stats[stat_ind('total_level')]
-        self.total_xp = stats[stat_ind('total_xp')]
-        self.rank = stats[stat_ind('total_rank')]
+
+        # First three stats are rank,
+        self.total_level = stats[1]
+        self.total_xp = stats[2]
+        self.rank = stats[0]
         self.stats = np.array(stats).astype('int')
         self.ts = ts
 
@@ -106,10 +104,11 @@ def player_to_csv(player) -> str:
     fields = [player.username] + stats + [player.ts.isoformat()]
     return ','.join(fields)
 
-def csv_to_player(csv_line):
+def csv_to_player(csv_line, check_len=False):
     username, *stats, ts = csv_line.split(',')
+    if check_len: # check that length of results is consistent with current API definition
+        assert len(stats) == len(csv_api_stats()), f"CSV row contained an unexpected number of stats: '{csv_line}'"
     stats = [int(v) if v else -1 for v in stats]
-    assert len(stats) == len(csv_api_stats()), f"CSV row contained an unexpected number of stats: '{csv_line}'"
     return PlayerRecord(username=username, stats=stats, ts=datetime.fromisoformat(ts))
 
 

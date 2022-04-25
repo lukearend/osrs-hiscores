@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 from src.analysis.data import dump_pkl
 from src.analysis import osrs_skills
-from src.scrape import csv_to_player, stat_ind
+from src.scrape import csv_to_player, csv_api_stats
 
 
 def main(in_file: str, out_file: str):
@@ -23,7 +23,7 @@ def main(in_file: str, out_file: str):
         f.readline()  # discard header
         players = []
         for line in tqdm(f.readlines(), total=nlines - 1):
-            players.append(csv_to_player(line.strip()))
+            players.append(csv_to_player(line.strip(), check_len=False))
 
     # Deduplicate any records with matching usernames by taking the later one.
     print("deduplicating...")
@@ -46,7 +46,7 @@ def main(in_file: str, out_file: str):
     # Cast to a pandas DataFrame.
     print("converting to DataFrame...")
     skills = osrs_skills(include_total=True)
-    skill_lvl_inds = np.array([stat_ind(f'{s}_level') for s in skills])
+    skill_lvl_inds = np.array([csv_api_stats().index(f'{s}_level') for s in skills])
 
     unames = []
     stats = np.zeros((len(players), len(skills)), dtype='int')
