@@ -21,4 +21,4 @@ sudo ./aws/install && rm -rf aws
 
 aws configure # asks for AWS account credentials. Set region as `us-east-2`, output `json`.
 
-echo -e "\nSetup complete. Log out and back in for docker permissions to take effect."
+echo -e "\nSetup complete. Log out and back in again for docker permissions to take effect\n."
