@@ -26,5 +26,6 @@ for file in [args.stats_file, args.clusterids_file, args.centroids_file]:
         print(f"{file} already exists, skipping download")
         continue
 
+    blob = download_s3_obj(args.s3_bucket, s3_keys[file])
     with open(file, 'wb') as f:
-        f.write(download_s3_obj(args.s3_bucket, s3_keys[file]))
+        f.write(blob)

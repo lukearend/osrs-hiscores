@@ -19,6 +19,8 @@ curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip
 unzip awscliv2.zip && rm awscliv2.zip
 sudo ./aws/install && rm -rf aws
 
-aws configure # asks for AWS account credentials. Set region as `us-east-2`, output `json`.
+if ! [ -f ~/.aws/config ] || ! [ -f ~/.aws/credentials ]; then
+    aws configure # Requests AWS account credentials. Use region `us-east-2` and output format `json`.
+fi
 
 echo -e "\nSetup complete. Log out and back in again for docker permissions to take effect\n."
