@@ -88,6 +88,8 @@ def download_s3_obj(bucket: str, obj_key: str) -> bytes:
         print("file not found")
     except NoCredentialsError:
         print("credentials not available")
+    finally:
+        print()  # flush progress bar line
 
     f.seek(0)  # put cursor back at beginning of file
     return f.read()
