@@ -1,6 +1,6 @@
-export SHELL:=/bin/bash
+export SHELL := /bin/bash
 
-ROOT:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+ROOT := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 ifneq (,$(wildcard .env))
     include .env
@@ -28,8 +28,9 @@ env:
 
 # Data scraping and cleaning ----------------------------------------------------------------------
 
-stats_raw:=$(ROOT)/data/raw/stats-raw
-stats:=$(ROOT)/data/interim/stats
+stats_raw   := $(ROOT)/data/raw/stats-raw
+stats       := $(ROOT)/data/interim/stats
+stats_final := $(ROOT)/data/final/player-stats
 
 scrape: $(stats_raw).csv ## Scrape hiscores data.
 
@@ -48,12 +49,14 @@ $(stats).pkl: $(stats_raw).csv
 
 # Clustering and analysis -------------------------------------------------------------------------
 
-splits:=$(ROOT)/ref/skill-splits.json
-params:=$(ROOT)/ref/split-params.json
-clusterids:=$(ROOT)/data/interim/clusterids
-centroids:=$(ROOT)/data/interim/centroids
-quartiles:=$(ROOT)/data/interim/quartiles
-xyz:=$(ROOT)/data/interim/xyz
+splits           := $(ROOT)/ref/skill-splits.json
+params           := $(ROOT)/ref/split-params.json
+clusterids       := $(ROOT)/data/interim/clusterids
+centroids        := $(ROOT)/data/interim/centroids
+quartiles        := $(ROOT)/data/interim/quartiles
+xyz              := $(ROOT)/data/interim/xyz
+clusterids_final := $(ROOT)/data/final/player-clusterids
+centroids_final  := $(ROOT)/data/final/cluster-centroids
 
 cluster: $(clusterids).pkl $(centroids).pkl ## Cluster players by account stats.
 
