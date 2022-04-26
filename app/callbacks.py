@@ -219,7 +219,7 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitData], player_coll: Collec
 
             now = datetime.now().timestamp()
             debounce = True if last_clicked_ts and now - last_clicked_ts < 0.3 else False
-            if clicked_cluster == current_cluster or current_cluster is None and debounce:
+            if debounce and (clicked_cluster == current_cluster or current_cluster is None):
                 raise PreventUpdate
 
             if current_cluster == clicked_cluster:

@@ -61,4 +61,4 @@ if __name__ == '__main__':
     else:
         appdata = load_pkl(args.data_file)
 
-    main(player_coll, appdata, args.debug)
+    main(player_coll, appdata, debug=args.debug, auth=args.auth)
