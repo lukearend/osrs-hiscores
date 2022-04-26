@@ -106,7 +106,7 @@ def player_to_csv(player) -> str:
 
 def csv_to_player(csv_line, check_len=False):
     username, *stats, ts = csv_line.split(',')
-    if check_len: # check that length of results is consistent with current API definition
+    if check_len:  # check that length of results is consistent with current API definition
         assert len(stats) == len(csv_api_stats()), f"CSV row contained an unexpected number of stats: '{csv_line}'"
     stats = [int(v) if v else -1 for v in stats]
     return PlayerRecord(username=username, stats=stats, ts=datetime.fromisoformat(ts))

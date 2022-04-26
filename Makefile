@@ -79,13 +79,13 @@ $(xyz).pkl: $(centroids).pkl
 
 # Dash application --------------------------------------------------------------------------------
 
-app_data:=$(ROOT)/data/interim/appdata
-mongo_url:=$(or $(OSRS_MONGO_URI), localhost:27017)
-app_coll:=$(or $(OSRS_APPDATA_COLL), players)
+mongo_url := $(or $(OSRS_MONGO_URI), localhost:27017)
+app_coll  := $(or $(OSRS_APPDATA_COLL), players)
+appdata   := $(ROOT)/data/interim/appdata
 
-appdata: $(app_data).pkl ## Build final application data.
+appdata: $(appdata).pkl ## Build final application data.
 
-$(app_data).pkl: $(stats).pkl $(clusterids).pkl $(centroids).pkl $(quartiles).pkl $(xyz).pkl
+$(appdata).pkl: $(stats).pkl $(clusterids).pkl $(centroids).pkl $(quartiles).pkl $(xyz).pkl
 	@source env/bin/activate && bin/start_mongo && cd scripts && \
 	python build_app.py --splits-file $(splits) --stats-file $(word 1,$^) \
 	                    --clusterids-file $(word 2,$^) --centroids-file $(word 3,$^) \
@@ -94,21 +94,11 @@ $(app_data).pkl: $(stats).pkl $(clusterids).pkl $(centroids).pkl $(quartiles).pk
 
 app: ## Run application.
 	@source env/bin/activate && bin/start_mongo && \
-	python app --mongo-url $(mongo_url) --collection $(app_coll) --data-file $(app_data).pkl --debug
+	python app --mongo-url $(mongo_url) --collection $(app_coll) --data-file $(appdata).pkl --debug
 
 # Importing and exporting data --------------------------------------------------------------------
 
-dataset_bucket:=osrshiscores
-stats_final:=$(ROOT)/data/final/player-stats
-clusterids_final:=$(ROOT)/data/final/player-clusterids
-centroids_final:=$(ROOT)/data/final/cluster-centroids
-
-download: ## Download scraped and clustered data.
-	@source env/bin/activate && bin/download_dataset $(dataset_bucket) $(stats).pkl $(clusterids).pkl $(centroids).pkl
-
-upload: push-aws push-gdrive
-
-export: $(stats_final).csv $(clusterids_final).csv $(centroids_final).csv ## Export result files to CSV.
+export: $(stats_final).csv $(clusterids_final).csv $(centroids_final).csv ## Export final results to CSV.
 
 $(stats_final).csv: $(stats).pkl
 	@source env/bin/activate && bin/dev/pkl_to_csv --in-file $< --out-file $@ --type players
@@ -119,8 +109,12 @@ $(clusterids_final).csv: $(clusterids).pkl
 $(centroids_final).csv: $(centroids).pkl
 	@source env/bin/activate && bin/dev/pkl_to_csv --in-file $< --out-file $@ --type centroids
 
-push-aws: $(stats_raw).csv $(stats).pkl $(clusterids).pkl $(centroids).pkl $(app_data).pkl
-	@aws s3 cp $(app_data).pkl "s3://$(OSRS_APPDATA_BUCKET)/$(OSRS_APPDATA_S3_KEY)"
+dataset_bucket := osrshiscores
+
+upload: push-aws push-gdrive
+
+push-aws: $(stats_raw).csv $(stats).pkl $(clusterids).pkl $(centroids).pkl $(appdata).pkl
+	@aws s3 cp $(appdata).pkl "s3://$(OSRS_APPDATA_BUCKET)/$(OSRS_APPDATA_S3_KEY)"
 	@aws s3 cp $(centroids).pkl "s3://$(dataset_bucket)/centroids.pkl"
 	@aws s3 cp $(clusterids).pkl "s3://$(dataset_bucket)/clusterids.pkl"
 	@aws s3 cp $(stats).pkl "s3://$(dataset_bucket)/stats.pkl"
@@ -130,6 +124,9 @@ push-gdrive: $(stats_raw).csv $(stats_final).csv $(centroids_final).csv $(cluste
 	@gdrive upload $(word 4,$^) -p $(OSRS_GDRIVE_DIR) --name player-clusters.csv
 	@gdrive upload $(word 2,$^) -p $(OSRS_GDRIVE_DIR) --name player-stats.csv
 	@gdrive upload $(word 1,$^) -p $(OSRS_GDRIVE_DIR) --name stats-raw.csv
+
+download: ## Download scraped and clustered data.
+	@source env/bin/activate && bin/download_dataset $(dataset_bucket) $(stats).pkl $(clusterids).pkl $(centroids).pkl
 
 # Other utilities ---------------------------------------------------------------------------------
 
