@@ -42,7 +42,7 @@ if __name__ == '__main__':
     parser.add_argument('--debug', action="store_true", help="if set, run in debug mode")
     args = parser.parse_args()
 
-    for arg_name, arg_val in args.__dict__.keys():
+    for arg_name, arg_val in args.__dict__.items():
         env_var = dict(
             mongo_url="OSRS_MONGO_URI",
             collection="OSRS_APPDATA_COLL",
@@ -57,8 +57,8 @@ if __name__ == '__main__':
 
     if args.deployment == 'cloud':
         s3_bucket, obj_key = args.data_file.replace('s3://', '').split('/', maxsplit=1)
-        app_data = pickle.loads(download_s3_obj(s3_bucket, obj_key))
+        appdata = pickle.loads(download_s3_obj(s3_bucket, obj_key))
     else:
-        app_data = load_pkl(args.data_file)
+        appdata = load_pkl(args.data_file)
 
-    main(player_coll, app_data, args.debug)
+    main(player_coll, appdata, args.debug)
