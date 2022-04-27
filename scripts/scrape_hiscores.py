@@ -11,7 +11,7 @@ import traceback
 import aiohttp
 from codetiming import Timer
 
-from src.scrape import RequestFailed, JobCounter, logprint
+from src.scrape.common import RequestFailed, JobCounter, logprint
 from src.scrape.export import DoneScraping, export_records, get_top_rank, get_page_jobs
 from src.scrape.workers import JobQueue, Worker, request_stats, enqueue_stats, request_page, enqueue_page_usernames
 from src.scrape.vpn import reset_vpn, askpass
@@ -101,13 +101,13 @@ async def main(out_file: str, start_rank: int, stop_rank: int, nworkers: int = 2
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Download player data from the OSRS hiscores.")
-    parser.add_argument('-o', '--out-file', required=True, help="dump scraped data to this CSV file in append mode")
-    parser.add_argument('--start-rank', default=1, type=int, help="start data collection at this player rank")
-    parser.add_argument('--stop-rank', default=2000000, type=int, help="stop data collection at this rank")
+    parser.add_argument('--start-rank', required=True, type=int, help="start data collection at this player rank")
+    parser.add_argument('--stop-rank', required=True, type=int, help="stop data collection at this rank")
+    parser.add_argument('--out-file', required=True, help="dump scraped data to this CSV file in append mode")
     parser.add_argument('--num-workers', default=28, type=int, help="number of concurrent scraping threads")
     parser.add_argument('--log-file', default=None, help="if provided, output logs to this file")
     parser.add_argument('--log-level', default='info', help="'debug'|'info'|'warning'|'error'|'critical'")
-    parser.add_argument('--vpn', dest='vpn', action='store_true', help="if set, will use VPN")
+    parser.add_argument('--vpn', action='store_true', help="if set, will use VPN")
     args = parser.parse_args()
 
     if args.log_file:

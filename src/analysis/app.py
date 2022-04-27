@@ -1,13 +1,13 @@
 """ Code for building app dependencies. """
 
 from dataclasses import dataclass
-from typing import List, Dict, Tuple, Any
+from typing import List, Dict, Tuple
 
 import certifi
 import pandas as pd
 import xarray as xr
 from numpy.typing import NDArray
-from pymongo import MongoClient, UpdateOne
+from pymongo import MongoClient
 from pymongo.collection import Collection
 
 

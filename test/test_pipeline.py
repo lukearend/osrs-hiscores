@@ -12,8 +12,7 @@ from scripts.build_app import build_app_data, build_app_database
 from src.analysis.app import PlayerResults, SplitData, connect_mongo, mongo_get_player
 
 from src.analysis.data import import_players_csv, export_players_csv, export_clusterids_csv, export_centroids_csv
-from src.analysis import osrs_skills, load_splits
-
+from src import osrs_skills
 
 SPLITS = OrderedDict([
     ("first5", ["attack", "defence", "strength", "hitpoints", "ranged"]),
@@ -29,12 +28,6 @@ global players_df
 global clusterids_df, centroids_dict
 global quartiles_dict
 global xyz_dict
-
-
-def test_splits():
-    for skills_in_split in load_splits().values():
-        for skill in skills_in_split:
-            assert skill in osrs_skills()
 
 
 def test_import_csv():

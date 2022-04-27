@@ -10,9 +10,8 @@ import pandas as pd
 import xarray as xr
 from tqdm import tqdm
 
-from src.analysis.data import load_pkl, dump_pkl
+from src.analysis.data import load_pkl, dump_pkl, load_json
 from src.analysis.results import compute_stat_quartiles
-from src.analysis import load_splits
 
 
 def main(players: pd.DataFrame, clusterids: pd.DataFrame,
@@ -47,13 +46,14 @@ def main(players: pd.DataFrame, clusterids: pd.DataFrame,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Compute stat quantiles for each cluster.")
-    parser.add_argument('--stats-file', type=str, help="load player stats from this file")
-    parser.add_argument('--clusterids-file', type=str, help="load player cluster IDs from this file")
-    parser.add_argument('--out-file', type=str, help="write cluster quartiles to this file")
+    parser.add_argument('--stats-file', required=True, type=str, help="load player stats from this file")
+    parser.add_argument('--clusterids-file', required=True, type=str, help="load player cluster IDs from this file")
+    parser.add_argument('--splits-file', required=True, type=str, help="load skills in each split from this file")
+    parser.add_argument('--out-file', required=True, type=str, help="write cluster quartiles to this file")
     args = parser.parse_args()
 
     players_df = load_pkl(args.stats_file)
     clusterids_df = load_pkl(args.clusterids_file)
-    quartiles_dict = main(players_df, clusterids_df, splits=load_splits())
+    quartiles_dict = main(players_df, clusterids_df, splits=load_json(args.split_file))
     dump_pkl(quartiles_dict, args.out_file)
     print(f"wrote cluster quartiles to {args.out_file}")

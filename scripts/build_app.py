@@ -55,7 +55,7 @@ def build_app_database(players: pd.DataFrame,
     with tqdm(total=len(players)) as pbar:
         batch = []
         for uname, player_stats in players.iterrows():
-            player_clusterids=clusterids.loc[uname].to_dict()
+            player_clusterids = clusterids.loc[uname].to_dict()
             player = PlayerResults(username=uname, stats=list(player_stats), clusterids=player_clusterids)
             batch.append(player_to_mongodoc(player))
             if len(batch) >= 5000:
@@ -69,15 +69,15 @@ def build_app_database(players: pd.DataFrame,
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Build data file and database for application to use.")
-    parser.add_argument('--stats-file', help="load player stats from this file")
-    parser.add_argument('--splits-file', help="load skills in each split from this file")
-    parser.add_argument('--clusterids-file', help="load player cluster IDs from this file")
-    parser.add_argument('--centroids-file', help="load cluster centroids from this file")
-    parser.add_argument('--quartiles-file', help="load cluster quartiles from this file")
-    parser.add_argument('--xyz-file', help="load cluster 3D coordinates from this file")
-    parser.add_argument('--out-file', help="write application data object to this file")
-    parser.add_argument('--mongo-url', help="use Mongo instance running at this URL")
-    parser.add_argument('--collection', help="export player stats to this collection")
+    parser.add_argument('--stats-file', required=True, help="load player stats from this file")
+    parser.add_argument('--splits-file', required=True, help="load skills in each split from this file")
+    parser.add_argument('--clusterids-file', required=True, help="load player cluster IDs from this file")
+    parser.add_argument('--centroids-file', required=True, help="load cluster centroids from this file")
+    parser.add_argument('--quartiles-file', required=True, help="load cluster quartiles from this file")
+    parser.add_argument('--xyz-file', required=True, help="load cluster 3D coordinates from this file")
+    parser.add_argument('--out-file', required=True, help="write application data object to this file")
+    parser.add_argument('--mongo-url', required=True, help="use Mongo instance running at this URL")
+    parser.add_argument('--collection', required=True, help="export player stats to this collection")
     args = parser.parse_args()
 
     print("building app data...")

@@ -11,8 +11,8 @@ import pandas as pd
 from tqdm import tqdm
 
 from src.analysis.data import dump_pkl
-from src.analysis import osrs_skills
-from src.scrape import csv_to_player, csv_api_stats
+from src import osrs_skills, csv_api_stats
+from src.scrape.common import csv_to_player
 
 
 def main(in_file: str, out_file: str):

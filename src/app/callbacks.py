@@ -10,10 +10,10 @@ from dash.exceptions import PreventUpdate
 from plotly import graph_objects as go
 from pymongo.collection import Collection
 
-from app import load_table_layout, format_skill, skill_upper, validate_username, get_level_tick_marks
-from app.plotdata import compute_boxplot_data, compute_scatterplot_data
-from app.figures import get_scatterplot, get_empty_boxplot
-from src.analysis import osrs_skills
+from src import osrs_skills
+from src.app.helpers import load_table_layout, format_skill, skill_upper, validate_username, get_level_tick_marks
+from src.app.plotdata import compute_boxplot_data, compute_scatterplot_data
+from src.app.figures import get_scatterplot, get_empty_boxplot
 from src.analysis.app import SplitData, mongo_get_player
 
 

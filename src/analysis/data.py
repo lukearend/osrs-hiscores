@@ -1,5 +1,6 @@
-""" Utilities for loading and writing data. """
+""" Utilities for loading and saving data. """
 
+import collections
 import csv
 import io
 import json
@@ -12,12 +13,12 @@ import pandas as pd
 from botocore.exceptions import NoCredentialsError
 from tqdm import tqdm, TqdmWarning
 
-from src.analysis import osrs_skills
+from src import osrs_skills
 
 
 def load_json(file: str) -> Any:
     with open(file, 'r') as f:
-        return json.load(f)
+        return json.load(f, object_pairs_hook=collections.OrderedDict)  # preserve order of object fields in file
 
 
 def load_pkl(file: str) -> Any:

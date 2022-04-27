@@ -31,7 +31,7 @@ if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Reduce dimensionality of cluster centroids to 3D.")
     parser.add_argument('--in-file', required=True, type=str, help="load clusters centroids from this file")
     parser.add_argument('--out-file', required=True, type=str, help="write cluster xyz coordinates to this file")
-    parser.add_argument('--params-file', type=str, help="load parameters to use for each split from this file")
+    parser.add_argument('--params-file', required=True, type=str, help="load UMAP parameters from this file")
     args = parser.parse_args()
 
 

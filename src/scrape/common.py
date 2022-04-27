@@ -1,28 +1,17 @@
 """ Classes and functions used throughout the scraping module. """
 
 import asyncio
-import json
 import logging
 from datetime import datetime
-from functools import lru_cache
-from pathlib import Path
 from typing import List
 
 import numpy as np
 
-
-@lru_cache()
-def csv_api_stats() -> List[str]:
-    """ Load the list of header fields returned from the OSRS hiscores CSV API. """
-
-    file = Path(__file__).resolve().parents[2] / "ref" / "csv-api-stats.json"
-    with open(file, 'r') as f:
-        return json.load(f)
+from src import csv_api_stats
 
 
 class PlayerRecord:
     """ Data record for one player scraped from the hiscores. """
-    assert csv_api_stats()[:3] == ['total_rank', 'total_level', 'total_xp']
 
     def __init__(self, username: str, stats: List[int], ts: datetime):
         """

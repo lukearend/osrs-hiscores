@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 from numpy.typing import NDArray
 from pandas import DataFrame
 
-from app import load_boxplot_offsets, load_boxplot_icon
+from src.app import load_boxplot_offsets, load_boxplot_icon
 
 
 def get_scatterplot(df: DataFrame,

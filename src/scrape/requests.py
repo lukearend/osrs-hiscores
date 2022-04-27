@@ -7,7 +7,8 @@ from typing import List, Tuple, Dict
 from aiohttp import ClientSession, ClientConnectionError
 from bs4 import BeautifulSoup
 
-from src.scrape import PlayerRecord, RequestFailed, UserNotFound, ServerBusy, csv_api_stats
+from src import csv_api_stats
+from src.scrape.common import PlayerRecord, RequestFailed, UserNotFound, ServerBusy
 
 
 class ParsingFailed(Exception):

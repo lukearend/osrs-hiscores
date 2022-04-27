@@ -11,7 +11,6 @@ import pandas as pd
 
 from src.analysis.data import load_pkl, dump_pkl, load_json
 from src.analysis.models import fit_kmeans, cluster_l2
-from src.analysis import load_splits
 
 
 def main(players: pd.DataFrame,
@@ -57,8 +56,8 @@ if __name__ == "__main__":
     parser.add_argument('--in-file', required=True, type=str, help="load player stats from this file")
     parser.add_argument('--out-clusterids', required=True, type=str, help="write cluster IDs to this file")
     parser.add_argument('--out-centroids', required=True, type=str, help="write cluster centroids to this file")
-    parser.add_argument('--params-file', type=str, help="load number of clusters per split from this file")
-    parser.add_argument('--splits-file', type=str, help="load skills in each split from this file")
+    parser.add_argument('--params-file', required=True, type=str, help="load clustering parameters from this file")
+    parser.add_argument('--splits-file', required=True, type=str, help="load skills in each split from this file")
     parser.add_argument('--verbose', action='store_true', help="if set, output progress during training")
     args = parser.parse_args()
 
@@ -69,7 +68,11 @@ if __name__ == "__main__":
             raise ValueError(f"params file is missing k parameter for split '{split}'")
 
     players_df = load_pkl(args.in_file)
-    clusterids_df, centroids_dict = main(players_df, k_per_split=k_per_split, splits=load_splits(), verbose=args.verbose)
+    clusterids_df, centroids_dict = main(players_df,
+                                         k_per_split=k_per_split,
+                                         splits=load_json(args.splits_file),
+                                         verbose=args.verbose)
+
     dump_pkl(clusterids_df, args.out_clusterids)
     print(f"wrote player cluster IDs to {args.out_clusterids}")
     dump_pkl(centroids_dict, args.out_centroids)

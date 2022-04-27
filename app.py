@@ -13,8 +13,8 @@ with warnings.catch_warnings():
 import dash_bootstrap_components as dbc
 from dash import Dash
 
-from app.layout import build_layout
-from app.callbacks import add_callbacks
+from src.app.layout import build_layout
+from src.app.callbacks import add_callbacks
 from src.analysis.app import connect_mongo
 from src.analysis.data import load_pkl, download_s3_obj
 

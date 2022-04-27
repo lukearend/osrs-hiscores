@@ -71,7 +71,8 @@ $(clusterids).pkl $(centroids).pkl: $(stats).pkl
 
 $(quartiles).pkl: $(stats).pkl $(clusterids).pkl
 	@source env/bin/activate && cd scripts && \
-	python compute_quartiles.py --stats-file $(word 1,$^) --clusterids-file $(word 2,$^) --out-file $@
+	python compute_quartiles.py --stats-file $(word 1,$^) --clusterids-file $(word 2,$^) \
+	                            --splits-file $(splits) --out-file $@
 
 $(xyz).pkl: $(centroids).pkl
 	@source env/bin/activate && cd scripts && \
@@ -137,7 +138,7 @@ test: lint ## Run test suite.
 	@source env/bin/activate && bin/start_mongo && pytest test -sv --asyncio-mode strict
 
 lint:
-	@source env/bin/activate && pycodestyle app src --ignore=E301,E302,E303,E402,E501
+	@source env/bin/activate && pycodestyle src scripts app.py --ignore=E301,E302,E303,E402,E501
 	@echo "code check passed"
 
 help: ## Print this help.
