@@ -19,7 +19,9 @@ from src.analysis.app import connect_mongo
 from src.analysis.data import load_pkl, download_s3_obj
 
 
-app = Dash(__name__, title="OSRS account clusters", external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = Dash(__name__,
+           title="OSRS account clusters",
+           external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 server = app.server
 
