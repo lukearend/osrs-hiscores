@@ -19,6 +19,7 @@ from src.analysis.app import connect_mongo
 from src.analysis.data import load_pkl
 from src import download_s3_obj
 
+
 app = Dash(__name__,
            title="OSRS account clusters",
            external_stylesheets=[dbc.themes.BOOTSTRAP])
@@ -58,12 +59,12 @@ if __name__ == '__main__':
     else:
         app_data = load_pkl(args.data_file)
 
-    global app
     if args.auth:
         auth_coll = connect_mongo(args.mongo_url, 'auth')
         VALID_AUTH_PAIRS = {doc['username']: doc['password'] for doc in auth_coll.find()}
         dash_auth.BasicAuth(app, VALID_AUTH_PAIRS)
 
+    # todo: add these outside of __main__. Currently broken.
     app = build_layout(app, app_data)
     app = add_callbacks(app, app_data, player_coll)
     app.run_server(debug=args.debug)
