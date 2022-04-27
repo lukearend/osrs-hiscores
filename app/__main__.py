@@ -6,30 +6,22 @@ import argparse
 import os
 import pickle
 import warnings
-from typing import Dict
 
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=UserWarning)  # supress dash_core_components deprecation warning
     import dash_auth
-
-from pymongo.collection import Collection
+import dash_bootstrap_components as dbc
+from dash import Dash
 
 from app.layout import build_layout
 from app.callbacks import add_callbacks
-from src.analysis.app import connect_mongo, SplitData
+from src.analysis.app import connect_mongo
 from src.analysis.data import load_pkl, download_s3_obj
 
 
-def main(app_coll: Collection, app_data: Dict[str, SplitData], debug: bool = True, auth: bool = False):
-    app = build_layout(app_data)
-    app = add_callbacks(app, app_data, app_coll)
+app = Dash(__name__, title="OSRS account clusters", external_stylesheets=[dbc.themes.BOOTSTRAP])
 
-    if auth:
-        auth_coll = connect_mongo(args.mongo_url, 'auth')
-        valid_pairs = {doc['username']: doc['password'] for doc in auth_coll.find()}
-        dash_auth.BasicAuth(app, valid_pairs)
-
-    app.run_server(debug=debug, port=os.getenv("PORT", 8050))
+server = app.server
 
 
 if __name__ == '__main__':
@@ -57,8 +49,15 @@ if __name__ == '__main__':
 
     if args.deployment == 'cloud':
         s3_bucket, obj_key = args.data_file.replace('s3://', '').split('/', maxsplit=1)
-        appdata = pickle.loads(download_s3_obj(s3_bucket, obj_key))
+        app_data = pickle.loads(download_s3_obj(s3_bucket, obj_key))
     else:
-        appdata = load_pkl(args.data_file)
+        app_data = load_pkl(args.data_file)
 
-    main(player_coll, appdata, debug=args.debug, auth=args.auth)
+    if args.auth:
+        auth_coll = connect_mongo(args.mongo_url, 'auth')
+        VALID_AUTH_PAIRS = {doc['username']: doc['password'] for doc in auth_coll.find()}
+        dash_auth.BasicAuth(app, VALID_AUTH_PAIRS)
+
+    app = build_layout(app, app_data)
+    app = add_callbacks(app, app_data, player_coll)
+    app.run_server(debug=args.debug)

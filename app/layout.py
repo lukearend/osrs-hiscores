@@ -9,8 +9,7 @@ from app.figures import get_empty_boxplot, get_scatterplot
 from src.analysis import osrs_skills
 
 
-def build_layout(app_data) -> Dash:
-    app = Dash(__name__, title="OSRS player clusters", external_stylesheets=[dbc.themes.BOOTSTRAP])
+def build_layout(app, app_data) -> Dash:
 
     init_split = 'all'
     init_skill = 'total'
