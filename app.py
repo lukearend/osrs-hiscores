@@ -58,6 +58,7 @@ if __name__ == '__main__':
     else:
         app_data = load_pkl(args.data_file)
 
+    global app
     if args.auth:
         auth_coll = connect_mongo(args.mongo_url, 'auth')
         VALID_AUTH_PAIRS = {doc['username']: doc['password'] for doc in auth_coll.find()}
