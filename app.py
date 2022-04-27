@@ -8,7 +8,7 @@ import pickle
 import warnings
 
 with warnings.catch_warnings():
-    warnings.filterwarnings("ignore", category=UserWarning)  # supress dash_core_components deprecation warning
+    warnings.filterwarnings("ignore", category=UserWarning)  # supress deprecation warning from dash_core_components
     import dash_auth
 import dash_bootstrap_components as dbc
 from dash import Dash
@@ -16,8 +16,8 @@ from dash import Dash
 from src.app.layout import build_layout
 from src.app.callbacks import add_callbacks
 from src.analysis.app import connect_mongo
-from src.analysis.data import load_pkl, download_s3_obj
-
+from src.analysis.data import load_pkl
+from src import download_s3_obj
 
 app = Dash(__name__,
            title="OSRS account clusters",
@@ -36,7 +36,7 @@ if __name__ == '__main__':
     parser.add_argument('--debug', action="store_true", help="if set, run in debug mode")
     args = parser.parse_args()
 
-    for arg_name, arg_val in args.__dict__.items():
+    for name, val in args.__dict__.items():
         env_var = dict(
             mongo_url="OSRS_MONGO_URI",
             collection="OSRS_APPDATA_COLL",
@@ -44,8 +44,11 @@ if __name__ == '__main__':
             data_file="OSRS_APPDATA_FILE",
             auth="OSRS_ENABLE_AUTH",
             debug="OSRS_DEBUG_MODE"
-        )[arg_name]
-        args.__dict__[arg_name] = os.getenv(env_var, arg_val)
+        )[name]
+        val = os.getenv(env_var, val)
+        if val is None:
+            raise ValueError(f"missing argument: '--{name.replace('_', '-')}' or environment variable '{env_var}'")
+        args.__dict__[name] = val
 
     player_coll = connect_mongo(args.mongo_url, args.collection)
 

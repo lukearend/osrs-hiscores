@@ -18,11 +18,10 @@ Project organization
 --------------------
 
     ├── LICENSE
-    ├── README.md        <- The top-level README for developers using this project.
-    ├── METHODS.md       <- A description of how these results were created.
-    │
     ├── Makefile         <- Top-level Makefile for building and running project.
-    ├── app              <- Dash application for visualizing final results.
+    ├── README.md        <- The top-level README for developers using this project.
+    │
+    ├── assets           <- Assets used by Dash application.           
     ├── bin              <- Utility executables.
     │
     ├── data
@@ -34,10 +33,13 @@ Project organization
     ├── scripts          <- Scripts for the stages of the data processing pipeline.
     │
     ├── src
+    │   ├── app          <- Application code.
     │   ├── analysis     <- Data science and analytics.
-    │   └── scrape       <- Scraping and exporting hiscores data.
+    │   └── scrape       <- Scraping hiscores data.
     │
     ├── test             <- Unit and integration tests.
+    │
+    ├── app.py           <- Main script for Dash application.
     ├── Procfile         <- Entry point for deployment as a Heroku application.
     ├── requirements.txt <- Dependencies file for reproducing the project environment.
     └── setup.py         <- Setup file for installing this project through pip.

@@ -95,7 +95,7 @@ $(appdata).pkl: $(stats).pkl $(clusterids).pkl $(centroids).pkl $(quartiles).pkl
 
 app: ## Run application.
 	@source env/bin/activate && bin/start_mongo && \
-	python app --mongo-url $(mongo_url) --collection $(app_coll) --data-file $(appdata).pkl --debug
+	python app.py --mongo-url $(mongo_url) --collection $(app_coll) --data-file $(appdata).pkl --debug
 
 # Importing and exporting data --------------------------------------------------------------------
 
@@ -135,7 +135,7 @@ ec2-%: # status, start, stop, connect, setup
 	@bin/dev/ec2_instance $*
 
 test: lint ## Run test suite.
-	@source env/bin/activate && bin/start_mongo && pytest test -sv --asyncio-mode strict
+	@source env/bin/activate && bin/start_mongo && pytest test
 
 lint:
 	@source env/bin/activate && pycodestyle src scripts app.py --ignore=E301,E302,E303,E402,E501

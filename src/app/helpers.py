@@ -2,7 +2,7 @@ import string
 import os
 from functools import lru_cache
 from pathlib import Path
-from typing import List
+from typing import List, Tuple
 
 from PIL import Image
 
@@ -10,7 +10,7 @@ from src.analysis.data import load_json
 
 
 def assets_dir() -> Path:
-    return Path(__file__).resolve().parent / 'assets'
+    return Path(__file__).resolve().parents[2] / 'assets'
 
 
 @lru_cache()
@@ -20,8 +20,9 @@ def load_table_layout(flat: bool = False) -> List[List[str]]:
 
 
 @lru_cache()
-def load_boxplot_offsets() -> float:
-    return load_json(assets_dir() / 'boxplot_offsets.json')
+def load_boxplot_offsets(split) -> Tuple[float, float]:
+    xy_offsets = load_json(assets_dir() / 'boxplot_offsets.json')
+    return tuple(xy_offsets[split])
 
 
 @lru_cache()

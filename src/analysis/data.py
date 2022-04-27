@@ -2,16 +2,12 @@
 
 import collections
 import csv
-import io
 import json
 import pickle
-import warnings
 from typing import OrderedDict, Any
 
-import boto3
 import pandas as pd
-from botocore.exceptions import NoCredentialsError
-from tqdm import tqdm, TqdmWarning
+from tqdm import tqdm
 
 from src import osrs_skills
 
@@ -67,27 +63,3 @@ def export_centroids_csv(centroids_dict: OrderedDict[str, pd.DataFrame], out_fil
                     skill_vals.append('' if s not in centroid.index else centroid[s])
                 lines.append([split, clusterid] + skill_vals)
             writer.writerows(lines)
-
-
-def download_s3_obj(bucket: str, obj_key: str) -> bytes:
-    """ Download object from an S3 bucket to a file handle, with a progress bar. """
-
-    warnings.filterwarnings("ignore", category=TqdmWarning)  # supress warning during float iteration
-
-    print(f"downloading s3://{bucket}/{obj_key}")
-    s3 = boto3.client('s3')
-    response = s3.head_object(Bucket=bucket, Key=obj_key)
-    size = response['ContentLength']
-    with tqdm(total=size, unit='B', unit_scale=True) as pbar:
-        def update_pbar(n):
-            pbar.update(n)
-        try:
-            f = io.BytesIO()
-            s3.download_fileobj(bucket, obj_key, f, Callback=update_pbar)
-        except FileNotFoundError:
-            print("file not found")
-        except NoCredentialsError:
-            print("credentials not available")
-
-    f.seek(0)  # put cursor back at beginning of file
-    return f.read()
