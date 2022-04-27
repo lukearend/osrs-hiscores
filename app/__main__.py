@@ -29,7 +29,7 @@ def main(app_coll: Collection, app_data: Dict[str, SplitData], debug: bool = Tru
         valid_pairs = {doc['username']: doc['password'] for doc in auth_coll.find()}
         dash_auth.BasicAuth(app, valid_pairs)
 
-    app.run_server(debug=debug)
+    app.run_server(debug=debug, port=os.getenv("PORT", 8050))
 
 
 if __name__ == '__main__':
