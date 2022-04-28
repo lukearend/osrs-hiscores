@@ -10,9 +10,9 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from src.analysis.data import dump_pkl
+from src.data.io import dump_pkl
 from src import osrs_skills, csv_api_stats
-from src.scrape.common import csv_to_player
+from src.scrape.export import csv_to_player
 
 
 def main(in_file: str, out_file: str):
@@ -53,7 +53,7 @@ def main(in_file: str, out_file: str):
     for i, p in tqdm(enumerate(players), total=len(players)):
         stats[i, :] = p.stats[skill_lvl_inds]
         unames.append(p.username)
-    stats[stats == -1] = 0         # missing data
+    stats[stats == -1] = 0          # missing data
     stats = stats.astype('uint16')  # save size since all values in range 0-2277
 
     players_df = pd.DataFrame(data=stats, index=unames, columns=skills)
@@ -64,7 +64,7 @@ def main(in_file: str, out_file: str):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Clean up and condense raw stats data.")
-    parser.add_argument('-i', '--in-file', required=True, help="raw CSV file from scraping process")
-    parser.add_argument('-o', '--out-file', required=True, help="output cleaned dataset to this file")
+    parser.add_argument('--in-file', required=True, help="raw CSV file from scraping process")
+    parser.add_argument('--out-file', required=True, help="output cleaned dataset to this file")
     args = parser.parse_args()
     main(args.in_file, args.out_file)

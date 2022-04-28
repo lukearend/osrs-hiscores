@@ -4,10 +4,10 @@ from typing import Dict
 import dash_bootstrap_components as dbc
 from dash import Dash, dcc, html
 
-from src.analysis.app import SplitData
+from src.data.types import SplitResults
 from src.app.helpers import load_table_layout, format_skill, \
     get_level_tick_marks, get_color_range, get_color_label, get_point_size
-from src.app.plotdata import compute_scatterplot_data
+from src.app.plotdata import scatterplot_data
 from src.app.figures import get_empty_boxplot, get_scatterplot
 from src import osrs_skills
 
@@ -18,7 +18,7 @@ INIT_PTSIZE = 'small'
 INIT_LEVEL_RANGE = [1, 2277]
 
 
-def build_layout(app: Dash, app_data: Dict[str, SplitData]):
+def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
 
     app.title = "OSRS account clusters"
     app.layout = dbc.Container([
@@ -205,7 +205,7 @@ def build_layout(app: Dash, app_data: Dict[str, SplitData]):
                     id='scatter-plot',
                     clear_on_unhover=True,
                     figure=get_scatterplot(
-                        df=compute_scatterplot_data(app_data[INIT_SPLIT], INIT_SKILL, INIT_LEVEL_RANGE),
+                        df=scatterplot_data(app_data[INIT_SPLIT], INIT_SKILL, INIT_LEVEL_RANGE),
                         colorbar_limits=get_color_range(INIT_SKILL),
                         colorbar_label=get_color_label(INIT_SKILL),
                         size_factor=get_point_size(INIT_PTSIZE),

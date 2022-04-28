@@ -11,22 +11,23 @@ import xarray as xr
 from pymongo.collection import Collection
 from tqdm import tqdm
 
-from src.analysis.app import SplitData, PlayerResults, connect_mongo, player_to_mongodoc
-from src.analysis.data import load_pkl, dump_pkl, load_json
-from src.analysis.results import get_cluster_sizes, get_cluster_uniqueness
+from src.data.analytics import get_cluster_sizes, get_cluster_uniqueness
+from src.data.db import connect_mongo, player_to_mongodoc
+from src.data.io import load_pkl, dump_pkl, load_json
+from src.data.types import SplitResults, PlayerResults
 
 
 def build_app_data(splits: OrderedDict[str, List[str]],
                    clusterids: pd.DataFrame,
                    centroids: OrderedDict[str, pd.DataFrame],
                    quartiles: OrderedDict[str, xr.DataArray],
-                   xyz: OrderedDict[str, pd.DataFrame]) -> OrderedDict[str, SplitData]:
+                   xyz: OrderedDict[str, pd.DataFrame]) -> OrderedDict[str, SplitResults]:
 
     app_data = collections.OrderedDict()
     for split, skills_in_split in splits.items():
         cluster_xyz = xyz[split]
         cluster_sizes = get_cluster_sizes(clusterids[split])
-        split_data = SplitData(
+        split_data = SplitResults(
             skills=skills_in_split,
             cluster_quartiles=quartiles[split],
             cluster_centroids=centroids[split],

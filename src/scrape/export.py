@@ -3,17 +3,15 @@
 import asyncio
 import csv
 import os
+from datetime import datetime
 from typing import List
 
 from tqdm import tqdm
 
 from src import csv_api_stats
-from src.scrape.common import PlayerRecord, player_to_csv, csv_to_player
+from src.data.types import PlayerRecord
+from src.scrape.exceptions import DoneScraping
 from src.scrape.workers import PageJob
-
-
-class DoneScraping(Exception):
-    """ Raised when all scraping is done to indicate script should exit. """
 
 
 async def export_records(in_queue: asyncio.Queue, out_file: str, total: int):
@@ -77,3 +75,17 @@ def get_page_jobs(start_rank: int, end_rank: int) -> List[PageJob]:
                             startind=startind if pagenum == firstpage else 0,
                             endind=endind if pagenum == lastpage else 25))
     return jobs
+
+
+def player_to_csv(player) -> str:
+    stats = [str(v) if v else '' for v in player.stats]
+    fields = [player.username] + stats + [player.ts.isoformat()]
+    return ','.join(fields)
+
+
+def csv_to_player(csv_line, check_len=False):
+    username, *stats, ts = csv_line.split(',')
+    if check_len:  # check that length of results is consistent with current API definition
+        assert len(stats) == len(csv_api_stats()), f"CSV row contained an unexpected number of stats: '{csv_line}'"
+    stats = [int(v) if v else -1 for v in stats]
+    return PlayerRecord(username=username, stats=stats, ts=datetime.fromisoformat(ts))

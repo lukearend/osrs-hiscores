@@ -6,7 +6,7 @@ from typing import List, Tuple
 
 from PIL import Image
 
-from src.analysis.data import load_json
+from src.data.io import load_json
 
 
 def assets_dir() -> Path:

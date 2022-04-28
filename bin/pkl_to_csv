@@ -4,7 +4,7 @@
 
 import argparse
 
-from src.analysis.data import load_pkl, export_players_csv, export_clusterids_csv, export_centroids_csv
+from src.data.io import load_pkl, export_players_csv, export_clusterids_csv, export_centroids_csv
 
 parser = argparse.ArgumentParser(description="Convert .pkl file to CSV.")
 parser.add_argument('--in-file', required=True, help=".pkl file to convert")

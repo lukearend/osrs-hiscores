@@ -6,10 +6,10 @@ import numpy as np
 import pandas as pd
 from numpy.typing import NDArray
 
-from src.analysis.app import SplitData
+from src.data.types import SplitResults
 
 
-def compute_scatterplot_data(split_data: SplitData, color_by_skill: str, color_axis_range: Tuple) -> pd.DataFrame:
+def scatterplot_data(split_data: SplitResults, color_by_skill: str, color_axis_range: Tuple) -> pd.DataFrame:
 
     # Display only those clusters whose median in the chosen skill is within the selected range.
     skill_names = ['total'] + split_data.skills
@@ -31,9 +31,9 @@ def compute_scatterplot_data(split_data: SplitData, color_by_skill: str, color_a
     })
 
 
-def compute_boxplot_data(split_data: SplitData, clusterid=None) -> Dict[str, NDArray]:
+def boxplot_data(split_data: SplitResults, clusterid=None) -> Dict[str, NDArray]:
 
-    hide_val = -100  # replace nans with an off-plot value to hide them
+    hide_val = -100  # hide nans by replacing with an off-plot value
     if clusterid is None:
         plot_data = {}
         for q in ['lowerfence', 'q1', 'median', 'q3', 'upperfence']:

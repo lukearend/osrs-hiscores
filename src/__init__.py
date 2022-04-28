@@ -1,14 +1,9 @@
 """ Top-level definitions. """
 
-import io
 import json
-import warnings
 from functools import lru_cache
 from pathlib import Path
 from typing import List
-
-import boto3
-from tqdm import TqdmWarning, tqdm
 
 
 @lru_cache()
@@ -32,22 +27,3 @@ def csv_api_stats() -> List[str]:
         stat_names = json.load(f)
         assert stat_names[:3] == ['total_rank', 'total_level', 'total_xp']
         return stat_names
-
-
-def download_s3_obj(bucket: str, obj_key: str) -> bytes:
-    """ Download raw object from an S3 bucket with progress bar. """
-
-    warnings.filterwarnings("ignore", category=TqdmWarning)  # supress warning from float iteration
-
-    s3 = boto3.client('s3')
-    response = s3.head_object(Bucket=bucket, Key=obj_key)
-    size = response['ContentLength']
-
-    print(f"downloading s3://{bucket}/{obj_key}")
-    f = io.BytesIO()
-    with tqdm(total=size, unit='B', unit_scale=True) as pbar:
-        s3.download_fileobj(bucket, obj_key, f,
-                            Callback=lambda n: pbar.update(n))
-
-    f.seek(0)  # put cursor back at beginning of file
-    return f.read()

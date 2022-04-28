@@ -12,12 +12,13 @@ from pymongo.collection import Collection
 
 from src import osrs_skills
 from src.app.helpers import load_table_layout, format_skill, skill_upper, validate_username, get_level_tick_marks
-from src.app.plotdata import compute_boxplot_data, compute_scatterplot_data
+from src.app.plotdata import boxplot_data, scatterplot_data
 from src.app.figures import get_scatterplot, get_empty_boxplot
-from src.analysis.app import SplitData, mongo_get_player
+from src.data.types import SplitResults
+from src.common import mongo_get_player
 
 
-def add_callbacks(app: Dash, app_data: Dict[str, SplitData], player_coll: Collection):
+def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Collection):
 
     @app.callback(
         Output('scatter-plot', 'figure'),
@@ -36,7 +37,7 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitData], player_coll: Collec
                            point_size: str) -> go.Figure:
 
         split_data = app_data[current_split]
-        df = compute_scatterplot_data(split_data, current_skill, level_range)
+        df = scatterplot_data(split_data, current_skill, level_range)
 
         if current_player is None:
             player_xyz = None
@@ -324,9 +325,9 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitData], player_coll: Collec
 
         split_data = app_data[current_split]
         if current_cluster is None:
-            plot_data = compute_boxplot_data(split_data, clusterid=None)
+            plot_data = boxplot_data(split_data, clusterid=None)
         else:
-            plot_data = compute_boxplot_data(split_data, clusterid=current_cluster['id'])
+            plot_data = boxplot_data(split_data, clusterid=current_cluster['id'])
         return [
             {
                 'lowerfence': [plot_data['lowerfence']],

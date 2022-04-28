@@ -38,8 +38,8 @@ clean: $(stats).pkl ## Clean raw scraped dataset.
 
 $(stats_raw).csv:
 	@source env/bin/activate && cd scripts && \
-	python scrape_hiscores.py --out-file $(stats_raw).tmp --start-rank 1 --stop-rank 2000000 --num-workers 28 \
-	                          --log-file $(ROOT)/data/raw/scrape.log --log-level INFO --vpn && \
+	python src.scrape --out-file $(stats_raw).tmp --start-rank 1 --stop-rank 2000000 --num-workers 28 \
+	                  --log-file $(ROOT)/data/raw/scrape.log --log-level INFO --vpn && \
 	mv $(stats_raw).tmp $(stats_raw).csv
 
 $(stats).pkl: $(stats_raw).csv
@@ -80,51 +80,54 @@ $(xyz).pkl: $(centroids).pkl
 
 # Dash application --------------------------------------------------------------------------------
 
-mongo_url := $(or $(OSRS_MONGO_URI), localhost:27017)
-app_coll  := $(or $(OSRS_APPDATA_COLL), players)
-appdata   := $(or $(OSRS_APPDATA_FILE), $(ROOT)/data/interim/appdata)
+mongo_url     := $(or $(OSRS_MONGO_URI), localhost:27017)
+appdata_coll  := $(or $(OSRS_APPDATA_COLL), appdata)
+appdata       := $(or $(OSRS_APPDATA_FILE), $(ROOT)/data/interim/appdata)
 
-appdata: $(appdata).pkl ## Build final application data.
+appdata: app_data.pkl ## Build final application data.
 
 $(appdata).pkl: $(stats).pkl $(clusterids).pkl $(centroids).pkl $(quartiles).pkl $(xyz).pkl
 	@source env/bin/activate && bin/start_mongo && cd scripts && \
 	python build_app.py --splits-file $(splits) --stats-file $(word 1,$^) \
 	                    --clusterids-file $(word 2,$^) --centroids-file $(word 3,$^) \
 	                    --quartiles-file $(word 4,$^) --xyz-file $(word 5,$^) \
-                        --out-file $@ --mongo-url $(mongo_url) --collection $(app_coll)
+                        --out-file $@ --mongo-url $(mongo_url) --collection $(mongo_coll)
 
 app: ## Run application.
 	@source env/bin/activate && bin/start_mongo && \
-	python app.py --mongo-url $(mongo_url) --collection $(app_coll) --data-file $(appdata).pkl --debug
+	export OSRS_MONGO_URI=$(mongo_url) && \
+	export OSRS_APPDATA_COLL=$(appdata_coll) && \
+	export OSRS_APPDATA_FILE=$(appdata) && \
+	python src.app
 
 # Importing and exporting data --------------------------------------------------------------------
 
 export: $(stats_final).csv $(clusterids_final).csv $(centroids_final).csv ## Export final results to CSV.
 
 $(stats_final).csv: $(stats).pkl
-	@source env/bin/activate && bin/dev/pkl_to_csv --in-file $< --out-file $@ --type players
+	@source env/bin/activate && bin/pkl_to_csv --in-file $< --out-file $@ --type players
 
 $(clusterids_final).csv: $(clusterids).pkl
-	@source env/bin/activate && bin/dev/pkl_to_csv --in-file $< --out-file $@ --type clusterids
+	@source env/bin/activate && bin/pkl_to_csv --in-file $< --out-file $@ --type clusterids
 
 $(centroids_final).csv: $(centroids).pkl
-	@source env/bin/activate && bin/dev/pkl_to_csv --in-file $< --out-file $@ --type centroids
+	@source env/bin/activate && bin/pkl_to_csv --in-file $< --out-file $@ --type centroids
 
 dataset_bucket := osrshiscores
 
 upload: push-aws push-gdrive
 
-push-aws: $(stats_raw).csv $(stats).pkl $(clusterids).pkl $(centroids).pkl $(appdata).pkl
+push-aws: $(stats_raw).csv $(stats).pkl $(clusterids).pkl $(centroids).pkl app_data.pkl
 	@aws s3 cp $(appdata).pkl "s3://$(OSRS_APPDATA_BUCKET)/$(OSRS_APPDATA_S3_KEY)"
 	@aws s3 cp $(centroids).pkl "s3://$(dataset_bucket)/centroids.pkl"
 	@aws s3 cp $(clusterids).pkl "s3://$(dataset_bucket)/clusterids.pkl"
 	@aws s3 cp $(stats).pkl "s3://$(dataset_bucket)/stats.pkl"
 
 push-gdrive: $(stats_raw).csv $(stats_final).csv $(centroids_final).csv $(clusterids_final).csv
-	@gdrive upload $(word 3,$^) -p $(OSRS_GDRIVE_DIR) --name cluster-centroids.csv
-	@gdrive upload $(word 4,$^) -p $(OSRS_GDRIVE_DIR) --name player-clusters.csv
-	@gdrive upload $(word 2,$^) -p $(OSRS_GDRIVE_DIR) --name player-stats.csv
-	@gdrive upload $(word 1,$^) -p $(OSRS_GDRIVE_DIR) --name stats-raw.csv
+	@gdrive upload $(word 3,$^) -p $(OSRS_GDRIVE_FOLDER) --name cluster-centroids.csv
+	@gdrive upload $(word 4,$^) -p $(OSRS_GDRIVE_FOLDER) --name player-clusters.csv
+	@gdrive upload $(word 2,$^) -p $(OSRS_GDRIVE_FOLDER) --name player-stats.csv
+	@gdrive upload $(word 1,$^) -p $(OSRS_GDRIVE_FOLDER) --name stats-raw.csv
 
 download: ## Download scraped and clustered data.
 	@source env/bin/activate && bin/download_dataset $(dataset_bucket) $(stats).pkl $(clusterids).pkl $(centroids).pkl
@@ -134,11 +137,14 @@ download: ## Download scraped and clustered data.
 ec2-%: # status, start, stop, connect, setup
 	@bin/dev/ec2_instance $*
 
+testdata: $(stats).pkl
+	@source env/bin/activate && bin/dev/build_test_data --in-file $< --out-file test/data/test-data.csv
+
 test: lint ## Run test suite.
 	@source env/bin/activate && bin/start_mongo && pytest test
 
 lint:
-	@source env/bin/activate && pycodestyle src scripts app.py --ignore=E301,E302,E303,E402,E501
+	@source env/bin/activate && pycodestyle src scripts --ignore=E301,E302,E303,E402,E501
 	@echo "code check passed"
 
 help: ## Print this help.

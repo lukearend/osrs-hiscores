@@ -2,17 +2,19 @@ import csv
 from collections import OrderedDict
 from pathlib import Path
 
+import numpy as np
 import pandas as pd
 import xarray as xr
 
+from scripts.build_app import build_app_data, build_app_database
 from scripts.cluster_players import main as cluster_players
 from scripts.compute_quartiles import main as compute_quartiles
 from scripts.dim_reduce_clusters import main as dim_reduce_clusters
-from scripts.build_app import build_app_data, build_app_database
-from src.analysis.app import PlayerResults, SplitData, connect_mongo, mongo_get_player
-
-from src.analysis.data import import_players_csv, export_players_csv, export_clusterids_csv, export_centroids_csv
+from src.data.db import connect_mongo, mongo_get_player
+from src.data.io import export_players_csv, export_clusterids_csv, export_centroids_csv
+from src.data.types import PlayerResults, SplitResults
 from src import osrs_skills
+
 
 SPLITS = OrderedDict([
     ("first5", ["attack", "defence", "strength", "hitpoints", "ranged"]),
@@ -30,13 +32,12 @@ global quartiles_dict
 global xyz_dict
 
 
-def test_import_csv():
+def setup():
     global players_df
     stats_file = Path(__file__).resolve().parent / "data" / "test-data.csv"
-    players_df = import_players_csv(stats_file)
-    assert isinstance(players_df, pd.DataFrame)
-    assert len(players_df) == 10000
-    assert list(players_df.columns) == osrs_skills(include_total=True)
+    players_df = pd.read_csv(stats_file, index_col='username').drop('rank', axis=1)
+    players_df[np.isnan(players_df)] = 1
+
 
 
 def test_cluster():
@@ -81,7 +82,7 @@ def test_buildapp():
     assert app_data.keys() == SPLITS.keys()
     for split, split_data in app_data.items():
         nclusters = NCLUSTERS_PER_SPLIT[split]
-        assert isinstance(split_data, SplitData)
+        assert isinstance(split_data, SplitResults)
         assert split_data.skills == SPLITS[split]
         assert isinstance(split_data.cluster_quartiles, xr.DataArray)
         assert isinstance(split_data.cluster_centroids, pd.DataFrame)

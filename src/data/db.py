@@ -1,36 +1,9 @@
-""" Code for building app dependencies. """
-
-from dataclasses import dataclass
-from typing import List, Dict, Tuple
+""" Database utilities. """
 
 import certifi
-import pandas as pd
-import xarray as xr
-from numpy.typing import NDArray
 from pymongo import MongoClient
 from pymongo.collection import Collection
-
-
-@dataclass
-class PlayerResults:
-    """ Stats and clustering results for a player. """
-
-    username: str
-    stats: List[int]            # includes total level
-    clusterids: Dict[str, int]  # cluster ID for each split of the dataset
-
-
-@dataclass
-class SplitData:
-    """ App data for one split of the dataset. """
-
-    skills: List[str]                # length nskills in split
-    cluster_quartiles: xr.DataArray  # shape (5, nclusters, nskills + 1), includes total level
-    cluster_centroids: pd.DataFrame  # shape (nclusters, nskills)
-    cluster_xyz: pd.DataFrame        # shape (nclusters, 3)
-    cluster_sizes: NDArray           # length nclusters
-    cluster_uniqueness: NDArray      # length nclusters
-    xyz_axlims: Dict[str, Tuple[float, float]]
+from src.data.types import PlayerResults
 
 
 def connect_mongo(url: str, collection: str = None) -> Collection:

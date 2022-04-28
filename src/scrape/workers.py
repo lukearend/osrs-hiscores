@@ -8,7 +8,8 @@ from typing import List, Tuple, Callable
 
 from aiohttp import ClientSession
 
-from src.scrape.common import RequestFailed, UserNotFound, ServerBusy, PlayerRecord, JobCounter
+from src.scrape.exceptions import RequestFailed, UserNotFound, ServerBusy
+from src.data.types import PlayerRecord
 from src.scrape.requests import get_hiscores_page, get_player_stats
 
 
@@ -29,6 +30,26 @@ class UsernameJob:
     priority: int
     username: str
     result: PlayerRecord = None
+
+
+class JobCounter:
+    """ A counter shared among workers to track the job currently being enqueued. """
+
+    def __init__(self, value: int):
+        self.v = value
+        self.nextcalled = asyncio.Event()
+
+    @property
+    def value(self):
+        return self.v
+
+    def next(self, n=1):
+        self.v += n
+        self.nextcalled.set()
+
+    async def await_next(self):
+        await self.nextcalled.wait()
+        self.nextcalled.clear()
 
 
 class JobQueue:

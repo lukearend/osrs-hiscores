@@ -1,4 +1,4 @@
-""" Functions for analyzing clustering results. """
+""" Analytics on clustering results. """
 
 import numpy as np
 from numpy.typing import NDArray
