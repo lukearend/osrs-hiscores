@@ -57,4 +57,4 @@ if auth:
 
 
 server = app.server
-app.run_server(debug=debug)
+app.run_server(debug=debug, port=os.getenv('PORT', 8050))
