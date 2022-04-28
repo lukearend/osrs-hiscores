@@ -10,8 +10,8 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
-from src.data.io import dump_pkl
 from src import osrs_skills, csv_api_stats
+from src.data.io import dump_pkl
 from src.scrape.export import csv_to_player
 
 

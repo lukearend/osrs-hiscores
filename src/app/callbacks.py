@@ -15,7 +15,7 @@ from src.app.helpers import load_table_layout, format_skill, skill_upper, valida
 from src.app.plotdata import boxplot_data, scatterplot_data
 from src.app.figures import get_scatterplot, get_empty_boxplot
 from src.data.types import SplitResults
-from src.common import mongo_get_player
+from src.data.db import mongo_get_player
 
 
 def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Collection):

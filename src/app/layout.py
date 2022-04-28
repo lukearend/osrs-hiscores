@@ -4,12 +4,12 @@ from typing import Dict
 import dash_bootstrap_components as dbc
 from dash import Dash, dcc, html
 
+from src import osrs_skills
 from src.data.types import SplitResults
 from src.app.helpers import load_table_layout, format_skill, \
     get_level_tick_marks, get_color_range, get_color_label, get_point_size
 from src.app.plotdata import scatterplot_data
 from src.app.figures import get_empty_boxplot, get_scatterplot
-from src import osrs_skills
 
 
 INIT_SPLIT = 'all'
