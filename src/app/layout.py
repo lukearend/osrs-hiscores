@@ -1,8 +1,10 @@
 """ Static layout of application page. """
+from typing import Dict
 
 import dash_bootstrap_components as dbc
 from dash import Dash, dcc, html
 
+from src.analysis.app import SplitData
 from src.app.helpers import load_table_layout, format_skill, \
     get_level_tick_marks, get_color_range, get_color_label, get_point_size
 from src.app.plotdata import compute_scatterplot_data
@@ -10,18 +12,20 @@ from src.app.figures import get_empty_boxplot, get_scatterplot
 from src import osrs_skills
 
 
-def build_layout(app, app_data) -> Dash:
+INIT_SPLIT = 'all'
+INIT_SKILL = 'total'
+INIT_PTSIZE = 'small'
+INIT_LEVEL_RANGE = [1, 2277]
 
-    init_split = 'all'
-    init_skill = 'total'
-    init_ptsize = 'small'
-    init_level_range = [1, 2277]
 
+def build_layout(app: Dash, app_data: Dict[str, SplitData]):
+
+    app.title = "OSRS account clusters"
     app.layout = dbc.Container([
         dbc.Row(
             dbc.Col([
                 html.Br(),
-                html.H1(children=html.Strong('OSRS player clusters')),
+                html.H1(children=html.Strong('OSRS account clusters')),
                 html.Div(children='''
                     Each point represents a cluster of OSRS players with similar stats.
                     The closer two clusters are, the more similar the accounts are in
@@ -51,7 +55,7 @@ def build_layout(app, app_data) -> Dash:
                                         {'label': 'Combat skills', 'value': 'cb'},
                                         {'label': 'Non-combat skills', 'value': 'noncb'},
                                     ],
-                                    value=init_split,
+                                    value=INIT_SPLIT,
                                     clearable=False
                                 )
                             )
@@ -71,10 +75,10 @@ def build_layout(app, app_data) -> Dash:
                                 dcc.Dropdown(
                                     id='current-skill',
                                     options=[
-                                        {'label': format_skill(init_skill), 'value': skill}
+                                        {'label': format_skill(INIT_SKILL), 'value': skill}
                                         for skill in osrs_skills(include_total=True)
                                     ],
-                                    value=init_skill,
+                                    value=INIT_SKILL,
                                     clearable=False
                                 )
                             )
@@ -97,10 +101,10 @@ def build_layout(app, app_data) -> Dash:
                 dbc.Col(
                     dcc.RangeSlider(
                         id='level-range',
-                        min=init_level_range[0],
-                        max=init_level_range[1],
+                        min=INIT_LEVEL_RANGE[0],
+                        max=INIT_LEVEL_RANGE[1],
                         step=1,
-                        value=init_level_range,
+                        value=INIT_LEVEL_RANGE,
                         tooltip={'placement': 'bottom'},
                         allowCross=False,
                         marks=get_level_tick_marks('total')
@@ -145,7 +149,7 @@ def build_layout(app, app_data) -> Dash:
                                         {'label': s, 'value': s}
                                         for s in ['small', 'medium', 'large']
                                     ],
-                                    value=init_ptsize,
+                                    value=INIT_PTSIZE,
                                     clearable=False
                                 )
                             )
@@ -188,7 +192,7 @@ def build_layout(app, app_data) -> Dash:
                             dcc.Graph(
                                 id='box-plot',
                                 style={'height': '20vh'},
-                                figure=get_empty_boxplot(init_split, app_data[init_split].skills)
+                                figure=get_empty_boxplot(INIT_SPLIT, app_data[INIT_SPLIT].skills)
                             )
                         ]),
                         align='center'
@@ -201,11 +205,11 @@ def build_layout(app, app_data) -> Dash:
                     id='scatter-plot',
                     clear_on_unhover=True,
                     figure=get_scatterplot(
-                        df=compute_scatterplot_data(app_data[init_split], init_skill, init_level_range),
-                        colorbar_limits=get_color_range(init_skill),
-                        colorbar_label=get_color_label(init_skill),
-                        size_factor=get_point_size(init_ptsize),
-                        axis_limits=app_data[init_split].xyz_axlims
+                        df=compute_scatterplot_data(app_data[INIT_SPLIT], INIT_SKILL, INIT_LEVEL_RANGE),
+                        colorbar_limits=get_color_range(INIT_SKILL),
+                        colorbar_label=get_color_label(INIT_SKILL),
+                        size_factor=get_point_size(INIT_PTSIZE),
+                        axis_limits=app_data[INIT_SPLIT].xyz_axlims
                     ),
                 ),
                 width=7
@@ -216,20 +220,16 @@ def build_layout(app, app_data) -> Dash:
         dbc.Row(dbc.Col(html.Br()))
     ])
 
-    return app
-
 
 def build_level_table(name: str) -> dbc.Col:
-    skills_layout = load_table_layout()
 
+    skills_layout = load_table_layout()
     table_rows = []
     for skill_row in skills_layout:
-
         table_row = []
         for skill in skill_row:
             icon = html.Div(html.Img(src=f'/assets/icons/{skill}_icon.png'))
             value = html.Div(id=f'{name}-{skill}')
-
             table_elem = dbc.Row(
                 [
                     dbc.Col(icon, width=6),
@@ -240,7 +240,5 @@ def build_level_table(name: str) -> dbc.Col:
                 className='g-1'  # very small gutter between icon and number
             )
             table_row.append(dbc.Col(table_elem, width=4))
-
         table_rows.append(dbc.Row(table_row, align='center'))
-
     return dbc.Col(table_rows)

@@ -2,10 +2,10 @@
 
 """ Dash application to visualize clustering results for the OSRS hiscores. """
 
-import argparse
 import os
 import pickle
 import warnings
+from pathlib import Path
 
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=UserWarning)  # supress deprecation warning from dash_core_components
@@ -20,51 +20,41 @@ from src.analysis.data import load_pkl
 from src import download_s3_obj
 
 
-app = Dash(__name__,
-           title="OSRS account clusters",
-           external_stylesheets=[dbc.themes.BOOTSTRAP])
+mongo_url = os.getenv("OSRS_MONGO_URI", "localhost:27017")
+coll_name = os.getenv("OSRS_APPDATA_COLL", "players")
+deployment = os.getenv("OSRS_DEPLOY_MODE", 'local')
+data_file = os.getenv("OSRS_APPDATA_FILE", None)
+auth = os.getenv("OSRS_REQUIRE_AUTH", None)
+debug = os.getenv("OSRS_DEBUG_MODE", None)
+
+auth = True if auth is not None and auth.lower() != 'false' else False
+debug = True if debug is None else debug.lower() != 'false'
+if deployment == 'cloud':
+    if data_file is None:
+        raise ValueError("missing config variable: OSRS_APPDATA_FILE")
+elif deployment == 'local':
+    if data_file is None:
+        data_file = str(Path(__name__).resolve().parent / "data" / "interim" / "appdata.pkl")
+else:
+    raise ValueError(f"unrecognized deployment type '{deployment}' (options: 'local', 'cloud')")
+
+
+player_coll = connect_mongo(mongo_url, coll_name)
+if deployment == 'cloud':
+    s3_bucket, obj_key = data_file.replace('s3://', '').split('/', maxsplit=1)
+    app_data = pickle.loads(download_s3_obj(s3_bucket, obj_key))
+else:
+    app_data = load_pkl(data_file)
+
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+build_layout(app, app_data)
+add_callbacks(app, app_data, player_coll)
+
+if auth:
+    auth_coll = connect_mongo(mongo_url, 'auth')
+    auth_pairs = {doc['username']: doc['password'] for doc in auth_coll.find()}
+    dash_auth.BasicAuth(app, username_password_list=auth_pairs)
+
 
 server = app.server
-
-
-if __name__ == '__main__':
-    parser = argparse.ArgumentParser(description="Run main Dash application.")
-    parser.add_argument('--mongo-url', help="use Mongo instance running at this URL")
-    parser.add_argument('--collection', help="collection containing player data")
-    parser.add_argument('--deployment', default="local", choices=['local', 'cloud'], help="deployment type")
-    parser.add_argument('--data-file', help="path to main data file (an S3 path for 'cloud' deployment)")
-    parser.add_argument('--auth', action="store_true", help="if set, require authentication")
-    parser.add_argument('--debug', action="store_true", help="if set, run in debug mode")
-    args = parser.parse_args()
-
-    for name, val in args.__dict__.items():
-        env_var = dict(
-            mongo_url="OSRS_MONGO_URI",
-            collection="OSRS_APPDATA_COLL",
-            deployment="OSRS_DEPLOY_MODE",
-            data_file="OSRS_APPDATA_FILE",
-            auth="OSRS_ENABLE_AUTH",
-            debug="OSRS_DEBUG_MODE"
-        )[name]
-        val = os.getenv(env_var, val)
-        if val is None:
-            raise ValueError(f"missing argument: '--{name.replace('_', '-')}' or environment variable '{env_var}'")
-        args.__dict__[name] = val
-
-    player_coll = connect_mongo(args.mongo_url, args.collection)
-
-    if args.deployment == 'cloud':
-        s3_bucket, obj_key = args.data_file.replace('s3://', '').split('/', maxsplit=1)
-        app_data = pickle.loads(download_s3_obj(s3_bucket, obj_key))
-    else:
-        app_data = load_pkl(args.data_file)
-
-    if args.auth:
-        auth_coll = connect_mongo(args.mongo_url, 'auth')
-        VALID_AUTH_PAIRS = {doc['username']: doc['password'] for doc in auth_coll.find()}
-        dash_auth.BasicAuth(app, VALID_AUTH_PAIRS)
-
-    # todo: add these outside of __main__. Currently broken.
-    app = build_layout(app, app_data)
-    app = add_callbacks(app, app_data, player_coll)
-    app.run_server(debug=args.debug)
+app.run_server(debug=debug)

@@ -17,7 +17,7 @@ from src.app.figures import get_scatterplot, get_empty_boxplot
 from src.analysis.app import SplitData, mongo_get_player
 
 
-def add_callbacks(app: Dash, app_data: Dict[str, SplitData], player_coll: Collection) -> Dash:
+def add_callbacks(app: Dash, app_data: Dict[str, SplitData], player_coll: Collection):
 
     @app.callback(
         Output('scatter-plot', 'figure'),
@@ -348,5 +348,3 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitData], player_coll: Collec
             return "Cluster level ranges"
         players = 'player' if cluster['size'] == 1 else 'players'
         return f"Cluster {cluster['id']} level ranges ({cluster['size']} {players})"
-
-    return app
