@@ -82,7 +82,7 @@ $(xyz).pkl: $(centroids).pkl
 
 mongo_url := $(or $(OSRS_MONGO_URI), localhost:27017)
 app_coll  := $(or $(OSRS_APPDATA_COLL), players)
-appdata   := $(ROOT)/data/interim/appdata
+appdata   := $(or $(OSRS_APPDATA_FILE), $(ROOT)/data/interim/appdata)
 
 appdata: $(appdata).pkl ## Build final application data.
 
