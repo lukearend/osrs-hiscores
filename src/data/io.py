@@ -30,6 +30,11 @@ def dump_pkl(obj: Any, file: str):
         pickle.dump(obj, f)
 
 
+def import_players_csv(file: str) -> pd.DataFrame:
+    """ Read player stats dataset from a CSV file. """
+
+    return pd.read_csv(file, index_col='username').drop('rank', axis=1)
+
 def export_players_csv(players_df: pd.DataFrame, out_file: str):
     """ Write a player stats dataset to CSV file. """
 

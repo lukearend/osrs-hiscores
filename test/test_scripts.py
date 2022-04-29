@@ -11,7 +11,7 @@ from scripts.cluster_players import main as cluster_players
 from scripts.compute_quartiles import main as compute_quartiles
 from scripts.dim_reduce_clusters import main as dim_reduce_clusters
 from src.data.db import connect_mongo, mongo_get_player
-from src.data.io import export_players_csv, export_clusterids_csv, export_centroids_csv
+from src.data.io import export_players_csv, export_clusterids_csv, export_centroids_csv, import_players_csv
 from src.data.types import PlayerResults, SplitResults
 from src import osrs_skills
 
@@ -35,7 +35,7 @@ global xyz_dict
 def setup():
     global players_df
     stats_file = Path(__file__).resolve().parent / "data" / "test-data.csv"
-    players_df = pd.read_csv(stats_file, index_col='username').drop('rank', axis=1)
+    players_df = import_players_csv(stats_file)
     players_df[np.isnan(players_df)] = 1
 
 
