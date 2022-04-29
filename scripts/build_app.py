@@ -46,7 +46,8 @@ def build_app_data(splits: OrderedDict[str, List[str]],
 
 def build_app_database(players: pd.DataFrame,
                        clusterids: pd.DataFrame,
-                       collection: Collection):
+                       collection: Collection,
+                       batch_size: int = 5000):
 
     if collection.count_documents({}) > 0:
         print("found partial collection, dropping")
@@ -59,7 +60,7 @@ def build_app_database(players: pd.DataFrame,
             player_clusterids = clusterids.loc[uname].to_dict()
             player = PlayerResults(username=uname, stats=list(player_stats), clusterids=player_clusterids)
             batch.append(player_to_mongodoc(player))
-            if len(batch) >= 5000:
+            if len(batch) >= batch_size:
                 collection.insert_many(batch)
                 pbar.update(len(batch))
                 batch = []

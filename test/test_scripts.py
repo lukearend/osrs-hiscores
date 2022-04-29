@@ -22,7 +22,7 @@ SPLITS = OrderedDict([
     ("last10", ["smithing", "mining", "herblore", "agility", "thieving",
                 "slayer", "farming", "runecraft", "hunter", "construction"])
 ])
-NCLUSTERS_PER_SPLIT = {"first5": 50, "last10": 25}
+NCLUSTERS_PER_SPLIT = {"first5": 40, "last10": 25}
 UMAP_NN_PER_SPLIT = {"first5": 5, "last10": 10}
 UMAP_MINDIST_PER_SPLIT = {"first5": 0.25, "last10": 0.10}
 
@@ -33,11 +33,10 @@ global quartiles_dict
 global xyz_dict
 
 
-def setup():
+def test_setup():
     global players_df
     stats_file = Path(__file__).resolve().parent / "data" / "test-data.csv"
     players_df = import_players_csv(stats_file)
-    players_df[np.isnan(players_df)] = 1
 
 
 def test_cluster():
@@ -98,7 +97,7 @@ def test_buildapp():
 
     coll = connect_mongo("localhost:27017", 'test')
     coll.drop()
-    build_app_database(players_df, clusterids_df, coll)
+    build_app_database(players_df, clusterids_df, coll, batch_size=789)
     assert coll.count_documents({}) == len(players_df)
 
     for uname in [d['username'] for d in coll.find({}, limit=5)]:
