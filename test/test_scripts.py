@@ -11,7 +11,8 @@ from scripts.cluster_players import main as cluster_players
 from scripts.compute_quartiles import main as compute_quartiles
 from scripts.dim_reduce_clusters import main as dim_reduce_clusters
 from src.data.db import connect_mongo, mongo_get_player
-from src.data.io import export_players_csv, export_clusterids_csv, export_centroids_csv, import_players_csv
+from src.data.io import export_players_csv, export_clusterids_csv, export_centroids_csv, import_players_csv, \
+    import_clusterids_csv, import_centroids_csv
 from src.data.types import PlayerResults, SplitResults
 from src import osrs_skills
 
@@ -37,7 +38,6 @@ def setup():
     stats_file = Path(__file__).resolve().parent / "data" / "test-data.csv"
     players_df = import_players_csv(stats_file)
     players_df[np.isnan(players_df)] = 1
-
 
 
 def test_cluster():
@@ -128,6 +128,8 @@ def test_export():
             assert len(line) == len(header)
         assert nlines == 10000
 
+    assert players_df == import_players_csv(stats_file)
+
     export_clusterids_csv(clusterids_df, clusterids_file)
     with open(clusterids_file, 'r') as f:
         reader = csv.reader(f)
@@ -136,6 +138,8 @@ def test_export():
         for nlines, line in enumerate(reader, start=1):
             assert len(line) == len(header)
         assert nlines == 10000
+
+    assert clusterids_df == import_clusterids_csv(clusterids_file)
 
     export_centroids_csv(centroids_dict, centroids_file)
     with open(centroids_file, 'r') as f:
@@ -154,3 +158,5 @@ def test_export():
                 assert len(skill_vals) == len(SPLITS[split])
                 nlines += 1
         assert nlines == sum(NCLUSTERS_PER_SPLIT.values())
+
+    assert centroids_dict == import_centroids_csv(centroids_file)

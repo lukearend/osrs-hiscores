@@ -6,7 +6,7 @@ import json
 import pickle
 import warnings
 from io import BytesIO
-from typing import OrderedDict, Any
+from typing import OrderedDict, Any, Dict
 
 import boto3
 import pandas as pd
@@ -35,11 +35,20 @@ def import_players_csv(file: str) -> pd.DataFrame:
 
     return pd.read_csv(file, index_col='username').drop('rank', axis=1)
 
-def export_players_csv(players_df: pd.DataFrame, out_file: str):
+
+def import_clusterids_csv(file: str) -> pd.DataFrame:
+    """ Read cluster IDs dataset from a CSV file. """
+
+
+def import_centroids_csv(file: str) -> Dict[str, pd.DataFrame]:
+    """ Read cluster centroids from a CSV file. """
+
+
+def export_players_csv(players_df: pd.DataFrame, file: str):
     """ Write a player stats dataset to CSV file. """
 
     players_df.insert(0, 'rank', range(1, 1 + len(players_df)))
-    with open(out_file, 'w') as f:
+    with open(file, 'w') as f:
         writer = csv.writer(f)
         writer.writerow(['username'] + list(players_df.columns))
         for username, stats in tqdm(players_df.iterrows(), total=len(players_df)):
@@ -52,17 +61,17 @@ def export_players_csv(players_df: pd.DataFrame, out_file: str):
             writer.writerow(line)
 
 
-def export_clusterids_csv(clusterids_df: pd.DataFrame, out_file: str):
+def export_clusterids_csv(clusterids_df: pd.DataFrame, file: str):
     """ Write a cluster IDs dataset to CSV file. """
 
-    clusterids_df.to_csv(out_file, header=True, index=True, index_label='player')
+    clusterids_df.to_csv(file, header=True, index=True, index_label='player')
 
 
-def export_centroids_csv(centroids_dict: OrderedDict[str, pd.DataFrame], out_file):
+def export_centroids_csv(centroids_dict: OrderedDict[str, pd.DataFrame], file):
     """ Write centroids that results from clustering to CSV file. """
 
     header = ['split', 'clusterid'] + osrs_skills(include_total=False)
-    with open(out_file, 'w') as f:
+    with open(file, 'w') as f:
         writer = csv.writer(f)
         writer.writerow(header)
         for split, split_centroids in centroids_dict.items():
