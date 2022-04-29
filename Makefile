@@ -98,7 +98,7 @@ app: ## Run application.
 	export OSRS_MONGO_URI=$(mongo_url) && \
 	export OSRS_APPDATA_COLL=$(appdata_coll) && \
 	export OSRS_APPDATA_FILE=$(appdata) && \
-	python src.app
+	python app.py
 
 # Importing and exporting data --------------------------------------------------------------------
 
