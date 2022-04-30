@@ -3,7 +3,9 @@
 """ Entry point for main application. """
 
 import os
-from src.app import mainapp
+import dash_bootstrap_components as dbc
+from dash import Dash
+from src.app import buildapp
 
 mongo_url = os.getenv("OSRS_MONGO_URI", None)
 appdata_coll = os.getenv("OSRS_APPDATA_COLL", None)
@@ -21,7 +23,8 @@ if appdata_file is None:
 auth = False if auth == 'false' else bool(auth)
 debug = False if debug == 'false' else bool(debug)
 
-app = mainapp(mongo_url, appdata_coll, appdata_file, auth)
+app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+buildapp(app, mongo_url, appdata_coll, appdata_file, auth)
 
 server = app.server
 app.run_server(debug=debug)

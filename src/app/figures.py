@@ -20,8 +20,8 @@ def get_scatterplot(df: DataFrame,
                     player_crosshairs: Tuple = None,
                     clicked_crosshairs: Tuple = None) -> go.Figure:
 
-    # While go.Scatter3d (from graph objects module) would be preferred,
-    # it doesn't allow color and hover data formatting using a dataframe.
+    # go.Scatter3d would be preferred but it doesn't allow
+    # color and hover data formatting using a dataframe.
     fig = px.scatter_3d(
         df,
         x='x',
@@ -62,7 +62,7 @@ def get_scatterplot(df: DataFrame,
                 z=[z, z, None, z, z, None, zmin, zmax],
                 mode='lines',
                 line_color='white',
-                line_width=3,
+                line_width=3 * size_factor,
                 showlegend=False,
                 hoverinfo='skip'
             )
@@ -77,7 +77,7 @@ def get_scatterplot(df: DataFrame,
                 z=[z, z, None, z, z, None, zmin, zmax],
                 mode='lines',
                 line_color='red',
-                line_width=3,
+                line_width=3 * size_factor,
                 showlegend=False,
                 hoverinfo='skip'
             )
@@ -113,6 +113,8 @@ def get_scatterplot(df: DataFrame,
         )
     )
 
+    fig.update_layout(scene_dragmode='orbit')  # use orbital rotation by default
+
     return fig
 
 
@@ -147,7 +149,7 @@ def get_empty_boxplot(split: str, split_skills: List[str]) -> go.Figure:
             x=i + x_offset,
             y=y_offset,
             sizex=1,
-            sizey=12,  # todo: can I divide y_offset in file by 12 and set this to 1?
+            sizey=12,  # determines icon size
             sizing="contain",
             layer="above"
         ))

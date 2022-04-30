@@ -4,7 +4,6 @@ import pickle
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=UserWarning)  # dash_core_components is deprecated
     import dash_auth
-import dash_bootstrap_components as dbc
 from dash import Dash
 
 from src.app.callbacks import add_callbacks
@@ -13,7 +12,7 @@ from src.data.db import connect_mongo
 from src.data.io import load_pkl, download_s3_obj
 
 
-def mainapp(mongo_url, appdata_coll, appdata_file, auth) -> Dash:
+def buildapp(app, mongo_url, appdata_coll, appdata_file, auth) -> Dash:
     """ Visualize clustering results for the OSRS hiscores. """
 
     player_coll = connect_mongo(mongo_url, appdata_coll)
@@ -24,7 +23,6 @@ def mainapp(mongo_url, appdata_coll, appdata_file, auth) -> Dash:
     else:
         app_data = load_pkl(appdata_file)
 
-    app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
     build_layout(app, app_data)
     add_callbacks(app, app_data, player_coll)
 
@@ -32,5 +30,3 @@ def mainapp(mongo_url, appdata_coll, appdata_file, auth) -> Dash:
         auth_coll = connect_mongo(mongo_url, 'auth')
         auth_pairs = {doc['username']: doc['password'] for doc in auth_coll.find()}
         dash_auth.BasicAuth(app, username_password_list=auth_pairs)
-
-    return app

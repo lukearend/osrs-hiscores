@@ -1,4 +1,5 @@
 """ Static layout of application page. """
+
 from typing import Dict
 
 import dash_bootstrap_components as dbc
@@ -29,8 +30,8 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                 html.Div(children='''
                     Each point represents a cluster of OSRS players with
                     similar stats. The closer two clusters are, the more
-                    similar the accounts are in each of those two clusters. The
-                    size of each point corresponds to the number of players
+                    similar the accounts are in each of those two clusters.
+                    The size of each point corresponds to the number of players
                     in that cluster. Axes have no meaningful interpretation.
                 '''),
                 html.Br(),
@@ -202,7 +203,6 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
             dbc.Col(
                 dcc.Graph(
                     id='scatter-plot',
-                    clear_on_unhover=True,
                     figure=get_scatterplot(
                         df=scatterplot_data(app_data[INIT_SPLIT], INIT_SKILL, INIT_LEVEL_RANGE),
                         colorbar_limits=get_color_range(INIT_SKILL),
@@ -227,7 +227,7 @@ def build_level_table(name: str) -> dbc.Col:
     for skill_row in skills_layout:
         table_row = []
         for skill in skill_row:
-            icon = html.Img(src=load_skill_icon(skill))
+            icon = html.Img(src=load_skill_icon(skill), title=skill.capitalize())
             value = html.Div(id=f'{name}-{skill}')
             table_elem = dbc.Row(
                 [
