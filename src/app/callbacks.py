@@ -12,7 +12,7 @@ from pymongo.collection import Collection
 
 from src import osrs_skills
 from src.app.helpers import load_table_layout, format_skill, validate_username, \
-                            get_level_tick_marks, get_color_label, get_color_range, get_point_size
+    get_level_tick_marks, get_color_label, get_color_range, get_point_size
 from src.app.plotdata import boxplot_data, scatterplot_data
 from src.app.figures import get_scatterplot, get_empty_boxplot
 from src.data.types import SplitResults

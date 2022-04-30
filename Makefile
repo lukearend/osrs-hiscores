@@ -26,8 +26,8 @@ env:
 
 # Data scraping and cleaning ----------------------------------------------------------------------
 
-stats_raw   := $(ROOT)/data/raw/player-stats-raw.csv
-stats       := $(ROOT)/data/interim/player-stats.pkl
+stats_raw := $(ROOT)/data/raw/player-stats-raw.csv
+stats     := $(ROOT)/data/interim/player-stats.pkl
 
 scrape: $(stats_raw) ## Scrape hiscores data.
 
@@ -93,14 +93,14 @@ $(appdata): $(stats) $(clusterids) $(centroids) $(quartiles) $(xyz)
 	python build_app.py --splits-file $(splits) --stats-file $(word 1,$^) \
 	                    --clusterids-file $(word 2,$^) --centroids-file $(word 3,$^) \
 	                    --quartiles-file $(word 4,$^) --xyz-file $(word 5,$^) \
-                        --out-file $@ --mongo-url $(mongo_url) --collection $(appdata_coll)
+	                    --out-file $@ --mongo-url $(mongo_url) --collection $(appdata_coll)
 
 # Importing and exporting data --------------------------------------------------------------------
 
+dataset_bucket   := osrshiscores
 stats_final      := $(ROOT)/data/final/player-stats.csv
 clusterids_final := $(ROOT)/data/final/player-clusterids.csv
 centroids_final  := $(ROOT)/data/final/cluster-centroids.csv
-dataset_bucket   := osrshiscores
 
 export: $(stats_final) $(clusterids_final) $(centroids_final) ## Export final results to CSV.
 
@@ -113,14 +113,13 @@ $(clusterids_final): $(clusterids)
 $(centroids_final): $(centroids)
 	@source env/bin/activate && bin/pkl_to_csv --in-file $< --out-file $@ --type centroids
 
-
 upload: push-aws push-gdrive
 
 push-aws: $(stats_raw) $(stats) $(clusterids) $(centroids) $(appdata)
-	@aws s3 cp $(appdata).pkl "s3://$(OSRS_APPDATA_BUCKET)/$(OSRS_APPDATA_S3_KEY)"
-	@aws s3 cp $(centroids) "s3://$(dataset_bucket)/centroids.pkl"
-	@aws s3 cp $(clusterids) "s3://$(dataset_bucket)/clusterids.pkl"
-	@aws s3 cp $(stats) "s3://$(dataset_bucket)/stats.pkl"
+	@aws s3 cp $(appdata) $(OSRS_APPDATA_URL)
+	@aws s3 cp $(centroids) "s3://$(dataset_bucket)/cluster-centroids.pkl"
+	@aws s3 cp $(clusterids) "s3://$(dataset_bucket)/player-clusterids.pkl"
+	@aws s3 cp $(stats) "s3://$(dataset_bucket)/player-stats.pkl"
 
 push-gdrive: $(stats_raw) $(stats_final) $(centroids_final) $(clusterids_final)
 	@gdrive upload $(word 3,$^) -p $(OSRS_GDRIVE_FOLDER) --name cluster-centroids.csv
