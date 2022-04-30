@@ -27,7 +27,7 @@ def load_boxplot_offsets(split) -> Tuple[float, float]:
 
 @lru_cache()
 def load_boxplot_icon(skill) -> Image:
-    path = os.path.join(assets_dir(), "icons", f"{skill}_icon.png")
+    path = os.path.join(assets_dir(), 'icons', f'{skill}_icon.png')
     return Image.open(path)
 
 
@@ -39,16 +39,12 @@ def validate_username(username):
     return True
 
 
-def skill_upper(skill):
-    return skill[0].upper() + skill[1:]
-
-
 def format_skill(skill):
-    return f"{skill_upper(skill)} level"
+    return f"{skill.capitalize()} level"
 
 
 def get_color_label(skill):
-    return f"{skill_upper(skill)}\nlevel"
+    return f"{skill.capitalize()}\nlevel"
 
 
 def get_color_range(skill):

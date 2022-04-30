@@ -11,7 +11,8 @@ from plotly import graph_objects as go
 from pymongo.collection import Collection
 
 from src import osrs_skills
-from src.app.helpers import load_table_layout, format_skill, skill_upper, validate_username, get_level_tick_marks
+from src.app.helpers import load_table_layout, format_skill, validate_username, \
+                            get_level_tick_marks, get_color_label, get_color_range, get_point_size
 from src.app.plotdata import boxplot_data, scatterplot_data
 from src.app.figures import get_scatterplot, get_empty_boxplot
 from src.data.types import SplitResults
@@ -52,10 +53,10 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Col
 
         return get_scatterplot(
             df,
-            colorbar_label=f"{skill_upper(current_skill)}\nlevel",
-            colorbar_limits=[500, 2277] if current_skill == 'total' else [1, 99],
+            colorbar_label=get_color_label(current_skill),
+            colorbar_limits=get_color_range(current_skill),
             axis_limits=split_data.xyz_axlims,
-            size_factor={'small': 1, 'medium': 2, 'large': 3}[point_size],
+            size_factor=get_point_size(point_size),
             player_crosshairs=player_xyz,
             clicked_crosshairs=clicked_xyz
         )
