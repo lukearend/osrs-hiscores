@@ -1,18 +1,16 @@
 export SHELL := /bin/bash
-
 ROOT := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+.DEFAULT_GOAL = help
 
 ifneq (,$(wildcard .env))
     include .env
 endif
 
-.DEFAULT_GOAL = help
-
 # Top-level ---------------------------------------------------------------------------------------
 
 build: init test download export appdata app ## Build app from downloaded data.
 
-all: init test scrape cluster appdata export upload ## Build repo results from scratch.
+all: init test scrape cluster export appdata upload ## Build repo results from scratch.
 
 init: env ## Initialize repository.
 	mkdir -p data/raw data/interim data/final
@@ -30,7 +28,6 @@ env:
 
 stats_raw   := $(ROOT)/data/raw/player-stats-raw.csv
 stats       := $(ROOT)/data/interim/player-stats.pkl
-stats_final := $(ROOT)/data/final/player-stats.csv
 
 scrape: $(stats_raw) ## Scrape hiscores data.
 
@@ -49,16 +46,12 @@ $(stats): $(stats_raw)
 
 # Clustering and analysis -------------------------------------------------------------------------
 
-splits := $(ROOT)/ref/skill-splits.json
-params := $(ROOT)/ref/split-params.json
-
+splits     := $(ROOT)/ref/skill-splits.json
+params     := $(ROOT)/ref/split-params.json
 clusterids := $(ROOT)/data/interim/player-clusterids.pkl
 centroids  := $(ROOT)/data/interim/cluster-centroids.pkl
 quartiles  := $(ROOT)/data/interim/cluster-quartiles.pkl
 xyz        := $(ROOT)/data/interim/cluster-xyz.pkl
-
-clusterids_final := $(ROOT)/data/final/player-clusterids.csv
-centroids_final  := $(ROOT)/data/final/cluster-centroids.csv
 
 cluster: $(clusterids) $(centroids) ## Cluster players by account stats.
 
@@ -104,6 +97,11 @@ $(appdata): $(stats) $(clusterids) $(centroids) $(quartiles) $(xyz)
 
 # Importing and exporting data --------------------------------------------------------------------
 
+stats_final      := $(ROOT)/data/final/player-stats.csv
+clusterids_final := $(ROOT)/data/final/player-clusterids.csv
+centroids_final  := $(ROOT)/data/final/cluster-centroids.csv
+dataset_bucket   := osrshiscores
+
 export: $(stats_final) $(clusterids_final) $(centroids_final) ## Export final results to CSV.
 
 $(stats_final): $(stats)
@@ -115,7 +113,6 @@ $(clusterids_final): $(clusterids)
 $(centroids_final): $(centroids)
 	@source env/bin/activate && bin/pkl_to_csv --in-file $< --out-file $@ --type centroids
 
-dataset_bucket := osrshiscores
 
 upload: push-aws push-gdrive
 
