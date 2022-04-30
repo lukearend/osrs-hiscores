@@ -54,6 +54,6 @@ if __name__ == '__main__':
 
     players_df = load_pkl(args.stats_file)
     clusterids_df = load_pkl(args.clusterids_file)
-    quartiles_dict = main(players_df, clusterids_df, splits=load_json(args.split_file))
+    quartiles_dict = main(players_df, clusterids_df, splits=load_json(args.splits_file))
     dump_pkl(quartiles_dict, args.out_file)
     print(f"wrote cluster quartiles to {args.out_file}")

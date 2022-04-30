@@ -12,7 +12,7 @@ from numpy.typing import NDArray
 
 @dataclass
 class SplitResults:
-    """ App data for one split of the dataset. """
+    """ Clustering results for one split of the dataset. """
 
     skills: List[str]                # length nskills in split
     cluster_quartiles: xr.DataArray  # shape (5, nclusters, nskills + 1), includes total level

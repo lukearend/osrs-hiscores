@@ -127,7 +127,7 @@ def test_export():
             assert len(line) == len(header)
         assert nlines == 10000
 
-    assert players_df == import_players_csv(stats_file)
+    assert import_players_csv(stats_file).equals(players_df)
 
     export_clusterids_csv(clusterids_df, clusterids_file)
     with open(clusterids_file, 'r') as f:
@@ -138,7 +138,7 @@ def test_export():
             assert len(line) == len(header)
         assert nlines == 10000
 
-    assert clusterids_df == import_clusterids_csv(clusterids_file)
+    assert import_clusterids_csv(clusterids_file).equals(clusterids_df)
 
     export_centroids_csv(centroids_dict, centroids_file)
     with open(centroids_file, 'r') as f:
@@ -158,4 +158,6 @@ def test_export():
                 nlines += 1
         assert nlines == sum(NCLUSTERS_PER_SPLIT.values())
 
-    assert centroids_dict == import_centroids_csv(centroids_file)
+    for split, centroids_df in import_centroids_csv(centroids_file).items():
+        diff = abs(centroids_dict[split] - centroids_df)
+        assert np.all(diff < 5e-6)

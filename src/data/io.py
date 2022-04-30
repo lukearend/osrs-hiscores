@@ -9,6 +9,7 @@ from io import BytesIO
 from typing import OrderedDict, Any, Dict
 
 import boto3
+import numpy as np
 import pandas as pd
 from tqdm import tqdm, TqdmWarning
 
@@ -33,26 +34,78 @@ def dump_pkl(obj: Any, file: str):
 def import_players_csv(file: str) -> pd.DataFrame:
     """ Read player stats dataset from a CSV file. """
 
-    return pd.read_csv(file, index_col='username').drop('rank', axis=1)
+    stats_df = pd.read_csv(file, index_col='username')
+    stats_df.drop('rank', axis=1, inplace=True)
+    stats_df[np.isnan(stats_df)] = 1
+    return stats_df.astype('uint16')
 
 
 def import_clusterids_csv(file: str) -> pd.DataFrame:
     """ Read cluster IDs dataset from a CSV file. """
 
+    return pd.read_csv(file, index_col='player').astype('int')
 
-def import_centroids_csv(file: str) -> Dict[str, pd.DataFrame]:
+
+def import_centroids_csv(file: str) -> OrderedDict[str, pd.DataFrame]:
     """ Read cluster centroids from a CSV file. """
+
+    raw_df = pd.read_csv(file)
+
+    k_per_split = collections.OrderedDict()
+    last_split = None
+    for split in raw_df['split']:
+        if split != last_split:
+            k_per_split[split] = 1
+            last_split = split
+        else:
+            k_per_split[split] += 1
+
+    centroids_per_split = collections.OrderedDict()
+    cursor = 0
+    for split, nclusters in k_per_split.items():
+        split_df = raw_df.iloc[cursor:cursor + nclusters]
+        centroids = split_df.drop('split', axis=1)
+        centroids.set_index('clusterid', drop=True, inplace=True)
+        centroids.dropna(axis=1, inplace=True)
+        centroids_per_split[split] = centroids
+        cursor += nclusters
+
+    return centroids_per_split
+
+
+    # splits.append(split)
+    #
+    # split = None
+    # for i, row in raw_df.iterrows():
+    #     if split is None:
+    #         split = row['split']
+    #     if row['split'] != split:
+    #         skills = centroids[0].index
+    #         centroids_per_split[split] = pd.DataFrame(centroids, index=clusterids, columns=skills)
+    #
+    #         split = row['split']
+    #         centroids = []
+    #         clusterids = []
+    #
+    #     centroid = row.drop(['split', 'clusterid']).dropna()
+    #     centroids.append(centroid)
+    #     clusterids.append(row['clusterid'])
+    #
+    # skills = centroids[0].index
+    # centroids_per_split[split] = pd.DataFrame(centroids, index=clusterids, columns=skills)
+
+    # return centroids_per_split
 
 
 def export_players_csv(players_df: pd.DataFrame, file: str):
     """ Write a player stats dataset to CSV file. """
 
-    players_df.insert(0, 'rank', range(1, 1 + len(players_df)))
+    print("writing player stats to CSV...")
     with open(file, 'w') as f:
         writer = csv.writer(f)
-        writer.writerow(['username'] + list(players_df.columns))
-        for username, stats in tqdm(players_df.iterrows(), total=len(players_df)):
-            line = [username]
+        writer.writerow(['username', 'rank'] + list(players_df.columns))
+        for rank, (uname, stats) in tqdm(enumerate(players_df.iterrows(), 1), total=len(players_df)):
+            line = [uname, rank]
             for n in stats:
                 if n == 0:
                     line.append('')

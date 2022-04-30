@@ -28,70 +28,65 @@ env:
 
 # Data scraping and cleaning ----------------------------------------------------------------------
 
-stats_raw   := $(ROOT)/data/raw/stats-raw
-stats       := $(ROOT)/data/interim/stats
-stats_final := $(ROOT)/data/final/player-stats
+stats_raw   := $(ROOT)/data/raw/player-stats-raw.csv
+stats       := $(ROOT)/data/interim/player-stats.pkl
+stats_final := $(ROOT)/data/final/player-stats.csv
 
-scrape: $(stats_raw).csv ## Scrape hiscores data.
+scrape: $(stats_raw) ## Scrape hiscores data.
 
-clean: $(stats).pkl ## Clean raw scraped dataset.
+clean: $(stats) ## Clean raw scraped dataset.
 
-$(stats_raw).csv:
+$(stats_raw):
 	@source env/bin/activate && cd scripts && \
 	python src.scrape --out-file $(stats_raw).tmp --start-rank 1 --stop-rank 2000000 --num-workers 28 \
 	                  --log-file $(ROOT)/data/raw/scrape.log --log-level INFO --vpn && \
-	mv $(stats_raw).tmp $(stats_raw).csv
+	mv $(stats_raw).tmp $(stats_raw)
 
-$(stats).pkl: $(stats_raw).csv
+$(stats): $(stats_raw)
 	@source env/bin/activate && python scripts/clean_raw_data.py --in-file $< --out-file $@
 
-.SECONDARY: $(stats_raw).csv # don't require $(stats_raw).csv if $(stats).pkl already exists
+.SECONDARY: $(stats_raw) # don't require $(stats_raw) if $(stats) already exists
 
 # Clustering and analysis -------------------------------------------------------------------------
 
-splits           := $(ROOT)/ref/skill-splits.json
-params           := $(ROOT)/ref/split-params.json
-clusterids       := $(ROOT)/data/interim/clusterids
-centroids        := $(ROOT)/data/interim/centroids
-quartiles        := $(ROOT)/data/interim/quartiles
-xyz              := $(ROOT)/data/interim/xyz
-clusterids_final := $(ROOT)/data/final/player-clusterids
-centroids_final  := $(ROOT)/data/final/cluster-centroids
+splits := $(ROOT)/ref/skill-splits.json
+params := $(ROOT)/ref/split-params.json
 
-cluster: $(clusterids).pkl $(centroids).pkl ## Cluster players by account stats.
+clusterids := $(ROOT)/data/interim/player-clusterids.pkl
+centroids  := $(ROOT)/data/interim/cluster-centroids.pkl
+quartiles  := $(ROOT)/data/interim/cluster-quartiles.pkl
+xyz        := $(ROOT)/data/interim/cluster-xyz.pkl
 
-quartiles: $(quartiles).pkl ## Compute cluster stat quartiles.
+clusterids_final := $(ROOT)/data/final/player-clusterids.csv
+centroids_final  := $(ROOT)/data/final/cluster-centroids.csv
 
-dimreduce: $(xyz).pkl ## Reduce cluster centroids to 3D.
+cluster: $(clusterids) $(centroids) ## Cluster players by account stats.
 
-$(clusterids).pkl $(centroids).pkl: $(stats).pkl
+quartiles: $(quartiles) ## Compute cluster stat quartiles.
+
+dimreduce: $(xyz) ## Reduce cluster centroids to 3D.
+
+$(clusterids) $(centroids): $(stats)
 	@source env/bin/activate && cd scripts && \
-	python cluster_players.py --in-file $< --out-clusterids $(clusterids).pkl --out-centroids $(centroids).pkl \
+	python cluster_players.py --in-file $< --out-clusterids $(clusterids) --out-centroids $(centroids) \
 	                          --splits-file $(splits) --params-file $(params) --verbose
 
-$(quartiles).pkl: $(stats).pkl $(clusterids).pkl
+$(quartiles): $(stats) $(clusterids)
 	@source env/bin/activate && cd scripts && \
 	python compute_quartiles.py --stats-file $(word 1,$^) --clusterids-file $(word 2,$^) \
 	                            --splits-file $(splits) --out-file $@
 
-$(xyz).pkl: $(centroids).pkl
+$(xyz): $(centroids)
 	@source env/bin/activate && cd scripts && \
 	python dim_reduce_clusters.py --in-file $< --out-file $@ --params-file $(params)
 
 # Dash application --------------------------------------------------------------------------------
 
-mongo_url     := $(or $(OSRS_MONGO_URI), localhost:27017)
-appdata_coll  := $(or $(OSRS_APPDATA_COLL), appdata)
-appdata       := $(or $(OSRS_APPDATA_FILE), $(ROOT)/data/interim/appdata)
+mongo_url    := $(or $(OSRS_MONGO_URI), localhost:27017)
+appdata_coll := $(or $(OSRS_APPDATA_COLL), appdata)
+appdata      := $(or $(OSRS_APPDATA_FILE), $(ROOT)/data/interim/appdata.pkl)
 
-appdata: app_data.pkl ## Build final application data.
-
-$(appdata).pkl: $(stats).pkl $(clusterids).pkl $(centroids).pkl $(quartiles).pkl $(xyz).pkl
-	@source env/bin/activate && bin/start_mongo && cd scripts && \
-	python build_app.py --splits-file $(splits) --stats-file $(word 1,$^) \
-	                    --clusterids-file $(word 2,$^) --centroids-file $(word 3,$^) \
-	                    --quartiles-file $(word 4,$^) --xyz-file $(word 5,$^) \
-                        --out-file $@ --mongo-url $(mongo_url) --collection $(mongo_coll)
+appdata: $(appdata) ## Build final application data.
 
 app: ## Run application.
 	@source env/bin/activate && bin/start_mongo && \
@@ -100,44 +95,51 @@ app: ## Run application.
 	export OSRS_APPDATA_FILE=$(appdata) && \
 	python app.py
 
+$(appdata): $(stats) $(clusterids) $(centroids) $(quartiles) $(xyz)
+	@source env/bin/activate && bin/start_mongo && cd scripts && \
+	python build_app.py --splits-file $(splits) --stats-file $(word 1,$^) \
+	                    --clusterids-file $(word 2,$^) --centroids-file $(word 3,$^) \
+	                    --quartiles-file $(word 4,$^) --xyz-file $(word 5,$^) \
+                        --out-file $@ --mongo-url $(mongo_url) --collection $(appdata_coll)
+
 # Importing and exporting data --------------------------------------------------------------------
 
-export: $(stats_final).csv $(clusterids_final).csv $(centroids_final).csv ## Export final results to CSV.
+export: $(stats_final) $(clusterids_final) $(centroids_final) ## Export final results to CSV.
 
-$(stats_final).csv: $(stats).pkl
+$(stats_final): $(stats)
 	@source env/bin/activate && bin/pkl_to_csv --in-file $< --out-file $@ --type players
 
-$(clusterids_final).csv: $(clusterids).pkl
+$(clusterids_final): $(clusterids)
 	@source env/bin/activate && bin/pkl_to_csv --in-file $< --out-file $@ --type clusterids
 
-$(centroids_final).csv: $(centroids).pkl
+$(centroids_final): $(centroids)
 	@source env/bin/activate && bin/pkl_to_csv --in-file $< --out-file $@ --type centroids
 
 dataset_bucket := osrshiscores
 
 upload: push-aws push-gdrive
 
-push-aws: $(stats_raw).csv $(stats).pkl $(clusterids).pkl $(centroids).pkl app_data.pkl
+push-aws: $(stats_raw) $(stats) $(clusterids) $(centroids) $(appdata)
 	@aws s3 cp $(appdata).pkl "s3://$(OSRS_APPDATA_BUCKET)/$(OSRS_APPDATA_S3_KEY)"
-	@aws s3 cp $(centroids).pkl "s3://$(dataset_bucket)/centroids.pkl"
-	@aws s3 cp $(clusterids).pkl "s3://$(dataset_bucket)/clusterids.pkl"
-	@aws s3 cp $(stats).pkl "s3://$(dataset_bucket)/stats.pkl"
+	@aws s3 cp $(centroids) "s3://$(dataset_bucket)/centroids.pkl"
+	@aws s3 cp $(clusterids) "s3://$(dataset_bucket)/clusterids.pkl"
+	@aws s3 cp $(stats) "s3://$(dataset_bucket)/stats.pkl"
 
-push-gdrive: $(stats_raw).csv $(stats_final).csv $(centroids_final).csv $(clusterids_final).csv
+push-gdrive: $(stats_raw) $(stats_final) $(centroids_final) $(clusterids_final)
 	@gdrive upload $(word 3,$^) -p $(OSRS_GDRIVE_FOLDER) --name cluster-centroids.csv
 	@gdrive upload $(word 4,$^) -p $(OSRS_GDRIVE_FOLDER) --name player-clusters.csv
 	@gdrive upload $(word 2,$^) -p $(OSRS_GDRIVE_FOLDER) --name player-stats.csv
 	@gdrive upload $(word 1,$^) -p $(OSRS_GDRIVE_FOLDER) --name stats-raw.csv
 
 download: ## Download scraped and clustered data.
-	@source env/bin/activate && bin/download_dataset $(dataset_bucket) $(stats).pkl $(clusterids).pkl $(centroids).pkl
+	@source env/bin/activate && bin/download_dataset $(dataset_bucket) $(stats) $(clusterids) $(centroids)
 
 # Other utilities ---------------------------------------------------------------------------------
 
 ec2-%: # status, start, stop, connect, setup
 	@bin/dev/ec2_instance $*
 
-testdata: $(stats).pkl
+testdata: $(stats)
 	@source env/bin/activate && bin/dev/build_test_data --in-file $< --out-file test/data/test-data.csv
 
 test: lint ## Run test suite.
