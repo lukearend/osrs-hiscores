@@ -7,7 +7,7 @@ from dash import Dash, dcc, html
 from src import osrs_skills
 from src.data.types import SplitResults
 from src.app.helpers import load_table_layout, format_skill, \
-    get_level_tick_marks, get_color_range, get_color_label, get_point_size
+    get_level_tick_marks, get_color_range, get_color_label, get_point_size, load_skill_icon
 from src.app.plotdata import scatterplot_data
 from src.app.figures import get_empty_boxplot, get_scatterplot
 
@@ -227,7 +227,7 @@ def build_level_table(name: str) -> dbc.Col:
     for skill_row in skills_layout:
         table_row = []
         for skill in skill_row:
-            icon = html.Div(html.Img(src=f'/assets/icons/{skill}_icon.png'))
+            icon = html.Img(src=load_skill_icon(skill))
             value = html.Div(id=f'{name}-{skill}')
             table_elem = dbc.Row(
                 [

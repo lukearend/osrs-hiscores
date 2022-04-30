@@ -1,10 +1,9 @@
+import base64
 import string
 import os
 from functools import lru_cache
 from pathlib import Path
 from typing import List, Tuple
-
-from PIL import Image
 
 from src.data.io import load_json
 
@@ -26,9 +25,11 @@ def load_boxplot_offsets(split) -> Tuple[float, float]:
 
 
 @lru_cache()
-def load_boxplot_icon(skill) -> Image:
+def load_skill_icon(skill) -> str:
     path = os.path.join(assets_dir(), 'icons', f'{skill}_icon.png')
-    return Image.open(path)
+    with open(path, 'rb') as f:
+        img_b64 = base64.b64encode(f.read()).decode('utf-8')
+    return f'data:image/png;base64,{img_b64}'
 
 
 def validate_username(username):
