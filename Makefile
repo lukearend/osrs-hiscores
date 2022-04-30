@@ -125,7 +125,7 @@ push-gdrive: $(stats_raw) $(stats_final) $(centroids_final) $(clusterids_final)
 	@gdrive upload $(word 3,$^) -p $(OSRS_GDRIVE_FOLDER) --name cluster-centroids.csv
 	@gdrive upload $(word 4,$^) -p $(OSRS_GDRIVE_FOLDER) --name player-clusters.csv
 	@gdrive upload $(word 2,$^) -p $(OSRS_GDRIVE_FOLDER) --name player-stats.csv
-	@gdrive upload $(word 1,$^) -p $(OSRS_GDRIVE_FOLDER) --name stats-raw.csv
+	@gdrive upload $(word 1,$^) -p $(OSRS_GDRIVE_FOLDER) --name player-stats-raw.csv
 
 download: ## Download scraped and clustered data.
 	@source env/bin/activate && bin/download_dataset $(dataset_bucket) $(stats) $(clusterids) $(centroids)
