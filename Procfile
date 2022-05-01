@@ -1,1 +1,1 @@
-web: gunicorn app.py:server --host 0.0.0.0:$PORT
+web: gunicorn app.py:server --bind 0.0.0.0:$PORT
