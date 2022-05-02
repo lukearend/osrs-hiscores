@@ -27,4 +27,5 @@ app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 buildapp(app, mongo_url, appdata_coll, appdata_file, auth)
 
 server = app.server
-app.run_server(debug=debug, port=os.getenv('PORT', 8050))
+host = "0.0.0.0" if os.getenv('ON_HEROKU', False) else 'localhost'
+app.run_server(debug=debug, host=host, port=os.getenv('PORT', 8050))
