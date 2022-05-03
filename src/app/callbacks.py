@@ -29,37 +29,34 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Col
         Input('level-range', 'value'),
         Input('point-size', 'value')
     )
-    def redraw_scatterplot(current_split: str,
-                           current_skill: str,
-                           current_player: Dict[str, Any],
-                           clicked_cluster: int,
-                           level_range: List[int],
+    def redraw_scatterplot(split: str,
+                           color_skill: str,
+                           highlight_player: Dict[str, Any],
+                           highlight_cluster: int,
+                           cbar_range: List[int],
                            point_size: str) -> go.Figure:
 
-        split_data = app_data[current_split]
-        df = scatterplot_data(split_data, current_skill, level_range)
+        split_data = app_data[split]
+        df = scatterplot_data(split_data, color_skill, cbar_range)
 
-        if current_player is None:
-            player_xyz = None
-        else:
-            player_cluster = current_player['clusterid'][current_split]
+        player_xyz = None
+        if highlight_player is not None:
+            player_cluster = highlight_player['clusterid'][split]
             player_xyz = split_data.cluster_xyz.loc[player_cluster, :].to_numpy()
 
-        if clicked_cluster is None:
-            clicked_xyz = None
-        else:
-            clicked_xyz = split_data.cluster_xyz.loc[clicked_cluster, :].to_numpy()
+        clicked_xyz = None
+        if highlight_cluster is not None:
+            clicked_xyz = split_data.cluster_xyz.loc[highlight_cluster, :].to_numpy()
 
         return get_scatterplot(
             df,
-            colorbar_label=get_color_label(current_skill),
-            colorbar_limits=get_color_range(current_skill),
+            colorbar_label=get_color_label(color_skill),
+            colorbar_limits=get_color_range(color_skill),
             axis_limits=split_data.xyz_axlims,
             size_factor=get_point_size(point_size),
             player_crosshairs=player_xyz,
             clicked_crosshairs=clicked_xyz
         )
-
 
     @app.callback(
         Output('current-skill', 'options'),
@@ -67,12 +64,11 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Col
         Input('current-split', 'value'),
         State('current-skill', 'value'),
     )
-    def set_split(current_split: str, current_skill: str) -> Tuple[List[str], str]:
-
-        if not current_split:
+    def set_split(new_split: str, current_skill: str) -> Tuple[List[str], str]:
+        if not new_split:
             raise PreventUpdate
 
-        split_data = app_data[current_split]
+        split_data = app_data[new_split]
         skills_in_split = ['total'] + split_data.skills
         options = []
         for skill in osrs_skills(include_total=True):
@@ -84,7 +80,6 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Col
         new_skill = current_skill if current_skill in skills_in_split else 'total'
         return options, new_skill
 
-
     @app.callback(
         Output('level-range', 'min'),
         Output('level-range', 'max'),
@@ -94,7 +89,6 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Col
         State('level-range', 'value')
     )
     def set_skill(new_skill, current_range) -> Tuple[int, int, int, Dict[int, str]]:
-
         if not new_skill:
             raise PreventUpdate
 
@@ -112,19 +106,16 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Col
 
         return 1, 99, new_range, marks
 
-
     @app.callback(
         Output('query-event', 'data'),
         Input('username-text', 'value'),
     )
     def query_player(username) -> Dict[str, Any]:
-
         if not username:
             return {
                 'username': '',
                 'response': None
             }
-
         if not validate_username(username):
             return {
                 'username': username,
@@ -146,14 +137,12 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Col
             }
         }
 
-
     @app.callback(
         Output('player-query-text', 'children'),
         Input('query-event', 'data'),
         Input('current-split', 'value'),
     )
-    def set_query_text(query: Dict[str, Any], current_split: str) -> str:
-
+    def set_query_text(query: Dict[str, Any], split: str) -> str:
         username = query['username']
         response = query['response']
         if response is None:
@@ -163,20 +152,18 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Col
         elif response == 404:
             return f"no player '{username}' in dataset"
 
-        split_data = app_data[current_split]
-        cluster_id = response['clusterids'][current_split]
+        split_data = app_data[split]
+        cluster_id = response['clusterids'][split]
         cluster_size = split_data.cluster_sizes[cluster_id]
         uniqueness = split_data.cluster_uniqueness[cluster_id]
 
         return f"Cluster {cluster_id} ({cluster_size} players, {uniqueness:.2%} unique)"
-
 
     @app.callback(
         Output('current-player', 'data'),
         Input('query-event', 'data')
     )
     def set_current_player(query: Dict[str, Any]) -> Dict[str, Any]:
-
         response = query['response']
         if response is None:
             return None
@@ -267,7 +254,6 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Col
             'total_level': medians.loc['total'].item()
         }
 
-
     @app.callback(
         Output('player-table-title', 'children'),
         *[Output(f'player-table-{s}', 'children') for s in osrs_skills(include_total=True)],
@@ -281,14 +267,13 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Col
         table_vals = [str(n) if n > 0 else '-' for n in player_data['stats']]
         return tuple([f"Player '{player_data['username']}'", *table_vals])
 
-
     @app.callback(
         Output('cluster-table-title', 'children'),
         *[Output(f'cluster-table-{s}', 'children') for s in load_table_layout(flat=True)],
         Input('current-cluster', 'data'),
         State('current-split', 'value'),
     )
-    def update_cluster_table(cluster_data: Dict[str, Any], current_split: str) -> Tuple[str, ...]:
+    def update_cluster_table(cluster_data: Dict[str, Any], split: str) -> Tuple[str, ...]:
 
         table_skills = load_table_layout(flat=True)
         if cluster_data is None:
@@ -298,7 +283,7 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Col
         total_col = table_skills.index('total')
         table_vals[total_col] = cluster_data['total_level']
 
-        split_data = app_data[current_split]
+        split_data = app_data[split]
         for i, skill in enumerate(split_data.skills):
             skill_level = cluster_data['centroid'][i]
             table_i = table_skills.index(skill)
@@ -306,14 +291,12 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Col
 
         return tuple([f"Cluster {cluster_data['id']}", *table_vals])
 
-
     @app.callback(
         Output('box-plot', 'figure'),
         Input('current-split', 'value')
     )
-    def redraw_box_plot(current_split: str) -> go.Figure:
-        return get_empty_boxplot(current_split, app_data[current_split].skills)
-
+    def redraw_box_plot(split: str) -> go.Figure:
+        return get_empty_boxplot(split, app_data[split].skills)
 
     @app.callback(
         Output('box-plot', 'extendData'),
@@ -321,13 +304,13 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Col
         Input('current-cluster', 'data'),
         State('current-split', 'value'),
     )
-    def update_box_plot(_, current_cluster: Dict[str, Any], current_split: str) -> Dict[str, Any]:
+    def update_box_plot(_, cluster: Dict[str, Any], split: str) -> Dict[str, Any]:
 
-        split_data = app_data[current_split]
-        if current_cluster is None:
+        split_data = app_data[split]
+        if cluster is None:
             plot_data = boxplot_data(split_data, clusterid=None)
         else:
-            plot_data = boxplot_data(split_data, clusterid=current_cluster['id'])
+            plot_data = boxplot_data(split_data, clusterid=cluster['id'])
         return [
             {
                 'lowerfence': [plot_data['lowerfence']],
@@ -336,9 +319,9 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Col
                 'q3': [plot_data['q3']],
                 'upperfence': [plot_data['upperfence']]
             },
-            [0], len(plot_data['median'])
+            [0],                      # insert index
+            len(plot_data['median'])  # max length
         ]
-
 
     @app.callback(
         Output('box-plot-text', 'children'),
