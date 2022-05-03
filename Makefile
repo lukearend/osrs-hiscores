@@ -142,7 +142,7 @@ test: lint ## Run test suite.
 	@source env/bin/activate && bin/start_mongo && pytest test
 
 lint:
-	@source env/bin/activate && pycodestyle src scripts --ignore=E301,E302,E303,E402,E501
+	@source env/bin/activate && pycodestyle src scripts --ignore=E301,E302,E402,E501
 	@echo "code check passed"
 
 help: ## Print this help.

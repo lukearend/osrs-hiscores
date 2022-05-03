@@ -73,30 +73,6 @@ def import_centroids_csv(file: str) -> OrderedDict[str, pd.DataFrame]:
     return centroids_per_split
 
 
-    # splits.append(split)
-    #
-    # split = None
-    # for i, row in raw_df.iterrows():
-    #     if split is None:
-    #         split = row['split']
-    #     if row['split'] != split:
-    #         skills = centroids[0].index
-    #         centroids_per_split[split] = pd.DataFrame(centroids, index=clusterids, columns=skills)
-    #
-    #         split = row['split']
-    #         centroids = []
-    #         clusterids = []
-    #
-    #     centroid = row.drop(['split', 'clusterid']).dropna()
-    #     centroids.append(centroid)
-    #     clusterids.append(row['clusterid'])
-    #
-    # skills = centroids[0].index
-    # centroids_per_split[split] = pd.DataFrame(centroids, index=clusterids, columns=skills)
-
-    # return centroids_per_split
-
-
 def export_players_csv(players_df: pd.DataFrame, file: str):
     """ Write a player stats dataset to CSV file. """
 

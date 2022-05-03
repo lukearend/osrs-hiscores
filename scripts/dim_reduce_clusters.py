@@ -34,7 +34,6 @@ if __name__ == '__main__':
     parser.add_argument('--params-file', required=True, type=str, help="load UMAP parameters from this file")
     args = parser.parse_args()
 
-
     nn_per_split = {split: params['n_neighbors'] for split, params in load_json(args.params_file).items()}
     mindist_per_split = {split: params['min_dist'] for split, params in load_json(args.params_file).items()}
     centroids_dict = load_pkl(args.in_file)

@@ -1,6 +1,5 @@
-""" Dynamic behavior of application. """
+""" Dynamic application behavior. """
 
-from datetime import datetime
 from typing import List, Dict, Any, Tuple
 
 import numpy as np
