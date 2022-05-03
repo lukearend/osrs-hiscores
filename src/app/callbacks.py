@@ -175,73 +175,57 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Col
             raise PreventUpdate
 
         stats = [None if n == -1 else n for n in response['stats']]
-
         return {
             'username': response['username'],
             'clusterid': response['clusterids'],
             'stats': stats
         }
 
-
     @app.callback(
         Output('clicked-cluster', 'data'),
-        Output('last-clicked-ts', 'data'),
-        Input('scatter-plot', 'clickData'),
         Input('current-split', 'value'),
-        State('clicked-cluster', 'data'),
-        State('last-clicked-ts', 'data')
+        Input('click-listener', 'event'),
+        Input('scatter-plot', 'clickData')
     )
-    def set_clicked_cluster(click_data: Dict[str, Any], _,
-                            current_cluster: int,
-                            last_clicked_ts: float) -> Tuple[int, int]:
+    def set_clicked_cluster(current_split: str,
+                            click_event: Any,
+                            click_data: Dict[str, Any]) -> Tuple[int, int]:
 
-        trigger = callback_context.triggered[0]['prop_id']
-        if trigger == 'current-split.value':
-            return None, no_update
-
-        elif trigger == 'scatter-plot.clickData':
+        triggers = [d['prop_id'] for d in callback_context.triggered]
+        if 'current-split.value' in triggers:
+            return None
+        elif 'scatter-plot.clickData' in triggers:
             if click_data is None:
                 raise PreventUpdate
-
-            clicked_cluster = click_data['points'][0]['customdata'][0]
-
-            now = datetime.now().timestamp()
-            debounce = True if last_clicked_ts and now - last_clicked_ts < 0.3 else False
-            if debounce and (clicked_cluster == current_cluster or current_cluster is None):
-                raise PreventUpdate
-
-            if current_cluster == clicked_cluster:
-                return None, now
-            return clicked_cluster, now
-
-        raise PreventUpdate
-
+            return click_data['points'][0]['customdata'][0]
+        else:
+            return None  # clicked on figure background
 
     @app.callback(
         Output('current-cluster', 'data'),
-        Input('current-player', 'data'),
         Input('current-split', 'value'),
+        Input('current-player', 'data'),
+        Input('clicked-cluster', 'data'),
         Input('scatter-plot', 'hoverData'),
-        State('clicked-cluster', 'data'),
     )
-    def set_current_cluster(player_data: Dict[str, Any],
-                            current_split: str,
-                            hover_data: Dict[str, Any],
-                            clicked_cluster: int) -> Dict[str, any]:
+    def set_current_cluster(split: str,
+                            current_player: Dict[str, Any],
+                            clicked_cluster: int,
+                            hover_data: Dict[str, Any]) -> Dict[str, any]:
 
-        if hover_data is not None:
-            point = hover_data['points'][0]
-            if point['curveNumber'] == 1:  # hovered over a line
-                raise PreventUpdate
-            cluster_id = point['customdata'][0]
-        elif clicked_cluster is not None:
+        cluster_id = None
+        if current_player:
+            cluster_id = current_player['clusterid'][split]
+        if clicked_cluster is not None:
             cluster_id = clicked_cluster
-        elif player_data is not None:
-            cluster_id = player_data['clusterid'][current_split]
-        else:
+        if hover_data:
+            point = hover_data['points'][0]
+            if point['curveNumber'] == 0:  # hovered over a line
+                cluster_id = point['customdata'][0]
+        if cluster_id is None:
             return None
 
-        split_data = app_data[current_split]
+        split_data = app_data[split]
         cluster_size = split_data.cluster_sizes[cluster_id]
         uniqueness = split_data.cluster_uniqueness[cluster_id]
         medians = split_data.cluster_quartiles.loc[50, cluster_id, :]  # 50th percentile

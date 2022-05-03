@@ -4,6 +4,7 @@ from typing import Dict
 
 import dash_bootstrap_components as dbc
 from dash import Dash, dcc, html
+from dash_extensions import EventListener
 
 from src import osrs_skills
 from src.data.types import SplitResults
@@ -166,7 +167,6 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
         dcc.Store(id='current-player'),
         dcc.Store(id='current-cluster'),
         dcc.Store(id='clicked-cluster'),
-        dcc.Store(id='last-clicked-ts'),
         dbc.Row([
             dbc.Col(
                 [
@@ -201,15 +201,22 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                 width=5
             ),
             dbc.Col(
-                dcc.Graph(
-                    id='scatter-plot',
-                    figure=get_scatterplot(
-                        df=scatterplot_data(app_data[INIT_SPLIT], INIT_SKILL, INIT_LEVEL_RANGE),
-                        colorbar_limits=get_color_range(INIT_SKILL),
-                        colorbar_label=get_color_label(INIT_SKILL),
-                        size_factor=get_point_size(INIT_PTSIZE),
-                        axis_limits=app_data[INIT_SPLIT].xyz_axlims
-                    ),
+                EventListener(
+                    id='click-listener',  # Detect clicks anywhere on the main figure.
+                    events=[{'event': 'mousedown', 'props': ['x', 'y']}],
+                    children=[
+                        dcc.Graph(
+                            id='scatter-plot',
+                            figure=get_scatterplot(
+                                df=scatterplot_data(app_data[INIT_SPLIT], INIT_SKILL, INIT_LEVEL_RANGE),
+                                colorbar_limits=get_color_range(INIT_SKILL),
+                                colorbar_label=get_color_label(INIT_SKILL),
+                                size_factor=get_point_size(INIT_PTSIZE),
+                                axis_limits=app_data[INIT_SPLIT].xyz_axlims
+                            ),
+                            clear_on_unhover=True
+                        )
+                    ]
                 ),
                 width=7
             )
