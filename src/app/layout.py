@@ -19,114 +19,50 @@ INIT_SKILL = 'total'
 INIT_PTSIZE = 'small'
 INIT_LEVEL_RANGE = [1, 2277]
 
+LEFT_PANEL_WIDTH = 4
+
 
 def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
 
     app.title = "OSRS account clusters"
     app.layout = dbc.Container([
 
-        dbc.Row(dbc.Col(html.Br())),
+        html.Br(),
 
         # Frontmatter
-        dbc.Row(dbc.Col([
-            html.H1(children=html.Strong("OSRS account clusters")),
-            html.Div(children="""
-                Each point represents a cluster of OSRS players with
-                similar stats. The closer two clusters are, the more
-                similar the accounts are in each of those two clusters.
-                The size of each point corresponds to the number of players
-                in that cluster. Axes have no meaningful interpretation.
-            """)
-        ])),
+        dbc.Row(dbc.Col(html.H1(html.Strong("OSRS account clusters")))),
 
-        dbc.Row(dbc.Col(html.Br())),
-
-        dbc.Row([
-
-            # Cluster-by dropdown
-            dbc.Col(dbc.Row([
-                dbc.Col(html.Div(children="Cluster by:"), width=3),
-                dbc.Col(dcc.Dropdown(
-                    id='current-split',
-                    options=[
-                        {'label': 'All skills', 'value': 'all'},
-                        {'label': 'Combat skills', 'value': 'cb'},
-                        {'label': 'Non-combat skills', 'value': 'noncb'},
-                    ],
-                    value=INIT_SPLIT,
-                    clearable=False
-                ))
-            ], align='center'), width=6),
-
-            # Color-by dropdown
-            dbc.Col(dbc.Row([
-                dbc.Col(html.Div(children="Color by:"), width=3),
-                dbc.Col(dcc.Dropdown(
-                    id='current-skill',
-                    options=[
-                        {'label': format_skill(INIT_SKILL), 'value': skill}
-                        for skill in osrs_skills(include_total=True)
-                    ],
-                    value=INIT_SKILL,
-                    clearable=False
-                ))
-            ], align='center'), width=6)
-
-        ], align='center', style={'padding-bottom': '1vh'}),
-
-        dbc.Row([
-
-            # Level slider
-            dbc.Col(html.Div(children="Show levels:"), width='auto'),
-            dbc.Col(dcc.RangeSlider(
-                id='level-range',
-                min=INIT_LEVEL_RANGE[0],
-                max=INIT_LEVEL_RANGE[1],
-                step=1,
-                value=INIT_LEVEL_RANGE,
-                tooltip={'placement': 'bottom'},
-                allowCross=False,
-                marks=get_level_tick_marks('total')
-            ))
-
-        ], align='center', style={'padding-bottom': '1vh'}),
-
-        dcc.Store(id='query-event'),
-
-        dbc.Row([
-
-            # Player lookup
-            dcc.Store(id='current-player'),
-            dbc.Col(dbc.Row([
-                dbc.Col(html.Div(children="Lookup player:"), width='auto'),
-                dbc.Col(dcc.Input(
-                    id='username-text',
-                    type='text',
-                    placeholder="e.g. 'snakeylime'",
-                    maxLength=12,
-                    debounce=True
-                ), width='auto'),
-                dbc.Col(html.Div(id='player-query-text'))
-            ], align='center'), width=9),
-
-            # Point size
-            dbc.Col(dbc.Row([
-                dbc.Col(html.Div(children="Point size:"), width='auto'),
-                dbc.Col(dcc.Dropdown(
-                    id='point-size',
-                    options=[{'label': s, 'value': s} for s in ['small', 'medium', 'large']],
-                    value=INIT_PTSIZE,
-                    clearable=False
-                ))
-            ], align='center', justify='end'), width=3)
-
-        ], style={'padding-bottom': '1vh'}),
+        dbc.Row(dbc.Col(html.Div("""
+            Each point represents a cluster of OSRS players with
+            similar stats. The closer two clusters are, the more
+            similar the accounts are in each of those two clusters.
+            The size of each point corresponds to the number of players
+            in that cluster. Axes have no meaningful interpretation.
+        """))),
 
         html.Br(),
 
         dbc.Row([
 
+            # Left panel
             dbc.Col([
+
+                # Player lookup
+                dcc.Store(id='query-event'),
+                dcc.Store(id='current-player'),
+                dbc.Row([
+                    dbc.Col(html.Div(children="Lookup player:"), width='auto'),
+                    dbc.Col(dcc.Input(
+                        id='username-text',
+                        type='text',
+                        placeholder="e.g. 'snakeylime'",
+                        maxLength=12,
+                        debounce=True
+                    ), width='auto'),
+                    dbc.Col(html.Div(id='player-query-text'))
+                ], align='center'),
+
+                html.Br(),
 
                 dbc.Row([
 
@@ -154,34 +90,105 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                         style={'height': '20vh'},
                         figure=get_empty_boxplot(INIT_SPLIT, app_data[INIT_SPLIT].skills)
                     )
-                ]),
-                align='center')
+                ]), align='center')
 
-            ], width=5),
+            ], align='center', width=LEFT_PANEL_WIDTH),
 
-            # Scatterplot
-            dcc.Store(id='current-cluster'),
-            dcc.Store(id='clicked-cluster'),
-            dcc.Tooltip(id='tooltip'),
-            dbc.Col(EventListener(
-                id='click-listener',  # Detect clicks anywhere on the main figure.
-                events=[{'event': 'mousedown', 'props': ['x', 'y']}],
-                children=[dcc.Graph(
-                    id='scatter-plot',
-                    figure=get_scatterplot(
-                        df=scatterplot_data(app_data[INIT_SPLIT], INIT_SKILL, INIT_LEVEL_RANGE),
-                        colorbar_limits=get_color_range(INIT_SKILL),
-                        colorbar_label=get_color_label(INIT_SKILL),
-                        size_factor=get_point_size(INIT_PTSIZE),
-                        axis_limits=app_data[INIT_SPLIT].xyz_axlims
-                    ),
-                    clear_on_unhover=True
-                )]
-            ), width=7)
+            # Right panel
+            dbc.Col([
+
+                dbc.Row([
+
+                    # Cluster-by dropdown
+                    dbc.Col(dbc.Row([
+                        dbc.Col(html.Div(children="Cluster by:"), width='auto'),
+                        dbc.Col(dcc.Dropdown(
+                            id='current-split',
+                            options=[
+                                {'label': 'All skills', 'value': 'all'},
+                                {'label': 'Combat skills', 'value': 'cb'},
+                                {'label': 'Non-combat skills', 'value': 'noncb'},
+                            ],
+                            value=INIT_SPLIT,
+                            clearable=False
+                        ))
+                    ], align='center')),
+
+                    # Color-by dropdown
+                    dbc.Col(dbc.Row([
+                        dbc.Col(html.Div(children="Color by:"), width='auto'),
+                        dbc.Col(dcc.Dropdown(
+                            id='current-skill',
+                            options=[
+                                {'label': format_skill(INIT_SKILL), 'value': skill}
+                                for skill in osrs_skills(include_total=True)
+                            ],
+                            value=INIT_SKILL,
+                            clearable=False
+                        ))
+                    ], align='center'))
+
+                ], align='center'),
+
+                dbc.Row([
+
+                    # Point size
+                    dbc.Col(dbc.Row([
+                        dbc.Col(html.Div(children="Point size:"), width='auto'),
+                        dbc.Col(dcc.Dropdown(
+                            id='point-size',
+                            options=[{'label': s, 'value': s} for s in ['small', 'medium', 'large']],
+                            value=INIT_PTSIZE,
+                            clearable=False
+                        ))
+                    ], align='center')),
+
+                    # Level slider
+                    dbc.Col(dbc.Row([
+                        dbc.Col(html.Div(children="Show levels:"), width='auto'),
+                        dbc.Col(dcc.RangeSlider(
+                            id='level-range',
+                            min=INIT_LEVEL_RANGE[0],
+                            max=INIT_LEVEL_RANGE[1],
+                            step=1,
+                            value=INIT_LEVEL_RANGE,
+                            tooltip={'placement': 'bottom'},
+                            allowCross=False,
+                            marks=get_level_tick_marks('total')
+                        ), style={'padding-top': '2vh'})  # padding helps with slider vertical alignment
+                    ], align='center'), width=12 - LEFT_PANEL_WIDTH)
+
+                ], align='center'),
+
+                dbc.Row([
+
+                    # Scatterplot
+                    dcc.Store(id='current-cluster'),
+                    dcc.Store(id='clicked-cluster'),
+                    dcc.Tooltip(id='tooltip'),
+                    dbc.Col(EventListener(
+                        id='click-listener',  # detect clicks anywhere on the main figure
+                        events=[{'event': 'mousedown', 'props': ['x', 'y']}],
+                        children=[dcc.Graph(
+                            id='scatter-plot',
+                            clear_on_unhover=True,
+                            figure=get_scatterplot(
+                                df=scatterplot_data(app_data[INIT_SPLIT], INIT_SKILL, INIT_LEVEL_RANGE),
+                                colorbar_limits=get_color_range(INIT_SKILL),
+                                colorbar_label=get_color_label(INIT_SKILL),
+                                size_factor=get_point_size(INIT_PTSIZE),
+                                axis_limits=app_data[INIT_SPLIT].xyz_axlims
+                            )
+                        )]
+                    ))
+
+                ], align='center'),
+
+            ]),
 
         ]),
 
-        dbc.Row(dbc.Col(html.Br()))
+        html.Br()
     ])
 
 
