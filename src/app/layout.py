@@ -112,7 +112,7 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                             value=INIT_SPLIT,
                             clearable=False
                         ))
-                    ], align='center')),
+                    ], align='center', className='g-2')),  # small gutter between text and dropdown
 
                     # Color-by dropdown
                     dbc.Col(dbc.Row([
@@ -126,7 +126,7 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                             value=INIT_SKILL,
                             clearable=False
                         ))
-                    ], align='center'))
+                    ], align='center', className='g-2'))
 
                 ], align='center'),
 
@@ -141,7 +141,7 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                             value=INIT_PTSIZE,
                             clearable=False
                         ))
-                    ], align='center')),
+                    ], align='center', className='g-2')),
 
                     # Level slider
                     dbc.Col(dbc.Row([
@@ -156,7 +156,7 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                             allowCross=False,
                             marks=get_level_tick_marks('total')
                         ), style={'padding-top': '2vh'})  # padding helps with slider vertical alignment
-                    ], align='center'), width=12 - LEFT_PANEL_WIDTH)
+                    ], align='center', className='g-2'), width=12 - LEFT_PANEL_WIDTH)
 
                 ], align='center'),
 
