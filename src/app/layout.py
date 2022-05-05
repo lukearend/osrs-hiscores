@@ -29,14 +29,14 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
 
         # Frontmatter
         dbc.Row(dbc.Col([
-            html.H1(children=html.Strong('OSRS account clusters')),
-            html.Div(children='''
+            html.H1(children=html.Strong("OSRS account clusters")),
+            html.Div(children="""
                 Each point represents a cluster of OSRS players with
                 similar stats. The closer two clusters are, the more
                 similar the accounts are in each of those two clusters.
                 The size of each point corresponds to the number of players
                 in that cluster. Axes have no meaningful interpretation.
-            ''')
+            """)
         ])),
 
         dbc.Row(dbc.Col(html.Br())),
