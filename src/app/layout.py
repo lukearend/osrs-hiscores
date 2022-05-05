@@ -44,25 +44,90 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
 
         dbc.Row([
 
+            # Username input box
+            dcc.Store(id='query-event'),
+            dcc.Store(id='current-player'),
+            dbc.Col(dbc.Row([
+                dbc.Col(html.Div(children="Lookup player:"), width='auto'),
+                dbc.Col(dcc.Input(
+                    id='username-text',
+                    type='text',
+                    placeholder="e.g. 'snakeylime'",
+                    maxLength=12,
+                    debounce=True
+                ), width='auto'),
+            ], align='center'), width=LEFT_PANEL_WIDTH),
+
+            dbc.Col(dbc.Row([
+
+                # Cluster-by dropdown
+                dbc.Col(dbc.Row([
+                    dbc.Col(html.Div(children="Cluster by:"), width='auto'),
+                    dbc.Col(dcc.Dropdown(
+                        id='current-split',
+                        options=[
+                            {'label': 'All skills', 'value': 'all'},
+                            {'label': 'Combat skills', 'value': 'cb'},
+                            {'label': 'Non-combat skills', 'value': 'noncb'},
+                        ],
+                        value=INIT_SPLIT,
+                        clearable=False
+                    ))
+                ], align='center', className='g-2')),  # small gutter between text and dropdown
+
+                # Color-by dropdown
+                dbc.Col(dbc.Row([
+                    dbc.Col(html.Div(children="Color by:"), width='auto'),
+                    dbc.Col(dcc.Dropdown(
+                        id='current-skill',
+                        options=[
+                            {'label': format_skill(INIT_SKILL), 'value': skill}
+                            for skill in osrs_skills(include_total=True)
+                        ],
+                        value=INIT_SKILL,
+                        clearable=False
+                    ))
+                ], align='center', className='g-2'))
+            ]))
+
+        ], align='center', className='g-0'),
+
+        dbc.Row([
+
+            dbc.Col(html.Div(id='player-query-text'), width=LEFT_PANEL_WIDTH),
+
+            # Level slider
+            dbc.Col(dbc.Row([
+                dbc.Col(html.Div(children="Level range:"), width='auto'),
+                dbc.Col(dcc.RangeSlider(
+                    id='level-range',
+                    min=INIT_LEVEL_RANGE[0],
+                    max=INIT_LEVEL_RANGE[1],
+                    step=1,
+                    value=INIT_LEVEL_RANGE,
+                    tooltip={'placement': 'bottom'},
+                    allowCross=False,
+                    marks=get_level_tick_marks('total')
+                ), style={'padding-top': '2vh'})  # padding helps with slider vertical alignment
+            ], align='center', className='g-0')),
+
+            # Point size
+            dbc.Col(dbc.Row([
+                dbc.Col(html.Div(children="Point size:"), width='auto'),
+                dbc.Col(dcc.Dropdown(
+                    id='point-size',
+                    options=[{'label': s, 'value': s} for s in ['small', 'medium', 'large']],
+                    value=INIT_PTSIZE,
+                    clearable=False
+                ))
+            ], align='center', className='g-2'), width=3),
+
+        ], align='center', className='g-0'),  # no gutter since level slider adds horizontal space
+
+        dbc.Row([
+
             # Left panel
             dbc.Col([
-
-                # Player lookup
-                dcc.Store(id='query-event'),
-                dcc.Store(id='current-player'),
-                dbc.Row([
-                    dbc.Col(html.Div(children="Lookup player:"), width='auto'),
-                    dbc.Col(dcc.Input(
-                        id='username-text',
-                        type='text',
-                        placeholder="e.g. 'snakeylime'",
-                        maxLength=12,
-                        debounce=True
-                    ), width='auto'),
-                    dbc.Col(html.Div(id='player-query-text'))
-                ], align='center'),
-
-                html.Br(),
 
                 dbc.Row([
 
@@ -94,101 +159,29 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
 
             ], align='center', width=LEFT_PANEL_WIDTH),
 
-            # Right panel
-            dbc.Col([
-
-                dbc.Row([
-
-                    # Cluster-by dropdown
-                    dbc.Col(dbc.Row([
-                        dbc.Col(html.Div(children="Cluster by:"), width='auto'),
-                        dbc.Col(dcc.Dropdown(
-                            id='current-split',
-                            options=[
-                                {'label': 'All skills', 'value': 'all'},
-                                {'label': 'Combat skills', 'value': 'cb'},
-                                {'label': 'Non-combat skills', 'value': 'noncb'},
-                            ],
-                            value=INIT_SPLIT,
-                            clearable=False
-                        ))
-                    ], align='center', className='g-2')),  # small gutter between text and dropdown
-
-                    # Color-by dropdown
-                    dbc.Col(dbc.Row([
-                        dbc.Col(html.Div(children="Color by:"), width='auto'),
-                        dbc.Col(dcc.Dropdown(
-                            id='current-skill',
-                            options=[
-                                {'label': format_skill(INIT_SKILL), 'value': skill}
-                                for skill in osrs_skills(include_total=True)
-                            ],
-                            value=INIT_SKILL,
-                            clearable=False
-                        ))
-                    ], align='center', className='g-2'))
-
-                ], align='center'),
-
-                dbc.Row([
-
-                    # Level slider
-                    dbc.Col(dbc.Row([
-                        dbc.Col(html.Div(children="Level range:"), width='auto'),
-                        dbc.Col(dcc.RangeSlider(
-                            id='level-range',
-                            min=INIT_LEVEL_RANGE[0],
-                            max=INIT_LEVEL_RANGE[1],
-                            step=1,
-                            value=INIT_LEVEL_RANGE,
-                            tooltip={'placement': 'bottom'},
-                            allowCross=False,
-                            marks=get_level_tick_marks('total')
-                        ), style={'padding-top': '2vh'})  # padding helps with slider vertical alignment
-                    ], align='center', className='g-0')),
-
-                    # Point size
-                    dbc.Col(dbc.Row([
-                        dbc.Col(html.Div(children="Point size:"), width='auto'),
-                        dbc.Col(dcc.Dropdown(
-                            id='point-size',
-                            options=[{'label': s, 'value': s} for s in ['small', 'medium', 'large']],
-                            value=INIT_PTSIZE,
-                            clearable=False
-                        ))
-                    ], align='center', className='g-2'), width=3),
-
-                ], align='center', className='g-0'),  # no gutter since level slider adds horizontal space
-
-                dbc.Row([
-
-                    # Scatterplot
-                    dcc.Store(id='current-cluster'),
-                    dcc.Store(id='clicked-cluster'),
-                    dcc.Tooltip(id='tooltip'),
-                    dbc.Col(EventListener(
-                        id='click-listener',  # detect clicks anywhere on the main figure
-                        events=[{'event': 'mousedown', 'props': ['x', 'y']}],
-                        children=[dcc.Graph(
-                            id='scatter-plot',
-                            clear_on_unhover=True,
-                            figure=get_scatterplot(
-                                df=scatterplot_data(app_data[INIT_SPLIT], INIT_SKILL, INIT_LEVEL_RANGE),
-                                colorbar_limits=get_color_range(INIT_SKILL),
-                                colorbar_label=get_color_label(INIT_SKILL),
-                                size_factor=get_point_size(INIT_PTSIZE),
-                                axis_limits=app_data[INIT_SPLIT].xyz_axlims
-                            )
-                        )]
-                    ))
-
-                ], align='center'),
-
-            ]),
+            # Scatterplot
+            dcc.Store(id='current-cluster'),
+            dcc.Store(id='clicked-cluster'),
+            dcc.Tooltip(id='tooltip'),
+            dbc.Col(EventListener(
+                id='click-listener',  # detect clicks anywhere on the main figure
+                events=[{'event': 'mousedown', 'props': ['x', 'y']}],
+                children=[dcc.Graph(
+                    id='scatter-plot',
+                    clear_on_unhover=True,
+                    figure=get_scatterplot(
+                        df=scatterplot_data(app_data[INIT_SPLIT], INIT_SKILL, INIT_LEVEL_RANGE),
+                        colorbar_limits=get_color_range(INIT_SKILL),
+                        colorbar_label=get_color_label(INIT_SKILL),
+                        size_factor=get_point_size(INIT_PTSIZE),
+                        axis_limits=app_data[INIT_SPLIT].xyz_axlims
+                    )
+                )]
+            ))
 
         ]),
 
-        html.Br()
+        html.Br(),
     ])
 
 
