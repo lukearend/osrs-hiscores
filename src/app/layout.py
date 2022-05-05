@@ -132,20 +132,9 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
 
                 dbc.Row([
 
-                    # Point size
-                    dbc.Col(dbc.Row([
-                        dbc.Col(html.Div(children="Point size:"), width='auto'),
-                        dbc.Col(dcc.Dropdown(
-                            id='point-size',
-                            options=[{'label': s, 'value': s} for s in ['small', 'medium', 'large']],
-                            value=INIT_PTSIZE,
-                            clearable=False
-                        ))
-                    ], align='center', className='g-2')),
-
                     # Level slider
                     dbc.Col(dbc.Row([
-                        dbc.Col(html.Div(children="Show levels:"), width='auto'),
+                        dbc.Col(html.Div(children="Level range:"), width='auto'),
                         dbc.Col(dcc.RangeSlider(
                             id='level-range',
                             min=INIT_LEVEL_RANGE[0],
@@ -156,9 +145,20 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                             allowCross=False,
                             marks=get_level_tick_marks('total')
                         ), style={'padding-top': '2vh'})  # padding helps with slider vertical alignment
-                    ], align='center', className='g-2'), width=12 - LEFT_PANEL_WIDTH)
+                    ], align='center', className='g-0')),
 
-                ], align='center'),
+                    # Point size
+                    dbc.Col(dbc.Row([
+                        dbc.Col(html.Div(children="Point size:"), width='auto'),
+                        dbc.Col(dcc.Dropdown(
+                            id='point-size',
+                            options=[{'label': s, 'value': s} for s in ['small', 'medium', 'large']],
+                            value=INIT_PTSIZE,
+                            clearable=False
+                        ))
+                    ], align='center', className='g-2'), width=3),
+
+                ], align='center', className='g-0'),  # no gutter since level slider adds horizontal space
 
                 dbc.Row([
 
