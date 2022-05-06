@@ -104,4 +104,11 @@ Methods
 Other notes
 -----------
 
+Free ideas for future work:
+
+* Run the same analysis on the Ironman hiscores.
+* Attempt to identify clusters of bot accounts within the dataset.
+* Try to predict an unknown skill given all other skills for an account.
+* Perform hierarchical clustering to identify super-clusters, or to explore fine-grained structure within clusters.
+
 If scraping hiscores data for a prolonged period of time, you may get blocked due to the high volume of requests. For this reason it is recommended that you use a small number of workers if scraping 25000+ records. There is an option to proxy requests through a VPN using the flag `--vpn`, but this requires access to an OpenVPN-based service and some advanced setup. Please respectful of Jagex's server resources in your usage of this code.
