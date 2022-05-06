@@ -11,7 +11,7 @@ from pymongo.collection import Collection
 
 from src import osrs_skills
 from src.app.helpers import load_table_layout, format_skill, validate_username, \
-    get_level_tick_marks, get_color_label, get_color_range, get_point_size
+    get_level_tick_marks, get_color_label, get_point_size
 from src.app.plotdata import boxplot_data, scatterplot_data
 from src.app.figures import get_scatterplot, get_empty_boxplot
 from src.data.types import SplitResults
@@ -51,7 +51,7 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Col
         return get_scatterplot(
             df,
             colorbar_label=get_color_label(color_skill),
-            colorbar_limits=get_color_range(color_skill),
+            colorbar_ticks=get_level_tick_marks(color_skill),
             axis_limits=split_data.xyz_axlims,
             size_factor=get_point_size(point_size),
             player_crosshairs=player_xyz,
@@ -88,23 +88,20 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Col
         Input('current-skill', 'value'),
         State('level-range', 'value')
     )
-    def set_skill(new_skill, current_range) -> Tuple[int, int, int, Dict[int, str]]:
+    def set_skill(new_skill, level_range) -> Tuple[int, int, int, Dict[int, str]]:
         if not new_skill:
             raise PreventUpdate
 
-        if current_range[0] > 98 or current_range[1] > 99 == [1, 2277] and new_skill != 'total':
-            new_range = [1, 99]
-        elif new_skill == 'total':
-            new_range = [1, 2277]
+        ticks = get_level_tick_marks(new_skill)
+        new_range = ticks[0], ticks[-1]
+
+        if new_range[0] > level_range[-1] or new_range[-1] < level_range[0]:
+            new_range = ticks[0], ticks[-1]
         else:
             new_range = no_update
 
-        marks = get_level_tick_marks(new_skill)
-
-        if new_skill == 'total':
-            return 1, 2277, new_range, marks
-
-        return 1, 99, new_range, marks
+        marks = {i: str(i) for i in get_level_tick_marks(new_skill)}
+        return ticks[0], ticks[-1], new_range, marks
 
     @app.callback(
         Output('query-event', 'data'),
@@ -265,7 +262,7 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Col
 
         table_vals = np.array(len(table_skills) * [''], dtype='object')
         total_col = table_skills.index('total')
-        table_vals[total_col] = cluster_data['total_level']
+        table_vals[total_col] = int(cluster_data['total_level'])
 
         split_data = app_data[split]
         for i, skill in enumerate(split_data.skills):

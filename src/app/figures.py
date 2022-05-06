@@ -14,11 +14,14 @@ from src.app.helpers import load_boxplot_offsets, load_skill_icon
 
 def get_scatterplot(df: DataFrame,
                     colorbar_label: str,
-                    colorbar_limits: Tuple[int],
+                    colorbar_ticks: List[int],
                     axis_limits: Dict[str, NDArray],
                     size_factor: int,
                     player_crosshairs: Tuple = None,
                     clicked_crosshairs: Tuple = None) -> go.Figure:
+
+    cmin = colorbar_ticks[0]
+    cmax = colorbar_ticks[-1]
 
     # go.Scatter3d would be preferred but it doesn't allow
     # color and hover data formatting using a dataframe.
@@ -28,7 +31,7 @@ def get_scatterplot(df: DataFrame,
         y='y',
         z='z',
         color='level',
-        range_color=colorbar_limits,
+        range_color=(cmin, cmax),
         hover_name=[f"Cluster {i}" for i in df['id']],
         custom_data=['id', 'size', 'uniqueness']
     )
@@ -61,7 +64,7 @@ def get_scatterplot(df: DataFrame,
                 y=[y, y, None, ymin, ymax, None, y, y],
                 z=[z, z, None, z, z, None, zmin, zmax],
                 mode='lines',
-                line_color='white',
+                line_color='blue',
                 line_width=3 * size_factor,
                 showlegend=False,
                 hoverinfo='skip'
@@ -109,7 +112,9 @@ def get_scatterplot(df: DataFrame,
                 text=colorbar_label,
                 side='right'
             ),
-            xanchor='right'
+            tickvals=colorbar_ticks,
+            xanchor='right',
+            len=0.8
         )
     )
 

@@ -48,15 +48,11 @@ def get_color_label(skill):
     return f"{skill.capitalize()}\nlevel"
 
 
-def get_color_range(skill):
-    return [500, 2277] if skill == 'total' else [1, 99]
-
-
 def get_point_size(ptsize_name):
     return {'small': 1, 'medium': 2, 'large': 3}[ptsize_name]
 
 
 def get_level_tick_marks(skill):
     if skill == 'total':
-        return {i: str(i) for i in [1, 250, 500, 750, 1000, 1250, 1500, 1750, 2000, 2277]}
-    return {i: str(i) for i in [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 99]}
+        return [500, 750, 1000, 1250, 1500, 1750, 2000, 2277]
+    return [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 99]
