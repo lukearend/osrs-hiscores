@@ -17,7 +17,7 @@ def scatterplot_data(split_data: SplitResults, color_by_skill: str, color_axis_r
     stat_median = split_data.cluster_quartiles[2, :, color_col].to_numpy()
 
     cmin, cmax = color_axis_range
-    within_range = np.logical_and(cmin < stat_median, stat_median <= cmax)
+    within_range = np.logical_and(cmin <= stat_median, stat_median <= cmax)
     show_inds = np.where(within_range)[0].astype('int')
     xyz = split_data.cluster_xyz.iloc[show_inds, :]
     return pd.DataFrame({
