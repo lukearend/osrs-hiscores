@@ -135,6 +135,9 @@ download: ## Download scraped and clustered data.
 ec2-%: # status, start, stop, connect, setup
 	@bin/dev/ec2_instance $*
 
+deploy:
+	git push staging development:master
+
 testdata: $(stats)
 	@source env/bin/activate && bin/dev/build_test_data --in-file $< --out-file test/data/test-data.csv
 
