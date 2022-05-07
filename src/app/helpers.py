@@ -19,12 +19,6 @@ def load_table_layout(flat: bool = False) -> List[List[str]]:
 
 
 @lru_cache()
-def load_boxplot_offsets(split) -> Tuple[float, float]:
-    xy_offsets = load_json(assets_dir() / 'boxplot_offsets.json')
-    return tuple(xy_offsets[split])
-
-
-@lru_cache()
 def load_skill_icon(skill) -> str:
     path = os.path.join(assets_dir(), 'icons', f'{skill}_icon.png')
     with open(path, 'rb') as f:

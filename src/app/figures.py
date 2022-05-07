@@ -9,7 +9,7 @@ import plotly.graph_objects as go
 from numpy.typing import NDArray
 from pandas import DataFrame
 
-from src.app.helpers import load_boxplot_offsets, load_skill_icon
+from src.app.helpers import load_skill_icon
 
 
 def get_scatterplot(df: DataFrame,
@@ -140,24 +140,24 @@ def get_empty_boxplot(split: str, split_skills: List[str]) -> go.Figure:
             )
         ],
         layout_uirevision='constant',
-        layout_margin=dict(b=0, l=0, r=0, t=0),
+        layout_margin=dict(b=12, l=0, r=0, t=0),
         layout_xaxis_tickvals=[],
         layout_xaxis_range=np.array([0, nskills]) - 0.5,
-        layout_yaxis_range=[-15, 100],
+        layout_yaxis_range=[0, 100],
         layout_yaxis_tickvals=[1, 20, 40, 60, 80, 99],
     )
 
-    x_offset, y_offset = load_boxplot_offsets(split)  # icons need different offsets for different splits
     for i, skill in enumerate(split_skills):
         fig.add_layout_image(dict(
             source=load_skill_icon(skill),
-            xref="x",
-            yref="y",
-            x=i + x_offset,
-            y=y_offset,
+            xref="x",          # x has units of x-coordinate on figure
+            yref="paper",      # y has units fraction of figure size
+            xanchor="center",
+            yanchor="top",
+            x=i,
+            y=0,
             sizex=1,
-            sizey=12,  # determines icon size
-            sizing="contain",
+            sizey=0.1,
             layer="above"
         ))
 
