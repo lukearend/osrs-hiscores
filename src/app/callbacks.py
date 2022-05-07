@@ -182,21 +182,21 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Col
         Output('clicked-cluster', 'data'),
         Input('current-split', 'value'),
         Input('click-listener', 'event'),
-        Input('scatter-plot', 'clickData')
+        State('scatter-plot', 'hoverData')
     )
     def set_clicked_cluster(current_split: str,
                             click_event: Any,
-                            click_data: Dict[str, Any]) -> Tuple[int, int]:
+                            hover_data: Dict[str, Any]) -> Tuple[int, int]:
 
         triggers = [d['prop_id'] for d in callback_context.triggered]
         if 'current-split.value' in triggers:
             return None
-        elif 'scatter-plot.clickData' in triggers:
-            if click_data is None:
-                raise PreventUpdate
-            return click_data['points'][0]['customdata'][0]
-        else:
-            return None  # clicked on figure background
+        if hover_data:  # interpret the click using hover info
+            point = hover_data['points'][0]
+            if point['curveNumber'] != 0:  # clicked on a line
+                return None
+            return point['customdata'][0]
+        raise PreventUpdate
 
     @app.callback(
         Output('current-cluster', 'data'),
@@ -217,8 +217,9 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Col
             cluster_id = clicked_cluster
         if hover_data:
             point = hover_data['points'][0]
-            if point['curveNumber'] == 0:  # hovered over a line
-                cluster_id = point['customdata'][0]
+            if point['curveNumber'] != 0:  # hovered over a line
+                raise PreventUpdate
+            cluster_id = point['customdata'][0]
         if cluster_id is None:
             return None
 

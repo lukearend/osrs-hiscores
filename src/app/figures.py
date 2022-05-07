@@ -67,7 +67,8 @@ def get_scatterplot(df: DataFrame,
                 line_color='blue',
                 line_width=3 * size_factor,
                 showlegend=False,
-                hoverinfo='skip'
+                hoverinfo='none',
+                hovertemplate=None
             )
         )
 
@@ -82,7 +83,8 @@ def get_scatterplot(df: DataFrame,
                 line_color='red',
                 line_width=3 * size_factor,
                 showlegend=False,
-                hoverinfo='skip'
+                hoverinfo='none',
+                hovertemplate=None
             )
         )
 
