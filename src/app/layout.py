@@ -33,12 +33,14 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
 
         # Frontmatter
         dbc.Row(dbc.Col(html.H1(html.Strong("OSRS account clusters")))),
-        dbc.Row(dbc.Col(html.Div("""
+        dbc.Row(dbc.Col(dcc.Markdown("""
             Each point represents a cluster of OSRS players with
             similar stats. The closer two clusters are, the more
             similar the accounts are in each of those two clusters.
             The size of each point corresponds to the number of players
             in that cluster. Axes have no meaningful interpretation.
+            Player stats were downloaded from the official [Old School 
+            Runescape hiscores] in April 2022.
         """))),
         html.Br(),
 
@@ -81,7 +83,7 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                     html.Div(id='box-plot-text'),
                     dcc.Graph(
                         id='box-plot',
-                        style={'height': '20vh'},
+                        style={'height': '25vh'},
                         figure=get_empty_boxplot(INIT_SPLIT, app_data[INIT_SPLIT].skills)
                     )
                 ]), align='center'),
@@ -99,6 +101,9 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                         dbc.Col(html.Div(children="Cluster by:"), width='auto'),
                         dbc.Col(dcc.Dropdown(
                             id='current-split',
+                            # style={'color': 'black',
+                            #        'background-color': 'rgba(255, 255, 255, 0.15)',
+                            #        'border-radius': '1rem'},
                             options=[
                                 {'label': 'All skills', 'value': 'all'},
                                 {'label': 'Combat skills', 'value': 'cb'},
@@ -178,7 +183,9 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
         ], className='g-5'),
 
         html.Br()
+
     ])
+    # ], className='dash-bootstrap')
 
 
 def build_level_table(name: str) -> dbc.Col:

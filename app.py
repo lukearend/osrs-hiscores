@@ -4,8 +4,11 @@
 
 import os
 import dash_bootstrap_components as dbc
+from dash_bootstrap_templates import load_figure_template
 from dash import Dash
 from src.app import buildapp
+
+load_figure_template('darkly')
 
 mongo_url = os.getenv("OSRS_MONGO_URI", None)
 appdata_coll = os.getenv("OSRS_APPDATA_COLL", None)
@@ -23,7 +26,7 @@ if appdata_file is None:
 auth = False if auth == 'false' else bool(auth)
 debug = False if debug == 'false' else bool(debug)
 
-app = Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+app = Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
 buildapp(app, mongo_url, appdata_coll, appdata_file, auth)
 
 server = app.server

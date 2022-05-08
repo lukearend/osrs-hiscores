@@ -89,24 +89,21 @@ def get_scatterplot(df: DataFrame,
         )
 
     fig.update_layout(
-        uirevision='constant',
-        margin=dict(b=0, l=0, r=0, t=0),
+        uirevision='constant',  # don't reset axes after updating plot
+        margin=dict(b=0, l=0, r=0, t=0),  # no border
         scene=dict(
             aspectmode='cube',
             xaxis=dict(
                 title='', showticklabels=False, showgrid=False,
-                zeroline=False, range=[xmin, xmax],
-                backgroundcolor='rgb(230, 230, 230)'
+                zeroline=False, range=[xmin, xmax]
             ),
             yaxis=dict(
                 title='', showticklabels=False, showgrid=False,
-                zeroline=False, range=[ymin, ymax],
-                backgroundcolor='rgb(220, 220, 220)'
+                zeroline=False, range=[ymin, ymax]
             ),
             zaxis=dict(
                 title='', showticklabels=False, showgrid=False,
-                zeroline=False, range=[zmin, zmax],
-                backgroundcolor='rgb(200, 200, 200)'
+                zeroline=False, range=[zmin, zmax]
             )
         ),
         coloraxis_colorbar=dict(
@@ -140,10 +137,10 @@ def get_empty_boxplot(split: str, split_skills: List[str]) -> go.Figure:
             )
         ],
         layout_uirevision='constant',
-        layout_margin=dict(b=12, l=0, r=0, t=0),
+        layout_margin=dict(b=20, l=2, r=3, t=3),
         layout_xaxis_tickvals=[],
         layout_xaxis_range=np.array([0, nskills]) - 0.5,
-        layout_yaxis_range=[0, 100],
+        layout_yaxis_range=[1, 106],
         layout_yaxis_tickvals=[1, 20, 40, 60, 80, 99],
     )
 
@@ -155,9 +152,9 @@ def get_empty_boxplot(split: str, split_skills: List[str]) -> go.Figure:
             xanchor="center",
             yanchor="top",
             x=i,
-            y=0,
+            y=-0.01,
             sizex=1,
-            sizey=0.1,
+            sizey=0.1,         # limits how large icons grow when displaying split 'cb'
             layer="above"
         ))
 
