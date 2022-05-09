@@ -94,7 +94,7 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                     html.Div(id='box-plot-text'),
                     dcc.Graph(
                         id='box-plot',
-                        style={'height': '15em'},
+                        style={'height': '10em'},
                         config={'displayModeBar': False},  # don't show Plotly options tool
                         figure=get_empty_boxplot(INIT_SPLIT, app_data[INIT_SPLIT].skills)
                     )
@@ -183,7 +183,8 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                             colorbar_label=get_color_label(INIT_SKILL),
                             size_factor=get_point_size(INIT_PTSIZE),
                             axis_limits=app_data[INIT_SPLIT].xyz_axlims
-                        )
+                        ),
+                        style={'height': '60vh'}
                     )]
                 ))
 
@@ -222,16 +223,10 @@ def build_level_table(name: str) -> dbc.Col:
             elem = dbc.Row([icon, num], className='table-elem')
             col.append(elem)
 
-        col = dbc.Col(col, className='table-col')
+        col = dbc.Col(col)
         cols.append(col)
 
-    header = dbc.Row(
-        dbc.Col(html.Div(
-            id=f'{name}-title'),
-            className='table-title'
-        ),
-        className='table-header'
-    )
-    body = dbc.Row(cols, className='table-body')
+    header = dbc.Row(dbc.Col(html.Div(id=f'{name}-title')))
+    body = dbc.Row(cols)
 
     return dbc.Col([header, body], className='stats-table')

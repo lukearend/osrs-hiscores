@@ -90,23 +90,22 @@ def get_scatterplot(df: DataFrame,
 
     fig.update_layout(
         uirevision='constant',  # don't reset axes after updating plot
-        margin=dict(b=0, l=0, r=0, t=0),  # no border
         scene=dict(
             aspectmode='cube',
             xaxis=dict(
                 title='', showticklabels=False, showgrid=False,
                 zeroline=False, range=[xmin, xmax],
-                backgroundcolor = '#222222'
+                backgroundcolor='#222222'
             ),
             yaxis=dict(
                 title='', showticklabels=False, showgrid=False,
                 zeroline=False, range=[ymin, ymax],
-                backgroundcolor = '#222222'
+                backgroundcolor='#242424'
             ),
             zaxis=dict(
                 title='', showticklabels=False, showgrid=False,
                 zeroline=False, range=[zmin, zmax],
-                backgroundcolor='#222222'
+                backgroundcolor='#202020'
             )
         ),
         coloraxis_colorbar=dict(
@@ -117,7 +116,7 @@ def get_scatterplot(df: DataFrame,
             tickvals=colorbar_ticks,
             tickfont={'family': "osrs-chat"},
             xanchor='right',
-            len=0.8
+            len=0.9
         )
     )
 
