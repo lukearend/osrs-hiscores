@@ -18,7 +18,7 @@ INIT_SPLIT = 'all'
 INIT_SKILL = 'total'
 INIT_PTSIZE = 'small'
 
-LEFT_PANEL_WIDTH = 4
+LEFT_PANEL_WIDTH = 5
 
 
 def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
@@ -29,21 +29,27 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
     app.title = "OSRS account clusters"
     app.layout = dbc.Container([
 
-        html.Br(),
 
         # Frontmatter
-        dbc.Row(dbc.Col(html.H1(html.Strong("OSRS account clusters")))),
-        dbc.Row(dbc.Col(dcc.Markdown("""
-            Each point represents a cluster of OSRS players with
-            similar stats. The closer two clusters are, the more
-            similar the accounts are in each of those two clusters.
-            The size of each point corresponds to the number of players
-            in that cluster. Axes have no meaningful interpretation.
-            Player stats were downloaded from the official [Old School 
-            Runescape hiscores] in April 2022.
-        """))),
+        html.Br(),
+        dbc.Row(
+            dbc.Col(html.H1(html.Strong("OSRS account clusters"))),
+        ),
+        dbc.Row(
+            dbc.Col(dcc.Markdown("""
+                Each point represents a cluster of OSRS players with
+                similar stats. The closer two clusters are, the more
+                similar the accounts are in each of those two clusters.
+                The size of each point corresponds to the number of players
+                in that cluster. Axes have no meaningful interpretation.
+                Player stats were downloaded from the official [Old School 
+                Runescape hiscores] in April 2022.
+            """)),
+            className='osrs-chat-bold'
+        ),
         html.Br(),
 
+        # Main body
         dbc.Row([
 
             # Left panel
@@ -52,30 +58,35 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                 # Username input box
                 dcc.Store(id='current-player'),
                 dbc.Row([
-                    dbc.Col(html.Div(children="Lookup player:"), width='auto'),
-                    dbc.Col(dcc.Input(
-                        id='username-text',
-                        type='text',
-                        placeholder="e.g. 'snakeylime'",
-                        maxLength=12,
-                        debounce=True
-                    ), width='auto'),
-                ], align='center'),
+                    dbc.Col(
+                        html.Div(
+                            children="Lookup player:",
+                            className="osrs-chat-bold"),
+                        width='auto'),
+                    dbc.Col(
+                        dcc.Input(
+                            id='username-text',
+                            type='text',
+                            placeholder="e.g. 'snakeylime'",
+                            maxLength=12,
+                            debounce=True),
+                        width='auto')],
+                    align='center',
+                    className='osrs-chat'),
                 html.Br(),
 
                 dcc.Store(id='query-event'),
-                dbc.Col(html.Div(id='player-query-text')),
+                dbc.Col(html.Div(id='player-query-text'), className='osrs-chat'),
                 html.Br(),
 
                 # Player/cluster stats tables
-                dbc.Row([
-                    dbc.Col(html.Strong(id='player-table-title'), ),
-                    dbc.Col(html.Strong(id='cluster-table-title'), ),
-                ], align='center', className='g-5'),
-                dbc.Row([
-                    dbc.Col(build_level_table(name='player-table'), ),
-                    dbc.Col(build_level_table(name='cluster-table')),
-                ], align='center', className='g-5'),
+                dbc.Row(
+                    [
+                        dbc.Col(build_level_table(name='player-table')),
+                        dbc.Col(build_level_table(name='cluster-table')),
+                    ],
+                    align='center'
+                ),
                 html.Br(),
 
                 # Boxplot
@@ -83,7 +94,8 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                     html.Div(id='box-plot-text'),
                     dcc.Graph(
                         id='box-plot',
-                        style={'height': '25vh'},
+                        style={'height': '15em'},
+                        config={'displayModeBar': False},  # don't show Plotly options tool
                         figure=get_empty_boxplot(INIT_SPLIT, app_data[INIT_SPLIT].skills)
                     )
                 ]), align='center'),
@@ -101,9 +113,6 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                         dbc.Col(html.Div(children="Cluster by:"), width='auto'),
                         dbc.Col(dcc.Dropdown(
                             id='current-split',
-                            # style={'color': 'black',
-                            #        'background-color': 'rgba(255, 255, 255, 0.15)',
-                            #        'border-radius': '1rem'},
                             options=[
                                 {'label': 'All skills', 'value': 'all'},
                                 {'label': 'Combat skills', 'value': 'cb'},
@@ -111,7 +120,7 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                             ],
                             value=INIT_SPLIT,
                             clearable=False
-                        ))
+                        ), id='split-dropdown')
                     ], align='center', className='g-2')),  # small gutter between text and dropdown
 
                     dbc.Col(dbc.Row([
@@ -178,33 +187,51 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                     )]
                 ))
 
-            ], align='center', lg=12 - LEFT_PANEL_WIDTH)
+            ], align='top', lg=12 - LEFT_PANEL_WIDTH)
 
-        ], className='g-5'),
+        ], className='osrs-chat-bold'),
 
         html.Br()
 
     ])
-    # ], className='dash-bootstrap')
 
 
 def build_level_table(name: str) -> dbc.Col:
 
     skills_layout = load_table_layout()
-    table_rows = []
-    for skill_row in skills_layout:
-        table_row = []
-        for skill in skill_row:
-            icon = html.Img(src=load_skill_icon(skill), title=skill.capitalize())
-            value = html.Div(id=f'{name}-{skill}')
-            table_elem = dbc.Row(
-                [
-                    dbc.Col(icon, width=6),
-                    dbc.Col(value, width=6)
-                ],
-                align='center',
-                justify='center'
+    cols = []
+    for j in range(3):
+
+        col = []
+        for i in range(8):
+            skill = skills_layout[i][j]
+            icon = dbc.Col(
+                html.Img(
+                    src=load_skill_icon(skill),
+                    title=skill.capitalize(),
+                    height=32
+                ),
+                width=4,
+                className='table-icon'
             )
-            table_row.append(dbc.Col(table_elem, width=4))
-        table_rows.append(dbc.Row(table_row, align='center'))
-    return dbc.Col(table_rows)
+            num = dbc.Col(html.Div(
+                id=f'{name}-{skill}'),
+                width=8,
+                className='table-number'
+            )
+            elem = dbc.Row([icon, num], className='table-elem')
+            col.append(elem)
+
+        col = dbc.Col(col, className='table-col')
+        cols.append(col)
+
+    header = dbc.Row(
+        dbc.Col(html.Div(
+            id=f'{name}-title'),
+            className='table-title'
+        ),
+        className='table-header'
+    )
+    body = dbc.Row(cols, className='table-body')
+
+    return dbc.Col([header, body], className='stats-table')

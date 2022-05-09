@@ -1,0 +1,19 @@
+@font-face {
+    font-family: "osrs-chat-bold";
+    src: url("fonts/RuneScape-Chat-Bold-07.ttf");
+}
+
+@font-face {
+    font-family: "osrs-chat";
+    src: url("fonts/RuneScape-Chat-07.ttf");
+}
+
+.osrs-chat-bold {
+    font-family: "osrs-chat-bold", sans-serif;
+    font-size: large;
+}
+
+.osrs-chat {
+    font-family: "osrs-chat", sans-serif;
+    font-size: large;
+}

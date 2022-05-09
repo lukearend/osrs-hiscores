@@ -95,15 +95,18 @@ def get_scatterplot(df: DataFrame,
             aspectmode='cube',
             xaxis=dict(
                 title='', showticklabels=False, showgrid=False,
-                zeroline=False, range=[xmin, xmax]
+                zeroline=False, range=[xmin, xmax],
+                backgroundcolor = '#222222'
             ),
             yaxis=dict(
                 title='', showticklabels=False, showgrid=False,
-                zeroline=False, range=[ymin, ymax]
+                zeroline=False, range=[ymin, ymax],
+                backgroundcolor = '#222222'
             ),
             zaxis=dict(
                 title='', showticklabels=False, showgrid=False,
-                zeroline=False, range=[zmin, zmax]
+                zeroline=False, range=[zmin, zmax],
+                backgroundcolor='#222222'
             )
         ),
         coloraxis_colorbar=dict(
@@ -112,6 +115,7 @@ def get_scatterplot(df: DataFrame,
                 side='right'
             ),
             tickvals=colorbar_ticks,
+            tickfont={'family': "osrs-chat"},
             xanchor='right',
             len=0.8
         )
@@ -137,11 +141,14 @@ def get_empty_boxplot(split: str, split_skills: List[str]) -> go.Figure:
             )
         ],
         layout_uirevision='constant',
-        layout_margin=dict(b=20, l=2, r=3, t=3),
-        layout_xaxis_tickvals=[],
+        layout_margin=dict(b=20, l=2, r=0, t=0),  # left margin adds space for y tick numbers
+        layout_xaxis_tickvals=[],                 # bottom margin adds space for x tick icons
         layout_xaxis_range=np.array([0, nskills]) - 0.5,
         layout_yaxis_range=[1, 106],
         layout_yaxis_tickvals=[1, 20, 40, 60, 80, 99],
+        layout_yaxis_tickfont={'family': "osrs-chat"},
+        layout_xaxis_fixedrange=True,
+        layout_yaxis_fixedrange=True
     )
 
     for i, skill in enumerate(split_skills):
