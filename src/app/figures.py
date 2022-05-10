@@ -114,7 +114,7 @@ def get_scatterplot(df: DataFrame,
                 side='right'
             ),
             tickvals=colorbar_ticks,
-            tickfont={'family': "osrs-chat"},
+            tickfont={'family': "rs-regular"},
             xanchor='right',
             len=0.9
         )
@@ -145,7 +145,7 @@ def get_empty_boxplot(split: str, split_skills: List[str]) -> go.Figure:
         layout_xaxis_range=np.array([0, nskills]) - 0.5,
         layout_yaxis_range=[1, 106],
         layout_yaxis_tickvals=[1, 20, 40, 60, 80, 99],
-        layout_yaxis_tickfont={'family': "osrs-chat"},
+        layout_yaxis_tickfont={'family': "rs-regular"},
         layout_xaxis_fixedrange=True,
         layout_yaxis_fixedrange=True
     )

@@ -18,14 +18,31 @@ body {
     border-radius: 4px;
 }
 
+.plot-title {
+    font-family: "rs-bold", sans-serif;
+}
+
 .table-icon {
     padding-left: 0;
 }
 
+.input-box {
+    font-family: "rs-regular-up-1px", sans-serif;
+    height: 2em;
+    text-anchor: middle;
+    border-style: solid;
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: #cccccc;
+}
+
+.dropdown {
+    font-family: "rs-regular", sans-serif;
+    color: #757575;
+}
+
 .table-number {
+    font-family: "rs-regular", sans-serif;
+    padding-top: 3px;
     text-align: center;
-    padding-top: 0.2em;
-    padding-bottom: 0;
-    font-family: "osrs-chat", sans-serif;
-    font-size: 1em;
 }

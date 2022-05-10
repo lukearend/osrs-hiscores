@@ -1,19 +1,29 @@
 @font-face {
-    font-family: "osrs-chat-bold";
-    src: url("fonts/RuneScape-Chat-Bold-07.ttf");
+    font-family: "rs-bold";
+    src: url("fonts/rs-bold-1px.ttf");
 }
 
 @font-face {
-    font-family: "osrs-chat";
-    src: url("fonts/RuneScape-Chat-07.ttf");
+    font-family: "rs-regular";
+    src: url("fonts/rs-regular-1px.ttf");
 }
 
-.osrs-chat-bold {
-    font-family: "osrs-chat-bold", sans-serif;
+@font-face {
+    font-family: "rs-regular-up-1px";
+    src: url("fonts/rs-regular.ttf");
+}
+
+.rs-bold {
+    font-family: "rs-bold", sans-serif;
     font-size: large;
 }
 
-.osrs-chat {
-    font-family: "osrs-chat", sans-serif;
+.rs-regular {
+    font-family: "rs-regular", sans-serif;
+    font-size: large;
+}
+
+.rs-regular-up-2px {
+    font-family: "rs-regular-up-2px", sans-serif;
     font-size: large;
 }

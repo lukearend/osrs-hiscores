@@ -45,7 +45,7 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                 Player stats were downloaded from the official [Old School 
                 Runescape hiscores] in April 2022.
             """)),
-            className='osrs-chat-bold'
+            className='rs-bold'
         ),
         html.Br(),
 
@@ -61,7 +61,7 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                     dbc.Col(
                         html.Div(
                             children="Lookup player:",
-                            className="osrs-chat-bold"),
+                            className="rs-bold"),
                         width='auto'),
                     dbc.Col(
                         dcc.Input(
@@ -69,14 +69,14 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                             type='text',
                             placeholder="e.g. 'snakeylime'",
                             maxLength=12,
-                            debounce=True),
+                            debounce=True,
+                            className='input-box'),
                         width='auto')],
-                    align='center',
-                    className='osrs-chat'),
+                    align='center'),
                 html.Br(),
 
                 dcc.Store(id='query-event'),
-                dbc.Col(html.Div(id='player-query-text'), className='osrs-chat'),
+                dbc.Col(html.Div(id='player-query-text'), className='rs-regular'),
                 html.Br(),
 
                 # Player/cluster stats tables
@@ -119,9 +119,10 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                                 {'label': 'Non-combat skills', 'value': 'noncb'},
                             ],
                             value=INIT_SPLIT,
-                            clearable=False
+                            clearable=False,
+                            className='dropdown',
                         ), id='split-dropdown')
-                    ], align='center', className='g-2')),  # small gutter between text and dropdown
+                    ], align='center', className='g-3')),
 
                     dbc.Col(dbc.Row([
                         dbc.Col(html.Div(children="Color by:"), width='auto'),
@@ -132,9 +133,10 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                                 for skill in osrs_skills(include_total=True)
                             ],
                             value=INIT_SKILL,
-                            clearable=False
+                            clearable=False,
+                            className='dropdown',
                         ))
-                    ], align='center', className='g-2'))
+                    ], align='center', className='g-3'))
 
                 ], align='center'),
 
@@ -161,11 +163,12 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                             id='point-size',
                             options=[{'label': s, 'value': s} for s in ['small', 'medium', 'large']],
                             value=INIT_PTSIZE,
-                            clearable=False
+                            clearable=False,
+                            className='dropdown',
                         ))
-                    ], align='center', className='g-2'), width=3),
+                    ], align='center', className='g-3'), width=3),
 
-                ], align='center', className='g-0'),  # no gutter since level slider adds horizontal space
+                ], align='center', className='g-2'),  # no gutter since level slider adds horizontal space
 
                 # Scatterplot
                 dcc.Store(id='current-cluster'),
@@ -190,7 +193,7 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
 
             ], align='top', lg=12 - LEFT_PANEL_WIDTH)
 
-        ], className='osrs-chat-bold'),
+        ], className='rs-bold'),
 
         html.Br()
 
