@@ -5,11 +5,6 @@
 
 @font-face {
     font-family: "rs-regular";
-    src: url("fonts/rs-regular-1px.ttf");
-}
-
-@font-face {
-    font-family: "rs-regular-up-1px";
     src: url("fonts/rs-regular.ttf");
 }
 
@@ -20,10 +15,5 @@
 
 .rs-regular {
     font-family: "rs-regular", sans-serif;
-    font-size: large;
-}
-
-.rs-regular-up-2px {
-    font-family: "rs-regular-up-2px", sans-serif;
     font-size: large;
 }

@@ -70,7 +70,7 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                             placeholder="e.g. 'snakeylime'",
                             maxLength=12,
                             debounce=True,
-                            className='input-box'),
+                            className='input-form rs-regular'),
                         width='auto')],
                     align='center'),
                 html.Br(),
@@ -121,6 +121,7 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                             value=INIT_SPLIT,
                             clearable=False,
                             className='dropdown',
+                            style={'background-color': '#222222', 'border-color': '#626262'},
                         ), id='split-dropdown')
                     ], align='center', className='g-3')),
 
@@ -135,6 +136,7 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                             value=INIT_SKILL,
                             clearable=False,
                             className='dropdown',
+                            style={'background-color': '#222222', 'border-color': '#626262'},
                         ))
                     ], align='center', className='g-3'))
 
@@ -154,7 +156,7 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                             tooltip={'placement': 'bottom'},
                             allowCross=False,
                             marks={i: str(i) for i in get_level_tick_marks('total')}
-                        ), style={'padding-top': '2vh'})  # padding aligns slider vertically
+                        ), style={'padding-top': '2vh'})  # padding centers slider vertically
                     ], align='center', className='g-0')),
 
                     dbc.Col(dbc.Row([
@@ -165,6 +167,7 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                             value=INIT_PTSIZE,
                             clearable=False,
                             className='dropdown',
+                            style={'background-color': '#222222', 'border-color': '#626262'},
                         ))
                     ], align='center', className='g-3'), width=3),
 
