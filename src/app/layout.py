@@ -121,7 +121,7 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                             value=INIT_SPLIT,
                             clearable=False,
                             className='dropdown',
-                            style={'background-color': '#222222', 'border-color': '#626262'},
+                            style={'background-color': '#111111', 'border-color': '#626262', 'color': 'white'},
                         ), id='split-dropdown')
                     ], align='center', className='g-3')),
 
@@ -136,7 +136,7 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                             value=INIT_SKILL,
                             clearable=False,
                             className='dropdown',
-                            style={'background-color': '#222222', 'border-color': '#626262'},
+                            style={'background-color': '#111111', 'border-color': '#626262', 'color': 'white'},
                         ))
                     ], align='center', className='g-3'))
 
@@ -167,7 +167,7 @@ def build_layout(app: Dash, app_data: Dict[str, SplitResults]):
                             value=INIT_PTSIZE,
                             clearable=False,
                             className='dropdown',
-                            style={'background-color': '#222222', 'border-color': '#626262'},
+                            style={'background-color': '#111111', 'border-color': '#626262'},
                         ))
                     ], align='center', className='g-3'), width=3),
 
@@ -232,7 +232,7 @@ def build_level_table(name: str) -> dbc.Col:
         col = dbc.Col(col)
         cols.append(col)
 
-    header = dbc.Row(dbc.Col(html.Div(id=f'{name}-title')))
+    header = dbc.Row(dbc.Col(html.Div(id=f'{name}-title'), className='table-header'))
     body = dbc.Row(cols)
 
     return dbc.Col([header, body], className='stats-table')

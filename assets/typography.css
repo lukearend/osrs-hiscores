@@ -4,6 +4,11 @@
 }
 
 @font-face {
+    font-family: "rs-bold-1";
+    src: url("fonts/rs-bold-1px.ttf");
+}
+
+@font-face {
     font-family: "rs-regular";
     src: url("fonts/rs-regular.ttf");
 }
@@ -11,9 +16,11 @@
 .rs-bold {
     font-family: "rs-bold", sans-serif;
     font-size: large;
+    padding-top: 4px;
 }
 
 .rs-regular {
     font-family: "rs-regular", sans-serif;
     font-size: large;
+    padding-top: 4px;
 }
