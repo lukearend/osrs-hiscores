@@ -33,4 +33,4 @@ server = app.server
 host = "0.0.0.0" if os.getenv('ON_HEROKU', False) else 'localhost'
 
 if __name__ == '__main__':
-    app.run_server(debug=debug, host=host, port=os.getenv('PORT', 8051))
+    app.run_server(debug=debug, host=host, port=os.getenv('PORT', 8050))
