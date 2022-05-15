@@ -116,7 +116,7 @@ $(centroids_final): $(centroids)
 upload: push-aws push-gdrive
 
 push-aws: $(stats_raw) $(stats) $(clusterids) $(centroids) $(appdata)
-	@aws s3 cp $(appdata) $(OSRS_APPDATA_URL)
+	@aws s3 cp $(appdata) $(OSRS_APPDATA_S3)
 	@aws s3 cp $(centroids) "s3://$(dataset_bucket)/cluster-centroids.pkl"
 	@aws s3 cp $(clusterids) "s3://$(dataset_bucket)/player-clusterids.pkl"
 	@aws s3 cp $(stats) "s3://$(dataset_bucket)/player-stats.pkl"

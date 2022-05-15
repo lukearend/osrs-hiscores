@@ -3,12 +3,7 @@
 """ Entry point for main application. """
 
 import os
-import dash_bootstrap_components as dbc
-from dash_bootstrap_templates import load_figure_template
-from dash import Dash
-from src.app import buildapp
-
-load_figure_template('darkly')
+from src.app.root import MainApp
 
 mongo_url = os.getenv("OSRS_MONGO_URI", None)
 appdata_coll = os.getenv("OSRS_APPDATA_COLL", None)
@@ -26,11 +21,13 @@ if appdata_file is None:
 auth = False if auth == 'false' else bool(auth)
 debug = False if debug == 'false' else bool(debug)
 
-app = Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
-buildapp(app, mongo_url, appdata_coll, appdata_file, auth)
+app = MainApp(__name__, mongo_url, appdata_coll, appdata_file, auth)
+app.init_layout()
+app.init_frontend()
+app.init_backend()
 
-server = app.server
-host = "0.0.0.0" if os.getenv('ON_HEROKU', False) else 'localhost'
+server = app.server  # gunicorn looks for 'server' in global namespace
 
 if __name__ == '__main__':
+    host = "0.0.0.0" if os.getenv('ON_HEROKU', False) else 'localhost'
     app.run_server(debug=debug, host=host, port=os.getenv('PORT', 8050))

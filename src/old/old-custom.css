@@ -1,0 +1,72 @@
+body {
+    font-size: x-large;
+}
+
+.rs-bold {
+    font-family: "rs-bold", sans-serif;
+}
+
+.rs-regular {
+    font-family: "rs-regular", sans-serif;
+}
+
+.label-text {
+    font-family: "rs-bold", sans-serif;
+}
+
+.boxplot {
+    font-family: "rs-regular", sans-serif;
+    height: 10em;
+}
+
+.input-form {
+    color: #ffffff;
+    background-color: #222222;
+    border-style: solid;
+    border-radius: 4px;
+    border-width: 1px;
+    border-color: #626262;
+    height: 2em;
+    padding-top: 4px;
+    padding-left: 0.5em;
+}
+
+.Select--multi .Select-value {
+    background-color: #222222;
+    color: black;
+}
+
+.VirtualizedSelectFocusedOption {
+    background-color: #626262;
+    color: white;
+}
+
+.stats-table {
+    padding-left: 12.5px;
+    padding-right: 12.5px;
+    padding-top: 2px;
+    padding-bottom: 0.5px;
+    background-color: #626262;
+    border-color: #626262;
+    border-width: 1px;
+    border-radius: 4px;
+}
+
+.table-elem {
+    background-color: #222222;
+    border-width: 0.5px;
+    border-style: solid;
+    border-color: #626262;
+    padding: 2px;
+    border-radius: 4px;
+}
+
+.table-icon {
+    padding-left: 0;
+}
+
+.table-number {
+    font-family: "rs-regular", sans-serif;
+    padding-top: 3px;
+    text-align: center;
+}

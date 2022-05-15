@@ -14,6 +14,7 @@ import pandas as pd
 from tqdm import tqdm, TqdmWarning
 
 from src import osrs_skills
+from src.data.types import SplitResults
 
 
 def load_json(file: str) -> Any:
@@ -130,3 +131,20 @@ def download_s3_obj(bucket: str, obj_key: str) -> bytes:
 
     f.seek(0)  # put cursor back at beginning of file
     return f.read()
+
+
+def load_app_data(path) -> OrderedDict[str, SplitResults]:
+    """ Load app data from S3 bucket or local path. """
+
+    if path.startswith('s3://'):
+        s3_bucket, obj_key = path.replace('s3://', '').split('/', maxsplit=1)
+        app_data = pickle.loads(download_s3_obj(s3_bucket, obj_key))
+    else:
+        app_data = load_pkl(path)
+
+    msg = 'invalid app data'
+    assert isinstance(app_data, OrderedDict), msg
+    for split, data in app_data.items():
+        assert isinstance(split, str) and isinstance(data, SplitResults), msg
+
+    return app_data

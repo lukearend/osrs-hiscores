@@ -7,7 +7,7 @@ with warnings.catch_warnings():
 from dash import Dash
 
 from src.app.callbacks import add_callbacks
-from src.app.layout import build_layout
+from src.app.components import build_layout
 from src.data.db import connect_mongo
 from src.data.io import load_pkl, download_s3_obj
 

@@ -1,19 +1,9 @@
 @font-face {
     font-family: "rs-bold";
-    src: url("fonts/rs-bold-1px.ttf");
+    src: url("fonts/rs-bold.ttf");
 }
 
 @font-face {
     font-family: "rs-regular";
     src: url("fonts/rs-regular.ttf");
-}
-
-.rs-bold {
-    font-family: "rs-bold", sans-serif;
-    font-size: large;
-}
-
-.rs-regular {
-    font-family: "rs-regular", sans-serif;
-    font-size: large;
 }

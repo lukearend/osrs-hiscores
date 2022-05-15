@@ -295,7 +295,7 @@ def add_callbacks(app: Dash, app_data: Dict[str, SplitResults], player_coll: Col
             plot_data = boxplot_data(split_data, clusterid=cluster['id'])
         return [
             {
-                'lowerfence': [plot_data['lowerfence']],
+                'lowerfence': [plot_data['lowerfence']]c
                 'q1': [plot_data['q1']],
                 'median': [plot_data['median']],
                 'q3': [plot_data['q3']],
