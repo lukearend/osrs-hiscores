@@ -8,16 +8,6 @@ from src.app import colors
 from src.app.helpers import load_icon_b64
 
 
-def add_controls(app: Dash) -> Dash:
-
-    @app.callback(
-        Output('controls:split', 'data'),
-        Input('split-menu', 'value'),
-    )
-    def set_current_split(newsplit):
-        return newsplit
-
-
 def add_boxplot(app: Dash) -> Dash:
 
     @app.callback(
@@ -26,7 +16,7 @@ def add_boxplot(app: Dash) -> Dash:
     )
     def render_empty_boxplot(skills: List[int]) -> go.Figure():
         nan = np.full(len(skills), np.nan)
-        box = go.Box(lowerfence=nan, upperfence=nan, median=nan, q1=nan, q3=nan)
+        boxtrace = go.Box(lowerfence=nan, upperfence=nan, median=nan, q1=nan, q3=nan)
 
         yticks = [1, 20, 40, 60, 80, 99]
         padbelow = 3  # space below level 1 on plot
@@ -44,11 +34,10 @@ def add_boxplot(app: Dash) -> Dash:
 
         )
         fig = go.Figure(
-            data=box,
+            data=boxtrace,
             layout=dict(
                 xaxis=xaxis,
                 yaxis=yaxis,
-                font='rs-regular',
                 paper_bgcolor=colors.BOXPLOT_PAPER,
                 plot_bgcolor=colors.BOXPLOT_BG,
                 marker=dict(color=colors.BOXPLOT_TRACE),

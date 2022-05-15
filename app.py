@@ -22,9 +22,8 @@ auth = False if auth == 'false' else bool(auth)
 debug = False if debug == 'false' else bool(debug)
 
 app = MainApp(__name__, mongo_url, appdata_coll, appdata_file, auth)
-app.init_layout()
-app.init_frontend()
-app.init_backend()
+app.build_layout()
+app.add_callbacks()
 
 server = app.server  # gunicorn looks for 'server' in global namespace
 

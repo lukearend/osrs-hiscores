@@ -1,23 +1,42 @@
 /* Global formatting */
+
 body {
-    font-size: x-large;
+    background-color: #222222;
 }
 
-/* Text styles */
-.rs-bold {
-    font-family: "rs-bold", sans-serif;
-}
-
-.rs-regular {
-    font-family: "rs-regular", sans-serif;
+.app {
+    color: #eeeeee;
 }
 
 .label-text {
-    font-family: "rs-bold", sans-serif;
 }
 
-/* Boxplot */
-.boxplot {
-    font-family: "rs-regular", sans-serif;
-    height: 10em;
+.dropdown {
 }
+
+/*.rs-bold {*/
+/*    font-family: "rs-bold", sans-serif;*/
+/*}*/
+
+/*.rs-regular {*/
+/*    font-family: "rs-regular", sans-serif;*/
+/*}*/
+
+/*.dropdown-button {*/
+/*    font-family: "rs-regular", sans-serif;*/
+/*}*/
+
+/*.Select--multi {*/
+/*    color: white;*/
+/*}*/
+
+/*.Select-value {*/
+/*    padding-top: 0.05em;*/
+/*    background-color: #111111;*/
+/*    color: white;*/
+/*}*/
+
+/*.boxplot {*/
+/*    font-family: "rs-regular", sans-serif;*/
+/*    height: 10em;*/
+/*}*/

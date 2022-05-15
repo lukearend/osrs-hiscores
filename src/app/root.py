@@ -7,7 +7,7 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=UserWarning)  # uses deprecated version of dcc
     import dash_auth
 
-from src.app import components, frontend, backend
+from src.app.dropdowns import SplitMenu
 from src.data.db import connect_mongo
 from src.data.io import load_app_data
 
@@ -15,7 +15,7 @@ from src.data.io import load_app_data
 class MainApp:
 
     def __init__(self, rootname: str, mongo_url: str, appdata_coll: str, appdata_file: str, auth: bool):
-        """ Initialize core app and connect to data sources. """
+        """ Connect to data sources and build application components. """
 
         self.player_coll = connect_mongo(mongo_url, appdata_coll)
         self.app_data = load_app_data(appdata_file)
@@ -28,34 +28,22 @@ class MainApp:
         self.server = self.app.server
         self.run_server = self.app.run_server
 
-    def init_layout(self):
-        """ Build global layout of application page. """
+        init_split = list(self.app_data.keys())[0]
+        self.splitmenu = SplitMenu(self.app, self.app_data, init_split)
+
+    def build_layout(self):
+        """ Define global layout of components on the page. """
 
         self.app.layout = dbc.Container([
 
-            dcc.Store('controls:split'),
-            dbc.Row([
-                dbc.Col(html.Div("Choose split:"), className='label-text'),
-                dbc.Col(components.splitmenu(self.app_data), className=''),
-            ]),
-
-            dcc.Store('boxplot:tickskills'),
-            dcc.Store('boxplot:title:clusterid'),
-            dcc.Store('boxplot:title:nplayers'),
-            dbc.Row(
-                dbc.Col([
-                    components.boxplot_title(),
-                    components.boxplot(),
+            dbc.Col(
+                dbc.Row([
+                    dbc.Col(self.splitmenu.label),
+                    dbc.Col(self.splitmenu.dropdown),
                 ]),
             ),
-        ])
 
-    def init_frontend(self):
-        """ Attach callbacks for updating graphical elements. """
+        ], className='app')
 
-        self.app = frontend.add_boxplot(self.app)
-
-    def init_backend(self):
-        """ Attach callbacks for application logic and data processing. """
-
-        self.app = backend.add_boxplot(self.app, self.app_data)
+    def add_callbacks(self):
+        """ Attach callbacks for dynamic/interactive elements. """
