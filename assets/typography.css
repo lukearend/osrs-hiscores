@@ -1,9 +1,10 @@
 @font-face {
-    font-family: "rs-bold";
-    src: url("fonts/rs-bold.ttf");
+    font-family: "Classic 2007";
+    src: url("fonts/rs-regular.ttf");
 }
 
 @font-face {
-    font-family: "rs-regular";
-    src: url("fonts/rs-regular.ttf");
+    font-family: "Classic 2007";
+    src: url("fonts/rs-bold.ttf");
+    font-weight: bold;
 }

@@ -2,41 +2,14 @@
 
 body {
     background-color: #222222;
-}
-
-.app {
     color: #eeeeee;
+    font-family: "Classic 2007", sans-serif;
 }
 
 .label-text {
+    font-weight: bold;
 }
-
-.dropdown {
-}
-
-/*.rs-bold {*/
-/*    font-family: "rs-bold", sans-serif;*/
-/*}*/
-
-/*.rs-regular {*/
-/*    font-family: "rs-regular", sans-serif;*/
-/*}*/
-
-/*.dropdown-button {*/
-/*    font-family: "rs-regular", sans-serif;*/
-/*}*/
-
-/*.Select--multi {*/
-/*    color: white;*/
-/*}*/
-
-/*.Select-value {*/
-/*    padding-top: 0.05em;*/
-/*    background-color: #111111;*/
-/*    color: white;*/
-/*}*/
 
 /*.boxplot {*/
-/*    font-family: "rs-regular", sans-serif;*/
 /*    height: 10em;*/
 /*}*/
