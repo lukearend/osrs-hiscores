@@ -27,6 +27,7 @@ class MainApp:
         self.app_data = load_app_data(appdata_file)
 
         theme = dbc.themes.DARKLY
+        load_figure_template('darkly')
 
         self.app = Dash(rootname, external_stylesheets=[theme])
         self.server = self.app.server

@@ -10,6 +10,6 @@ body {
     font-weight: bold;
 }
 
-/*.boxplot {*/
-/*    height: 10em;*/
-/*}*/
+.boxplot-title-parens {
+    font-weight: normal;
+}

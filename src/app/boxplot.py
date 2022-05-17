@@ -31,54 +31,61 @@ class Boxplot:
         )
 
     def add_callbacks(self):
-        # @self.app.callback(
-        #     Output(self.graph, 'figure'),
-        #     Input(self.store.currentsplit, 'data'),
-        #     prevent_initial_call=True,
-        # )
-        # def make_boxplot(split: str) -> go.Figure():
-        #     if split is None:
-        #         return no_update
-        #
-        #     skills = self.app_data[split].skills
-        #     nan = np.full(len(skills), np.nan)
-        #     boxtrace = go.Box(lowerfence=nan, upperfence=nan, median=nan, q1=nan, q3=nan)
-        #
-        #     yticks = [1, 20, 40, 60, 80, 99]
-        #     padbelow = 3  # space below level 1 on plot
-        #     padabove = 5  # space above level 99 on plot
-        #     yaxis = dict(
-        #         range=(1 - padbelow, 99 + padabove),
-        #         fixedrange=True,  # not zoomable
-        #         tickvals=yticks,
-        #     )
-        #     xaxis = dict(
-        #         range=(-0.5, len(skills) - 0.5),
-        #         fixedrange=True,  # not zoomable
-        #         tickvals=[],  # these ticks are drawn on as images instead
-        #     )
-        #
-        #     fig = go.Figure(data=boxtrace)
-        #     fig.update_layout(dict(
-        #         xaxis=xaxis,
-        #         yaxis=yaxis,
-        #         paper_bgcolor=colors.BOXPLOT_PAPER,
-        #         plot_bgcolor=colors.BOXPLOT_BG,
-        #     ))
-        #     fig.update_traces(
-        #         marker=dict(color=colors.BOXPLOT_TRACE),
-        #     )
-        #     for i, skill in enumerate(skills):
-        #         fig.add_layout_image(
-        #             source='data:image/png;base64,' + load_icon_b64(skill),
-        #             layer='above',
-        #             xanchor='center',  # center image horizontally on xtick
-        #             yanchor='top',  # dangle image below horizontal baseline
-        #             xref='x',  # x offset units: boxplot x-coordinate
-        #             yref='y',  # y offset units: boxplot y-coordinate
-        #             x=i,
-        #             y=padbelow,
-        #         )
+        @self.app.callback(
+            Output(self.graph, 'figure'),
+            Input(self.store.currentsplit, 'data'),
+            prevent_initial_call=True,
+        )
+        def make_boxplot(split: str) -> go.Figure():
+            if split is None:
+                return no_update
+
+            skills = self.app_data[split].skills
+            # nan = np.full(len(skills), np.nan)
+            nan = np.full(len(skills), -100)
+            boxtrace = go.Box(lowerfence=nan, upperfence=nan, median=nan, q1=nan, q3=nan)
+
+            imsize = 10
+            padbelow = 3  # space between level 1 line and top of icons
+            padabove = 3  # space above level 99 on plot
+
+            yticks = [1, 20, 40, 60, 80, 99]
+            yaxis = dict(
+                range=(1 - 2 * padbelow - imsize, 99 + padabove),
+                fixedrange=True,  # not zoomable
+                zeroline=False,
+                tickvals=yticks,
+            )
+            xaxis = dict(
+                range=(-0.5, len(skills) - 0.5),
+                fixedrange=True,  # not zoomable
+                tickvals=[],  # these ticks are drawn on as images instead
+            )
+
+            fig = go.Figure(data=boxtrace)
+            fig.update_layout(dict(
+                xaxis=xaxis,
+                yaxis=yaxis,
+                paper_bgcolor=colors.BOXPLOT_PAPER,
+                plot_bgcolor=colors.BOXPLOT_BG,
+            ))
+            fig.update_traces(
+                marker=dict(color=colors.BOXPLOT_TRACE),
+            )
+            for i, skill in enumerate(skills):
+                fig.add_layout_image(
+                    source='data:image/png;base64,' + load_icon_b64(skill),
+                    layer='above',
+                    xanchor='center',  # center image horizontally on xtick
+                    yanchor='top',  # dangle image below horizontal baseline
+                    xref='x',  # x offset units: boxplot x-coordinate
+                    yref='y',  # y offset units: boxplot y-coordinate
+                    x=i,
+                    y=1 - padbelow,
+                    sizex=1,
+                    sizey=imsize,
+                )
+            return fig
 
         @self.app.callback(
             Output(self.title, 'children'),
@@ -87,10 +94,10 @@ class Boxplot:
         )
         def update_boxplot_title(clusterid: int, nplayers: int) -> List[html.Span]:
             if clusterid is None or nplayers is None:
-                part1, part2 = "Cluster level ranges", None
+                part1, part2 = "Cluster stats", None
             else:
-                part1, part2 = f"Cluster {clusterid} level ranges", f" ({nplayers} players"
+                part1, part2 = f"Cluster {clusterid} stats", f" ({nplayers} players)"
 
-            bold = html.Span(part1)
-            norm = html.Span(part2, className='rs-regular')
-            return [bold, norm]
+            part1 = html.Span(part1)
+            part2 = html.Span(part2, className='boxplot-title-parens')
+            return [part1, part2]
