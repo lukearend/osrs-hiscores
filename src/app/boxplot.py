@@ -34,24 +34,24 @@ class Boxplot:
         @self.app.callback(
             Output(self.graph, 'figure'),
             Input(self.store.currentsplit, 'data'),
-            prevent_initial_call=True,
         )
         def make_boxplot(split: str) -> go.Figure():
             if split is None:
                 return no_update
 
             skills = self.app_data[split].skills
-            # nan = np.full(len(skills), np.nan)
-            nan = np.full(len(skills), -100)
-            boxtrace = go.Box(lowerfence=nan, upperfence=nan, median=nan, q1=nan, q3=nan)
+            hidden = np.full(len(skills), -100)
+            boxtrace = go.Box(lowerfence=hidden, upperfence=hidden,
+                              median=hidden, q1=hidden, q3=hidden)
 
-            imsize = 10
-            padbelow = 3  # space between level 1 line and top of icons
-            padabove = 3  # space above level 99 on plot
+            imsize = 10  # icon container size in y-axis units
+            imscale = 0.75  # icon size as a proportion of container
+            padabove = 3  # padding above level 99 in y-axis units
+            yticks = [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 99]
 
-            yticks = [1, 20, 40, 60, 80, 99]
+            padbelow = (1 - imscale) * imsize
             yaxis = dict(
-                range=(1 - 2 * padbelow - imsize, 99 + padabove),
+                range=(1 - 2 * padbelow - imscale * imsize, 99 + padabove),
                 fixedrange=True,  # not zoomable
                 zeroline=False,
                 tickvals=yticks,
@@ -78,12 +78,12 @@ class Boxplot:
                     layer='above',
                     xanchor='center',  # center image horizontally on xtick
                     yanchor='top',  # dangle image below horizontal baseline
-                    xref='x',  # x offset units: boxplot x-coordinate
-                    yref='y',  # y offset units: boxplot y-coordinate
+                    xref='x',  # x offset in x-axis units
+                    yref='y',  # y offset in y-axis units
                     x=i,
                     y=1 - padbelow,
-                    sizex=1,
-                    sizey=imsize,
+                    sizex=imscale,
+                    sizey=imscale * imsize,
                 )
             return fig
 

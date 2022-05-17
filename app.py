@@ -27,7 +27,6 @@ app.build_layout()
 app.add_callbacks()
 
 server = app.server  # gunicorn looks for 'server' in global namespace
-
 if __name__ == '__main__':
     host = "0.0.0.0" if os.getenv('ON_HEROKU', False) else 'localhost'
     app.run_server(debug=debug, host=host, port=os.getenv('PORT', 8050))
