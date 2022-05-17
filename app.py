@@ -3,6 +3,7 @@
 """ Entry point for main application. """
 
 import os
+
 from src.app.root import MainApp
 
 mongo_url = os.getenv("OSRS_MONGO_URI", None)
