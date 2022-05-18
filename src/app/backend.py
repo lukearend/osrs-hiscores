@@ -11,6 +11,7 @@ class DataStore:
     currentsplit: dcc.Store
     boxplot_clusterid: dcc.Store
     boxplot_nplayers: dcc.Store
+    scatterplot_ptsize: dcc.Store
 
 
 class Backend:
@@ -23,6 +24,7 @@ class Backend:
             currentsplit=dcc.Store('current-split'),
             boxplot_clusterid=dcc.Store('boxplot-clusterid'),
             boxplot_nplayers=dcc.Store('boxplot-nplayers'),
+            scatterplot_ptsize=dcc.Store('scatterplot-ptsize'),
         )
         self.view = html.Div(children=[])
 

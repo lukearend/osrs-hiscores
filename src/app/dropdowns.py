@@ -19,11 +19,11 @@ class SplitMenu:
     """ Dropdown menu for selecting the current split. """
 
     def __init__(self, app: Dash, app_data: OrderedDict[str, SplitResults],
-                 datastore: DataStore, init_split: str = 'all'):
+                 datastore: DataStore, init_val: str = 'all'):
         self.app = app
         self.app_data = app_data
         self.store = datastore
-        self.init_split = init_split
+        self.init_size = init_val
 
         splits = self.app_data.keys()
         opttext = {
@@ -64,7 +64,56 @@ class SplitMenu:
         def select_menu_item(*args) -> str:
             ctx = callback_context
             if not ctx.triggered:
-                return self.init_split
+                return self.init_size
             button_id = ctx.triggered[0]['prop_id'].split('.')[0]
             newsplit = button_id.split(':')[2]
             return newsplit
+
+
+class PointSizeMenu:
+    """ Dropdown menu for setting the scatterplot point size. """
+
+    def __init__(self, app: Dash, app_data: OrderedDict[str, SplitResults],
+                 datastore: DataStore, init_val: str = 'small'):
+        self.app = app
+        self.app_data = app_data
+        self.store = datastore
+        self.init_ptsize = init_val
+
+        opts = ['small', 'medium', 'large']
+        self.menuitems = collections.OrderedDict()
+        for ptsize in opts:
+            label = ptsize
+            button = dbc.DropdownMenuItem(label, id=f'ptsizemenu:item:{ptsize}')
+            item = MenuItem(label=label, button=button)
+            self.menuitems[ptsize] = item
+
+        self.label = html.Div("Point size:", className='label-text')
+        self.dropdown = dbc.DropdownMenu(
+            [item.button for item in self.menuitems.values()],
+            label='',
+            id='ptsizemenu',
+            menu_variant='dark',
+        )
+
+    def add_callbacks(self):
+
+        @self.app.callback(
+            Output(self.dropdown, 'label'),
+            Input(self.store.scatterplot_ptsize, 'data'),
+        )
+        def update_button_text(newsplit: str) -> str:
+            return self.menuitems[newsplit].label
+
+        @self.app.callback(
+            Output(self.store.scatterplot_ptsize, 'data'),
+            *[Input(item.button, 'n_clicks')
+              for item in self.menuitems.values()],
+        )
+        def select_menu_item(*args) -> str:
+            ctx = callback_context
+            if not ctx.triggered:
+                return self.init_ptsize
+            button_id = ctx.triggered[0]['prop_id'].split('.')[0]
+            new_ptsize = button_id.split(':')[2]
+            return new_ptsize

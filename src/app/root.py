@@ -7,7 +7,7 @@ from dash import Dash
 
 from src.app.backend import Backend
 from src.app.boxplot import Boxplot
-from src.app.dropdowns import SplitMenu
+from src.app.dropdowns import SplitMenu, PointSizeMenu
 
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=UserWarning)  # uses deprecated version of dcc
@@ -42,7 +42,9 @@ class MainApp:
         self.datastore = self.backend.store
 
         init_split = list(self.app_data.keys())[0]
-        self.splitmenu = SplitMenu(self.app, self.app_data, self.datastore, init_split=init_split)
+        init_ptsize = 'small'
+        self.splitmenu = SplitMenu(self.app, self.app_data, self.datastore, init_val=init_split)
+        self.ptsizemenu = PointSizeMenu(self.app, self.app_data, self.datastore, init_ptsize)
         self.boxplot = Boxplot(self.app, self.app_data, self.datastore)
 
     def build_layout(self):
@@ -52,13 +54,25 @@ class MainApp:
         for field in fields(self.datastore):
             var = getattr(self.datastore, field.name)
             storevars.append(var)
-        datastore = dbc.Col(storevars)
 
-        splitmenu = dbc.Col(
-            dbc.Row([
-                dbc.Col(self.splitmenu.label),
+        splitmenu = dbc.Row([
+                dbc.Col(self.splitmenu.label, width='auto'),
                 dbc.Col(self.splitmenu.dropdown),
-            ], align='center'),
+            ],
+            align='center'
+        ),
+        ptsizemenu = dbc.Row([
+                dbc.Col(self.ptsizemenu.label, width='auto'),
+                dbc.Col(self.ptsizemenu.dropdown),
+            ],
+            align='center'
+        ),
+        controls = dbc.Row(
+            [
+                dbc.Col(splitmenu, width='auto'),
+                dbc.Col(ptsizemenu),
+            ],
+            align='center',
         )
 
         boxplot = dbc.Col([
@@ -67,9 +81,9 @@ class MainApp:
         ])
 
         self.app.layout = dbc.Container([
-            dbc.Row(datastore),
-            dbc.Row(splitmenu),
-            dbc.Row(boxplot),
+            dbc.Row(dbc.Col(storevars)),
+            dbc.Row(dbc.Col(controls)),
+            dbc.Row(dbc.Col(boxplot)),
             dbc.Row(self.backend.view)
         ])
 
@@ -78,4 +92,5 @@ class MainApp:
 
         self.backend.add_callbacks()
         self.splitmenu.add_callbacks()
+        self.ptsizemenu.add_callbacks()
         self.boxplot.add_callbacks()

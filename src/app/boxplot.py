@@ -61,11 +61,13 @@ class Boxplot:
                 fixedrange=True,  # not zoomable
                 tickvals=[],  # these ticks are drawn on as images instead
             )
+            margin = dict(t=0)
 
             fig = go.Figure(data=boxtrace)
             fig.update_layout(dict(
                 xaxis=xaxis,
                 yaxis=yaxis,
+                margin=margin,
                 paper_bgcolor=colors.BOXPLOT_PAPER,
                 plot_bgcolor=colors.BOXPLOT_BG,
             ))
