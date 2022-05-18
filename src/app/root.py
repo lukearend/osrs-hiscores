@@ -41,10 +41,8 @@ class MainApp:
         self.backend = Backend(self.app, self.app_data)
         self.datastore = self.backend.store
 
-        init_split = list(self.app_data.keys())[0]
-        init_ptsize = 'small'
-        self.splitmenu = SplitMenu(self.app, self.app_data, self.datastore, init_val=init_split)
-        self.ptsizemenu = PointSizeMenu(self.app, self.app_data, self.datastore, init_ptsize)
+        self.splitmenu = SplitMenu(self.app, self.app_data, self.datastore)
+        self.ptsizemenu = PointSizeMenu(self.app, self.app_data, self.datastore)
         self.boxplot = Boxplot(self.app, self.app_data, self.datastore)
 
     def build_layout(self):
