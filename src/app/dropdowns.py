@@ -81,7 +81,7 @@ class SplitMenu:
             app=self.app,
             storevar=self.store.currentsplit,
             optlabels=optlabels,
-            name='splitmenu'
+            name='splitmenu',
         )
 
         self.label = html.Div("Choose split:", className='label-text')

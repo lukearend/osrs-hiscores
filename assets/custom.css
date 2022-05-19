@@ -4,6 +4,7 @@ body {
     background-color: #222222;
     color: #eeeeee;
     font-family: "Classic 2007", sans-serif;
+    font-size: x-large;
 }
 
 .label-text {
@@ -12,4 +13,12 @@ body {
 
 .boxplot-title-parens {
     font-weight: normal;
+}
+
+.dropdown-toggle {
+    font-size: x-large;
+}
+
+.boxplot {
+    height: 30em;
 }

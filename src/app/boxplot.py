@@ -5,6 +5,7 @@ from dash import Dash, Input, Output, html, dcc, no_update
 from plotly import graph_objects as go
 
 from src.app import colors
+from src.app import styles
 from src.app.backend import DataStore
 from src.app.helpers import load_icon_b64
 from src.data.types import SplitResults
@@ -70,6 +71,7 @@ class Boxplot:
                 margin=margin,
                 paper_bgcolor=colors.BOXPLOT_PAPER,
                 plot_bgcolor=colors.BOXPLOT_BG,
+                yaxis_tickfont_size=styles.BOXPLOT_AXIS_FONTSIZE,
             ))
             fig.update_traces(
                 marker=dict(color=colors.BOXPLOT_TRACE),
