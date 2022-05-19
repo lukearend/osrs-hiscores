@@ -1,5 +1,6 @@
 from typing import OrderedDict, List
 
+import dash_bootstrap_components as dbc
 import numpy as np
 from dash import Dash, Input, Output, html, dcc, no_update
 from plotly import graph_objects as go
@@ -62,7 +63,8 @@ class Boxplot:
                 fixedrange=True,  # not zoomable
                 tickvals=[],  # these ticks are drawn on as images instead
             )
-            margin = dict(t=0)
+            margin = dict(b=0, t=0)
+            # layout_margin = dict(b=20, l=2, r=0, t=0),  # left margin adds space for y tick numbers
 
             fig = go.Figure(data=boxtrace)
             fig.update_layout(dict(
