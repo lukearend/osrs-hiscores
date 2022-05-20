@@ -33,6 +33,7 @@ class Boxplot:
         )
 
     def add_callbacks(self):
+
         @self.app.callback(
             Output(self.graph, 'figure'),
             Input(self.store.currentsplit, 'data'),
@@ -57,6 +58,7 @@ class Boxplot:
                 fixedrange=True,  # not zoomable
                 zeroline=False,
                 tickvals=yticks,
+                tickfont={'family': 'sans-serif'},
             )
             xaxis = dict(
                 range=(-0.5, len(skills) - 0.5),

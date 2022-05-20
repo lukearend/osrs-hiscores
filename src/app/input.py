@@ -17,6 +17,7 @@ class UsernameInput:
             id='username-input',
             type='text',
             placeholder="e.g. 'snakeylime'",
+            className='username-input'
         )
 
     def add_callbacks(self):
