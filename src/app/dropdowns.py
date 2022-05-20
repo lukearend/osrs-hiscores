@@ -84,7 +84,7 @@ class SplitMenu:
             name='split-menu',
         )
 
-        self.label = html.Div("Choose split:", className='label-text')
+        self.label = html.Div("Choose split:", style={'font-weight': 'bold'})
         self.dropdown = dropdown.component
         self.add_callbacks = dropdown.add_callbacks
 
@@ -109,6 +109,6 @@ class PointSizeMenu:
             name='ptsizemenu'
         )
 
-        self.label = html.Div("Point size:", className='label-text')
+        self.label = html.Div("Point size:", style={'font-weight': 'bold'})
         self.dropdown = dropdown.component
         self.add_callbacks = dropdown.add_callbacks

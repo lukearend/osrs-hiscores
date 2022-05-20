@@ -29,7 +29,7 @@ class Boxplot:
             figure={},  # Dash bug: figure must be explicitly initialized to an empty value
             config={'displayModeBar': False},  # hide plotly toolbar
             id='boxplot',
-            className='boxplot',
+            className='boxplot-graph',
         )
 
     def add_callbacks(self):
@@ -75,9 +75,6 @@ class Boxplot:
                 plot_bgcolor=colors.BOXPLOT_BG,
                 yaxis_tickfont_size=styles.BOXPLOT_AXIS_FONTSIZE,
             ))
-            fig.update_traces(
-                marker=dict(color=colors.BOXPLOT_TRACE),
-            )
             for i, skill in enumerate(skills):
                 fig.add_layout_image(
                     source='data:image/png;base64,' + load_icon_b64(skill),
@@ -104,6 +101,6 @@ class Boxplot:
             else:
                 part1, part2 = f"Cluster {clusterid} stats", f" ({nplayers} players)"
 
-            part1 = html.Span(part1)
-            part2 = html.Span(part2, className='boxplot-title-parens')
+            part1 = html.Span(part1, style={'font-weight': 'bold'})
+            part2 = html.Span(part2, style={'font-weight': 'normal'})
             return [part1, part2]

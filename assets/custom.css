@@ -1,27 +1,28 @@
-/* Global formatting */
-
 body {
-    background-color: #222222;
-    color: #eeeeee;
     font-family: "Classic 2007", sans-serif;
     font-size: x-large;
 }
 
-.label-text {
-    font-weight: bold;
+/* Bootstrap overrides */
+::placeholder {
 }
 
-.boxplot-title-parens {
-    font-weight: normal;
+.btn {
+    font-size: x-large;
+    border-radius: 0.15em;
 }
 
-.dropdown-toggle {
+.dropdown-item {
     font-size: x-large;
 }
 
-.boxplot {
-    height: 20em;
+/* Custom classes */
+.input-field {
+    padding-left: 0.5em;
+    border: solid;
+    border-radius: 0.15em;
 }
 
-.username-input {
+.boxplot-graph {
+    height: 20em;
 }
