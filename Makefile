@@ -42,7 +42,7 @@ pull-mongo:
 player_stats_raw    := $(ROOT)/data/raw/player-stats-raw.csv
 player_stats := $(ROOT)/data/interim/player-stats.pkl
 
-scrape-hiscores: player_stats_raw
+scrape-hiscores: $(player_stats_raw)
 clean-scraped-data: $(player_stats)
 
 $(player_stats_raw):
@@ -52,11 +52,11 @@ $(player_stats_raw):
 	                          --out-file $(player_stats_raw).tmp --vpn
 	mv $(player_stats_raw).tmp $(player_stats_raw)
 
-$(player_stats): player_stats_raw
+$(player_stats): $(player_stats_raw)
 	@source env/bin/activate && cd scripts && \
 	python clean_raw_data.py --in-file $< --out-file $@
 
-.SECONDARY: player_stats_raw # Don't require $(stats_raw) if $(player_stats) already exists.
+.SECONDARY: $(player_stats_raw) # Don't require $(stats_raw) if $(player_stats) already exists.
 
 ## ---- Clustering and analysis ----
 
@@ -101,24 +101,25 @@ app-blob: $(app_data)
 
 app-db: start-mongo $(player_stats) $(cluster_ids)
 	@source env/bin/activate && cd scripts && \
-	python build_app.py --stats-file $(word 1,$^) \
-	                    --clusterids-file $(word 2,$^) \
-	                    --mongo-url $(mongo_url) \
-	                    --collection players
+	python build_app_db.py --stats-file $(word 1,$^) \
+	                       --clusterids-file $(word 2,$^) \
+	                       --mongo-url $(mongo_url) \
+	                       --collection players
 
 $(app_data): $(cluster_ids) $(cluster_centroids) $(cluster_quartiles) $(cluster_xyz)
 	@source env/bin/activate && cd scripts && \
-	python build_app.py --splits-file $(splits) \
-	                    --clusterids-file $(word 1,$^) \
-	                    --centroids-file $(word 2,$^) \
-	                    --quartiles-file $(word 3,$^) \
-	                    --xyz-file $(word 4,$^) \
-	                    --out-file $@
+	python build_app_data.py --splits-file $(splits) \
+	                         --clusterids-file $(word 1,$^) \
+	                         --centroids-file $(word 2,$^) \
+	                         --quartiles-file $(word 3,$^) \
+	                         --xyz-file $(word 4,$^) \
+	                         --out-file $@
 
 run-app: start-mongo
 	@source env/bin/activate && \
 	export OSRS_MONGO_URI=$(mongo_url) && \
 	export OSRS_APPDATA_URI=$(app_data) && \
+	export OSRS_DISABLE_AUTH=true && \
 	python app.py
 
 # ---- Finalization ----

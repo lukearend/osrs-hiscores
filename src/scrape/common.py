@@ -1,35 +1,33 @@
-""" Special data types. """
+""" Shared classes for the scraping process. """
 
-from dataclasses import dataclass
 from datetime import datetime
-from typing import List, Dict, Tuple
+from typing import List
 
 import numpy as np
-import pandas as pd
-import xarray as xr
-from numpy.typing import NDArray
 
 
-@dataclass
-class SplitResults:
-    """ Clustering results for one split of the dataset. """
-
-    skills: List[str]                # length nskills in split
-    cluster_quartiles: xr.DataArray  # shape (5, nclusters, nskills + 1), includes total level
-    cluster_centroids: pd.DataFrame  # shape (nclusters, nskills)
-    cluster_xyz: pd.DataFrame        # shape (nclusters, 3)
-    cluster_sizes: NDArray           # length nclusters
-    cluster_uniqueness: NDArray      # length nclusters
-    xyz_axlims: Dict[str, Tuple[float, float]]
+class DoneScraping(Exception):
+    """ Raised when all scraping is done. """
 
 
-@dataclass
-class PlayerResults:
-    """ Stats and clustering results for a player. """
+class NothingToDo(Exception):
+    """ Raised upon discovering the output file is already complete. """
 
-    username: str
-    stats: List[int]            # includes total level
-    clusterids: Dict[str, int]  # cluster ID for each split of the dataset
+
+class UserNotFound(Exception):
+    """ Raised when data for a requested username does not exist. """
+
+
+class ServerBusy(Exception):
+    """ Raised when the CSV API is too busy to process a stats request. """
+
+
+class RequestFailed(Exception):
+    """ Raised when an HTTP request to the hiscores API fails. """
+
+    def __init__(self, message, code=None):
+        self.code = code
+        super().__init__(message)
 
 
 class PlayerRecord:

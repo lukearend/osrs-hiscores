@@ -9,8 +9,7 @@ from typing import List
 from tqdm import tqdm
 
 from src.common import csv_api_stats
-from src.data.types import PlayerRecord
-from src.scrape.exceptions import DoneScraping
+from src.scrape.common import DoneScraping, PlayerRecord
 from src.scrape.workers import PageJob
 
 

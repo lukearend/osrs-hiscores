@@ -8,9 +8,9 @@ import pandas as pd
 from pymongo.collection import Collection
 from tqdm import tqdm
 
-from src.data.db import connect_mongo, player_to_mongodoc
-from src.data.io import load_pkl
-from src.data.types import PlayerResults
+from src.analysis.appdata import player_to_mongodoc
+from src.analysis.io import load_pkl
+from src.common import connect_mongo
 
 
 def main(players: pd.DataFrame,

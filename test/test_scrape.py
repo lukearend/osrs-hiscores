@@ -10,7 +10,7 @@ import aiohttp
 import pytest
 
 from src.common import osrs_skills, csv_api_stats
-from src.data.types import PlayerRecord
+from src.scrape.common import PlayerRecord
 from src.scrape.export import get_top_rank, get_page_jobs, player_to_csv, csv_to_player
 from src.scrape.requests import get_hiscores_page, get_player_stats
 from src.scrape.workers import JobQueue, JobCounter

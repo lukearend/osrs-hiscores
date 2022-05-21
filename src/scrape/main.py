@@ -5,7 +5,7 @@ import asyncio
 import aiohttp
 
 from src.scrape.export import get_page_jobs, export_records
-from src.scrape.exceptions import DoneScraping
+from src.scrape.common import DoneScraping
 from src.scrape.workers import JobQueue, JobCounter, Worker, \
     request_page, request_stats, enqueue_page_usernames, enqueue_stats
 

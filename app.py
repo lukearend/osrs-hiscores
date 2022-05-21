@@ -1,32 +1,31 @@
 #!/usr/bin/env python3
 
-""" Entry point for main application. """
+""" Server entry point for main application. """
 
 import os
+import warnings
 
-from src.app.root import MainApp
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=UserWarning)  # uses deprecated version of dcc
+    import dash_auth
 
-mongo_url = os.getenv("OSRS_MONGO_URI", None)
-appdata_coll = os.getenv("OSRS_APPDATA_COLL", None)
-appdata_file = os.getenv("OSRS_APPDATA_FILE", None)
-auth = os.getenv("OSRS_REQUIRE_AUTH", 'false')
-debug = os.getenv("OSRS_DEBUG_MODE", 'true')
+from src.app import app
+from src.app.root import root_layout
+from src.common import connect_mongo
 
-if mongo_url is None:
-    raise ValueError("missing config variable: OSRS_MONGO_URI")
-if appdata_coll is None:
-    raise ValueError("missing config variable: OSRS_APPDATA_COLL")
-if appdata_file is None:
-    raise ValueError("missing config variable: OSRS_APPDATA_FILE")
 
-auth = False if auth == 'false' else bool(auth)
-debug = False if debug == 'false' else bool(debug)
+host = 'localhost'
+if os.getenv('OSRS_ON_CLOUD', None):
+    host = '0.0.0.0'  # serve to public internet
+    server = app.server  # gunicorn finds and uses `server` in global namespace
 
-app = MainApp(__name__, mongo_url, appdata_coll, appdata_file, auth)
-app.build_layout()
-app.add_callbacks()
+if not os.getenv('OSRS_DISABLE_AUTH', None):
+    auth_coll = connect_mongo(url=os.environ['OSRS_MONGO_URI'], collection='auth')
+    auth_pairs = {doc['username']: doc['password'] for doc in auth_coll.find()}
+    dash_auth.BasicAuth(app, username_password_list=auth_pairs)
 
-server = app.server  # gunicorn looks for 'server' in global namespace
-if __name__ == '__main__':
-    host = "0.0.0.0" if os.getenv('ON_HEROKU', False) else 'localhost'
-    app.run_server(debug=debug, host=host, port=os.getenv('PORT', 8050))
+debug = False if os.getenv('OSRS_DEBUG_OFF', None) else True
+
+app.title = "OSRS hiscores explorer"
+app.layout = root_layout()
+app.run_server(host=host, debug=debug)

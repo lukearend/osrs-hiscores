@@ -8,8 +8,7 @@ from aiohttp import ClientSession, ClientConnectionError
 from bs4 import BeautifulSoup
 
 from src.common import csv_api_stats
-from src.scrape.exceptions import RequestFailed, UserNotFound, ServerBusy
-from src.data.types import PlayerRecord
+from src.scrape.common import RequestFailed, UserNotFound, ServerBusy, PlayerRecord
 
 
 class ParsingFailed(Exception):

@@ -4,17 +4,13 @@ import collections
 import csv
 import json
 import pickle
-import warnings
-from io import BytesIO
-from typing import OrderedDict, Any, Dict
+from typing import OrderedDict, Any
 
-import boto3
 import numpy as np
 import pandas as pd
-from tqdm import tqdm, TqdmWarning
+from tqdm import tqdm
 
 from src.common import osrs_skills
-from src.data.types import SplitResults
 
 
 def load_json(file: str) -> Any:
@@ -112,39 +108,3 @@ def export_centroids_csv(centroids_dict: OrderedDict[str, pd.DataFrame], file):
                     skill_vals.append('' if s not in centroid.index else centroid[s])
                 lines.append([split, clusterid] + skill_vals)
             writer.writerows(lines)
-
-
-def download_s3_obj(bucket: str, obj_key: str) -> bytes:
-    """ Download raw object from an S3 bucket with progress bar. """
-
-    warnings.filterwarnings("ignore", category=TqdmWarning)  # supress warning from float iteration
-
-    s3 = boto3.client('s3')
-    response = s3.head_object(Bucket=bucket, Key=obj_key)
-    size = response['ContentLength']
-
-    print(f"downloading s3://{bucket}/{obj_key}")
-    f = BytesIO()
-    with tqdm(total=size, unit='B', unit_scale=True) as pbar:
-        s3.download_fileobj(bucket, obj_key, f,
-                            Callback=lambda n: pbar.update(n))
-
-    f.seek(0)  # put cursor back at beginning of file
-    return f.read()
-
-
-def load_app_data(path) -> OrderedDict[str, SplitResults]:
-    """ Load app data from S3 bucket or local path. """
-
-    if path.startswith('s3://'):
-        s3_bucket, obj_key = path.replace('s3://', '').split('/', maxsplit=1)
-        app_data = pickle.loads(download_s3_obj(s3_bucket, obj_key))
-    else:
-        app_data = load_pkl(path)
-
-    msg = 'invalid app data'
-    assert isinstance(app_data, OrderedDict), msg
-    for split, data in app_data.items():
-        assert isinstance(split, str) and isinstance(data, SplitResults), msg
-
-    return app_data

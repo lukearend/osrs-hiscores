@@ -9,9 +9,8 @@ from typing import List, OrderedDict
 import pandas as pd
 import xarray as xr
 
-from src.data.analytics import get_cluster_sizes, get_cluster_uniqueness
-from src.data.io import load_pkl, dump_pkl, load_json
-from src.data.types import SplitResults
+from src.analysis.appdata import SplitResults, get_cluster_sizes, get_cluster_uniqueness
+from src.analysis.io import load_pkl, dump_pkl, load_json
 
 
 def main(splits: OrderedDict[str, List[str]],

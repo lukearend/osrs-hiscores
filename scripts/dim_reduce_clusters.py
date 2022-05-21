@@ -7,8 +7,8 @@ from typing import OrderedDict
 
 import pandas as pd
 
-from src.data.io import load_pkl, dump_pkl, load_json
-from src.data.models import umap_reduce
+from src.analysis.io import load_pkl, dump_pkl, load_json
+from src.analysis.models import umap_reduce
 
 
 def main(centroids: OrderedDict[str, pd.DataFrame],

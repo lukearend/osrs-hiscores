@@ -9,8 +9,8 @@ from typing import Tuple, List, Dict, OrderedDict
 import numpy as np
 import pandas as pd
 
-from src.data.io import load_pkl, dump_pkl, load_json
-from src.data.models import fit_kmeans, cluster_l2
+from src.analysis.io import load_pkl, dump_pkl, load_json
+from src.analysis.models import fit_kmeans, cluster_l2
 
 
 def main(players: pd.DataFrame,
