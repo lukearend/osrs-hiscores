@@ -6,7 +6,7 @@ import dash_bootstrap_components as dbc
 from dash import Dash, dcc, html
 from dash_extensions import EventListener
 
-from src import osrs_skills
+from src.common import osrs_skills
 from src.data.types import SplitResults
 from src.app.helpers import load_table_layout, format_skill, \
     get_level_tick_marks, get_color_label, get_point_size, load_skill_icon

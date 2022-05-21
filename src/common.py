@@ -1,4 +1,4 @@
-""" Top-level definitions. """
+""" Shared definitions. """
 
 import json
 from functools import lru_cache

@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 from tqdm import tqdm, TqdmWarning
 
-from src import osrs_skills
+from src.common import osrs_skills
 from src.data.types import SplitResults
 
 

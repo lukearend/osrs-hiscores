@@ -5,7 +5,7 @@
 import argparse
 import os
 
-from src import download_s3_obj
+from src.common import download_s3_obj
 
 parser = argparse.ArgumentParser(description="Download pre-computed scraping and clustering results.")
 parser.add_argument('s3_bucket', help="download files from this S3 bucket")

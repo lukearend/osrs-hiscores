@@ -9,7 +9,7 @@ from dash.exceptions import PreventUpdate
 from plotly import graph_objects as go
 from pymongo.collection import Collection
 
-from src import osrs_skills
+from src.common import osrs_skills
 from src.app.helpers import load_table_layout, format_skill, validate_username, \
     get_level_tick_marks, get_color_label, get_point_size
 from src.app.plotdata import boxplot_data, scatterplot_data
