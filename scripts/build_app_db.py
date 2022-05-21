@@ -3,12 +3,13 @@
 """ Build player stat/clusters database for main application. """
 
 import argparse
+import sys
 
 import pandas as pd
 from pymongo.collection import Collection
 from tqdm import tqdm
 
-from src.analysis.appdata import player_to_mongodoc
+from src.analysis.appdata import PlayerResults, player_to_mongodoc
 from src.analysis.io import load_pkl
 from src.common import connect_mongo
 
@@ -19,7 +20,7 @@ def main(players: pd.DataFrame,
          batch_size: int = 5000):
 
     if collection.count_documents({}) > 0:
-        print("found partial collection, dropping")
+        print("found existing collection, dropping")
         coll.drop()
 
     with tqdm(total=len(players)) as pbar:
@@ -58,5 +59,6 @@ if __name__ == '__main__':
     last_uname = players_df.index[-1]
     if coll.find_one({'_id': last_uname.lower()}):
         print("database collection is already populated")
+        sys.exit(0)
 
     main(players_df, clusterids_df, coll)

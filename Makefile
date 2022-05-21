@@ -5,22 +5,22 @@ ROOT := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
 ## ---- End-to-end ----
 
-build:    setup download app run                ## Build and run final application from downloaded data.
-all:      setup scrape cluster analysis app run ## Build and run final application from scratch.
+build:    setup download app run                 ## Build and run final application from downloaded data.
+all:      setup scrape cluster analysis app run  ## Build and run final application from scratch.
 
 ## ---- Top-level ----
 
-setup:    init-repo build-env pull-mongo       ## Setup repository and install dependencies.
-scrape:   scrape-hiscores clean-scraped-data   ## Scrape top 2 million players from the OSRS hiscores.
-cluster:  cluster-hiscores-data                ## Cluster players according to account similarity.
-analysis: compute-quartiles dimreduce-clusters ## Analyze and postprocess clustering results.
-app:      app-blob app-db                      ## Build data blob and database needed by main application.
-run:      start-mongo run-app                  ## Run main application.
-test:     lint test-scrape test-scripts        ## Run test suite.
+setup:    init-repo build-env pull-mongo         ## Setup repository and install dependencies.
+scrape:   scrape-hiscores clean-scraped-data     ## Scrape account stats from the OSRS hiscores.
+cluster:  cluster-hiscores-data                  ## Cluster players according to account similarity.
+analysis: compute-quartiles dimreduce-clusters   ## Analyze and postprocess clustering results.
+app:      app-blob app-db                        ## Build data blob and database needed by main application.
+run:      start-mongo run-app                    ## Run main application.
+test:     lint test-units test-system            ## Run test suite.
 
-export:   export-dataset                       ## Export finalized dataset to CSV files.
-publish:  upload-dataset build-app-prod        ## Upload finalized dataset and production app data.
-download: download-prebuilt-data               ## Download pre-scraped data with clustering results.
+export:   export-dataset                         ## Export finalized dataset to CSV files.
+publish:  upload-dataset build-app-prod          ## Upload finalized dataset and production app data.
+download: download-prebuilt-data                 ## Download pre-scraped data with clustering results.
 
 ## ---- Setup ----
 
@@ -101,8 +101,8 @@ app-blob: $(app_data)
 
 app-db: start-mongo $(player_stats) $(cluster_ids)
 	@source env/bin/activate && cd scripts && \
-	python build_app_db.py --stats-file $(word 1,$^) \
-	                       --clusterids-file $(word 2,$^) \
+	python build_app_db.py --stats-file $(word 2,$^) \
+	                       --clusterids-file $(word 3,$^) \
 	                       --mongo-url $(mongo_url) \
 	                       --collection players
 
@@ -196,13 +196,11 @@ lint:
 	@source env/bin/activate && pycodestyle src scripts --ignore=E301,E302,E402,E501
 	@echo "code check passed"
 
-test-scrape:
-	@source env/bin/activate && cd test && \
-	pytest test_scrape.py
+test-units:
+	@source env/bin/activate && pytest test
 
-test-scripts:
-	@source env/bin/activate && cd test && \
-	pytest test_scripts.py
+test-system:
+	@: # todo: run bash script which does a small scrape, analysis, and run-app
 
 build-test-data:
 	@source env/bin/activate && \

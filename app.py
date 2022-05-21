@@ -9,8 +9,8 @@ with warnings.catch_warnings():
     warnings.filterwarnings("ignore", category=UserWarning)  # uses deprecated version of dcc
     import dash_auth
 
-from src.app import app
-from src.app.root import root_layout
+from app import app
+from app.root import root_layout
 from src.common import connect_mongo
 
 

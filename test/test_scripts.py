@@ -12,10 +12,9 @@ from scripts.cluster_players import main as cluster_players
 from scripts.compute_quartiles import main as compute_quartiles
 from scripts.dim_reduce_clusters import main as dim_reduce_clusters
 from src.common import osrs_skills, connect_mongo
-from src.data.db import mongo_get_player
-from src.data.io import export_players_csv, export_clusterids_csv, export_centroids_csv, import_players_csv, \
-    import_clusterids_csv, import_centroids_csv
-from src.data.types import PlayerResults, SplitResults
+from src.analysis.appdata import PlayerResults, SplitResults, mongo_get_player
+from src.analysis.io import import_players_csv, import_clusterids_csv, import_centroids_csv, \
+    export_players_csv, export_clusterids_csv, export_centroids_csv
 
 
 SPLITS = OrderedDict([
