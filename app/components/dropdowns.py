@@ -3,10 +3,7 @@ from dataclasses import dataclass
 from typing import OrderedDict
 
 import dash_bootstrap_components as dbc
-from dash import Dash, Input, Output, html, callback_context, no_update, dcc
-
-from src.app.backend import DataStore
-from src.data.types import SplitResults
+from dash import Dash, Input, Output, html, callback_context, dcc
 
 
 @dataclass

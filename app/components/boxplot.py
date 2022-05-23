@@ -5,12 +5,6 @@ import numpy as np
 from dash import Dash, Input, Output, html, dcc, no_update
 from plotly import graph_objects as go
 
-from src.app import colors
-from src.app import styles
-from src.app.backend import DataStore
-from src.app.helpers import load_icon_b64
-from src.data.types import SplitResults
-
 
 class Boxplot:
     """ Boxplot displaying quartiles for the hovered cluster. """

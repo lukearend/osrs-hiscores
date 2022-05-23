@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 
-""" Server entry point for main application. """
+""" Entry point for main application. """
 
 import os
 import warnings

@@ -38,19 +38,21 @@ def csv_api_stats() -> List[str]:
 
 
 @lru_cache()
-def download_s3_obj(bucket: str, obj_key: str) -> bytes:
-    """ Download raw object from an S3 bucket with progress bar. """
+def download_s3_obj(url: str) -> bytes:
+    """ Download an S3 object blob with progress bar. """
 
-    warnings.filterwarnings("ignore", category=TqdmWarning)  # supress warning from float iteration
+    bucket, objkey = url.replace('s3://', '').split('/', maxsplit=1)
 
     s3 = boto3.client('s3')
-    response = s3.head_object(Bucket=bucket, Key=obj_key)
+    response = s3.head_object(Bucket=bucket, Key=objkey)
     size = response['ContentLength']
 
-    print(f"downloading s3://{bucket}/{obj_key}")
+    print(f"downloading s3://{bucket}/{objkey}")
     f = BytesIO()
+
+    warnings.filterwarnings("ignore", category=TqdmWarning)  # supress warning from float iteration
     with tqdm(total=size, unit='B', unit_scale=True) as pbar:
-        s3.download_fileobj(bucket, obj_key, f,
+        s3.download_fileobj(bucket, objkey, f,
                             Callback=lambda n: pbar.update(n))
 
     f.seek(0)  # put cursor back at beginning of file

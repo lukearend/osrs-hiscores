@@ -3,7 +3,7 @@ from typing import OrderedDict, Tuple
 
 from dash import Dash, Output, Input, dcc, html
 
-from src.data.types import SplitResults
+from prevent_initial_call.types import SplitResults
 
 
 @dataclass

@@ -1,28 +1,29 @@
 import base64
+import os
 import pickle
-from functools import lru_cache
+from pathlib import Path
 from typing import OrderedDict
 
-from app import app
 from src.common import download_s3_obj
-from src.data.io import load_pkl
-from src.data.types import SplitResults
+from src.analysis.appdata import SplitResults
+from src.analysis.io import load_pkl
 
 
-@lru_cache()
+def assets_dir() -> Path:
+    return Path(__file__).resolve().parents[2] / 'assets'
+
+
 def load_icon_b64(skill: str):
-    file = app.get_asset_url(f"icons/{skill}.png")
+    file = os.path.join(assets_dir(), 'icons', skill + '.png')
     with open(file, 'rb') as f:
         return base64.b64encode(f.read()).decode('utf-8')
 
 
-@lru_cache()
 def load_app_data(path) -> OrderedDict[str, SplitResults]:
-    """ Load pickled app data from S3 bucket or local path. """
+    """ Load app data from S3 bucket or local path. """
 
     if path.startswith('s3://'):
-        s3_bucket, obj_key = path.replace('s3://', '').split('/', maxsplit=1)
-        blob = download_s3_obj(s3_bucket, obj_key)
+        blob = download_s3_obj(url=path)
         app_data = pickle.loads(blob)
     else:
         app_data = load_pkl(path)
