@@ -12,13 +12,9 @@ final: init scrape cluster export upload-data postprocess build-app push-app dep
 
 ## ---- Top-level ----
 
-postprocess: compute-quartiles dimreduce-clusters     ## Analyze and postprocess clustering results.
-
 download: download-pkl export-csv                  ## Download pre-scraped data and clustering results.
-
 upload-data: upload-pkl upload-csv                    ## Upload finalized dataset.
-upload-app: app-blob app-db-prod push-app-blob       ## Push finalized app data to the cloud.
-deploy-app: deploy-dev
+upload-app: app-blob app-db-prod push-app-blob
 
 ## ---- Setup ----
 
@@ -39,10 +35,11 @@ pull-mongo:
 
 scrape: scrape-hiscores clean-scraped-data  ## Create account stats dataset from the OSRS hiscores.
 
-player_stats_raw := "$(ROOT)/data/raw/player-stats-raw.csv"
-player_stats := "$(ROOT)/data/interim/player-stats.pkl"
+player_stats_raw := $(ROOT)/data/raw/player-stats-raw.csv
+player_stats := $(ROOT)/data/interim/player-stats.pkl
 
 scrape-hiscores: $(player_stats_raw)
+
 $(player_stats_raw):
 	echo $(player_stats_raw)
 	@source env/bin/activate && cd scripts && \
@@ -60,8 +57,8 @@ $(player_stats):
 
 ## ---- Clustering and analysis ----
 
-cluster_ids := "$(ROOT)/data/interim/player-clusterids.pkl"
-cluster_centroids := "$(ROOT)/data/interim/cluster-centroids.pkl"
+cluster_ids := $(ROOT)/data/interim/player-clusterids.pkl
+cluster_centroids := $(ROOT)/data/interim/cluster-centroids.pkl
 
 cluster: $(cluster_ids) $(cluster_centroids)  ## Cluster players according to account similarity.
 $(cluster_ids) $(cluster_centroids):
@@ -73,22 +70,22 @@ $(cluster_ids) $(cluster_centroids):
 	                          --out-centroids $(cluster_centroids) \
 	                          --verbose
 
-cluster_xyz := "$(ROOT)/data/interim/cluster-xyz.pkl"
-cluster_quartiles := "$(ROOT)/data/interim/cluster-quartiles.pkl"
+cluster_xyz := $(ROOT)/data/interim/cluster-xyz.pkl
+cluster_quartiles := $(ROOT)/data/interim/cluster-quartiles.pkl
 
-postprocess: dimreduce-clusters compute-quartiles
+postprocess: compute-quartiles dimreduce-clusters     ## Analyze and postprocess clustering results.
 
 dimreduce-clusters: $(cluster_xyz)
 $(cluster_xyz):
 	@source env/bin/activate && cd scripts && \
-	python dim_reduce_clusters.py --params-file "$(ROOT)/ref/split-params.json" \
+	python dim_reduce_clusters.py --params-file $(ROOT)/ref/split-params.json \
 	                              --in-file $(cluster_centroids) \
 	                              --out-file $@
 
 compute-quartiles: $(cluster_quartiles)
 $(cluster_quartiles):
 	@source env/bin/activate && cd scripts && \
-	python compute_quartiles.py --splits-file "$(ROOT)/ref/skill-splits.json" \
+	python compute_quartiles.py --splits-file $(ROOT)/ref/skill-splits.json \
 	                            --stats-file $(player_stats) \
 	                            --clusterids-file $(cluster_ids) \
 	                            --out-file $@ \
@@ -97,8 +94,8 @@ $(cluster_quartiles):
 
 ## ---- Main application ----
 
-mongo_url := $(or $(OSRS_MONGO_URI), "localhost:27017")
-app_data := "$(ROOT)/data/final/app-data.pkl"
+mongo_url := $(or $(OSRS_MONGO_URI), localhost:27017)
+app_data := $(ROOT)/data/final/app-data.pkl
 
 run-app: start-mongo  ## Run main application.
 	@source env/bin/activate && \
@@ -107,12 +104,12 @@ run-app: start-mongo  ## Run main application.
 	export OSRS_DISABLE_AUTH=true && \
 	python app.py
 
-build-app: app-blob app-db ## Build data blob and database needed by main application.
+build-app: app-blob app-db  ## Build data blob and database needed by main application.
 
 app-blob: $(app_data)
 $(app_data):
 	@source env/bin/activate && cd scripts && \
-	python build_app_data.py --splits-file $(splits) \
+	python build_app_data.py --splits-file $(ROOT)/ref/skill-splits.json \
 	                         --clusterids-file $(cluster_ids) \
 	                         --centroids-file $(cluster_centroids) \
 	                         --quartiles-file $(cluster_quartiles) \
@@ -126,11 +123,15 @@ app-db: start-mongo
 	                       --mongo-url $(mongo_url) \
 	                       --collection players
 
-push-app: push-blob
-	@: # todo: build app db with production URL
+push-app:  ## Push finalized app data to the cloud.
+	aws s3 cp $(app_data) $(OSRS_APPDATA_URI)
+	source env/bin/activate && cd scripts && \
+	python build_app_db.py --stats-file $(player_stats) \
+	                       --clusterids-file $(cluster_ids) \
+	                       --mongo-url $(OSRS_MONGO_URI_PROD) \
+	                       --collection players
 
 deploy-dev:
-	aws s3 cp $(app_data) $(OSRS_APPDATA_URI)
 	git push staging development:master
 
 deploy-prod:
@@ -144,9 +145,9 @@ download-pkl: download-centroids-pkl download-clusterids-pkl download-stats-pkl
 	touch $(player_stats)
 	touch $(cluster_ids) $(cluster_centroids)
 
-player_stats_s3      := "s3://osrshiscores/player-stats.pkl"
-cluster_ids_s3       := "s3://osrshiscores/player-clusterids.pkl"
-cluster_centroids_s3 := "s3://osrshiscores/cluster-centroids.pkl"
+player_stats_s3      := s3://osrshiscores/player-stats.pkl
+cluster_ids_s3       := s3://osrshiscores/player-clusterids.pkl
+cluster_centroids_s3 := s3://osrshiscores/cluster-centroids.pkl
 
 upload-stats-pkl:
 	aws s3 cp $(player_stats) $(player_stats_s3)
@@ -171,11 +172,11 @@ download-centroids-pkl:
 
 ## ---- Finalization ----
 
-export: export-stats-csv export-clusterids-csv export-centroids-csv  ## Export finalized dataset to CSV.
+export-csv: export-stats-csv export-clusterids-csv export-centroids-csv  ## Export finalized dataset to CSV.
 
-player_stats_final      := "$(ROOT)/data/final/player-stats.csv"
-cluster_ids_final       := "$(ROOT)/data/final/player-clusterids.csv"
-cluster_centroids_final := "$(ROOT)/data/final/cluster-centroids.csv"
+player_stats_final      := $(ROOT)/data/final/player-stats.csv
+cluster_ids_final       := $(ROOT)/data/final/player-clusterids.csv
+cluster_centroids_final := $(ROOT)/data/final/cluster-centroids.csv
 
 export-stats-csv:      $(player_stats_final)
 export-clusterids-csv: $(cluster_ids_final)
