@@ -102,7 +102,7 @@ run-app: start-mongo  ## Run main application.
 	export OSRS_MONGO_URI=$(mongo_url) && \
 	export OSRS_APPDATA_URI=$(app_data) && \
 	export OSRS_DISABLE_AUTH=true && \
-	python app.py
+	python app
 
 build-app: app-blob app-db  ## Build data blob and database needed by main application.
 
@@ -132,8 +132,7 @@ push-app:  ## Push finalized app data to the cloud.
 	                       --collection players
 
 deploy-dev:
-	git push staging refactor-app:master && \
-	heroku restart -r staging
+	git push staging refactor-app:master
 
 deploy-prod:
 	git push heroku master:master

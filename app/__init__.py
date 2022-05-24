@@ -13,7 +13,7 @@ if os.getenv("OSRS_APPDATA_URI") is None:
     raise ValueError("missing config variable: OSRS_APPDATA_URI")
 
 load_figure_template('darkly')
-app = Dash('__main__', external_stylesheets=[themes.DARKLY])
+app = Dash(__name__, external_stylesheets=[themes.DARKLY])
 appdb = connect_mongo(os.environ['OSRS_MONGO_URI'], 'players')
 appdata = load_app_data(os.environ['OSRS_APPDATA_URI'])
 server = app.server  # gunicorn finds and uses `server` in root namespace
