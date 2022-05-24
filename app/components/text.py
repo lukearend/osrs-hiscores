@@ -26,23 +26,33 @@ def info_blurb():
 
 def support_link():
     link = 'https://www.buymeacoffee.com/snakeylime'
-    heart = '&#10084'
-    coffee = '&#9749'
-    text = dcc.Markdown(f"made with {heart} and {coffee} by snakeylime")
-    button = dbc.Button("buy me a coffee", href=link)
-    return dbc.Row([
-        dbc.Col(text),
-        dbc.Col(button),
-    ])
+    text = html.Div(
+        f"made with ❤️ and ☕ by snakeylime",
+        className='support-link',
+    )
+    button = dbc.Button(
+        "buy me a coffee",
+        href=link,
+        target='_blank',  # open link in new tab
+        className='support-button',
+    )
+    return dbc.Row(
+        [
+            dbc.Col(text, width='auto'),
+            dbc.Col(button, width='auto'),
+        ],
+        align='center',
+        justify='end',
+    )
 
 
 def github_link():
     link = 'https://github.com/lukearend/osrs-hiscores'
-    text = f"Check out the [source code]({link}) on Github"
+    text = f"Want to dig deeper? Check out the [source code]({link}) on Github."
     return dcc.Markdown(text)
 
 
 def download_link():
     link = 'https://drive.google.com/drive/u/0/folders/***REMOVED***'
-    text = f"[Download the dataset]({link}) from Google Drive"
+    text = f"The dataset is [available for download]({link}) in CSV format from Google Drive."
     return dcc.Markdown(text)

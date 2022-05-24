@@ -1,3 +1,8 @@
+h1 {
+    padding-top: 0.25em;
+    font-size: 250%;
+}
+
 body {
     font-family: "Classic 2007", sans-serif;
     font-size: xx-large;
@@ -17,6 +22,10 @@ body {
 }
 
 /* Custom classes */
+.label-text {
+    font-weight: bold;
+}
+
 .username-input {
     padding-left: 0.5em;
     border: solid;
@@ -25,4 +34,21 @@ body {
 
 .boxplot-graph {
     height: 20em;
+}
+
+.support-link {
+    padding-top: 0.25em;
+    font-size: x-large;
+}
+
+.support-button {
+    padding: 0;
+    padding-left: 0.25em;
+    padding-right: 0.25em;
+    font-size: x-large;
+}
+
+/* Utility */
+.text-smaller {
+    font-size: x-large;
 }

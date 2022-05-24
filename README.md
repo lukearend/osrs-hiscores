@@ -5,10 +5,10 @@ A quantitative analysis of the OSRS hiscores, complete with open-source dataset 
 
 This repository is accompanied by a few important data files:
 
-1. `player-stats.csv`: Skill levels in all 23 skills for the top 2 million OSRS accounts.
-2. `cluster-centroids.csv`: Central values for clusters that emerge from partitioning player dataset into groups based on account similarity. Each centroid is a vector of values between 1-99 in "OSRS skill" space.
-3. `player-clusters.csv`: Cluster IDs per player for three separate clustering runs, grouping similar accounts according to (i) all skills, (ii) combat skills only and (iii) non-combat skills only.
-4. `stats-raw.csv`: Rank, level, xp, clues, minigame and boss stats for the top 2 million OSRS players. This file is the raw output from the scraping process.
+1. `player-stats.csv` (163 MB): Skill levels in all 23 skills for the top 2 million OSRS accounts.
+2. `cluster-centroids.csv` (1 MB): Central values for clusters that emerge from partitioning player dataset into groups based on account similarity. Each centroid is a vector of values between 1-99 in "OSRS skill" space.
+3. `player-clusters.csv` (44.6 MB): Cluster IDs per player for three separate clustering runs, grouping similar accounts according to (i) all skills, (ii) combat skills only and (iii) non-combat skills only.
+4. `stats-raw.csv` (1.1 GB): Rank, level, xp, clues, minigame and boss stats for the top 2 million OSRS players. This file is the raw output from the scraping process.
 
 These files are **not included in the repo** due to file size constraints, and can be downloaded separately from the following public Google Drive folder: <https://drive.google.com/drive/folders/***REMOVED***?usp=sharing>
 

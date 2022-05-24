@@ -1,24 +1,30 @@
-from dash import html, Dash, dcc
-from pymongo.collection import Collection
+from app import app, appdb, appdata
+from dash import html, dcc
+import dash_bootstrap_components as dbc
 
-from src.app.backend import DataStore
 
-
-class UsernameInput:
+def username_input_box():
     """ Input field for usernames to query. """
 
-    def __init__(self, app: Dash, player_coll: Collection, datastore: DataStore):
-        self.app = app
-        self.coll = player_coll
-        self.datastore = datastore
+    label = html.Div(
+        'Lookup username:',
+        className='label-text',
+    )
+    input_box = dcc.Input(
+        id='username-input',
+        type='text',
+        placeholder="e.g. 'snakeylime'",
+        className='username-input',
+    )
+    return dbc.Row(
+        [
+            dbc.Col(label, width='auto'),
+            dbc.Col(input_box),
+        ],
+        align='center',
+    )
 
-        self.label = html.Div('Lookup username:', style={'font-weight': 'bold'})
-        self.input = dcc.Input(
-            id='username-input',
-            type='text',
-            placeholder="e.g. 'snakeylime'",
-            className='username-input'
-        )
+def current_usernames_box():
+    """ Field containing currently queried usernames. """
 
-    def add_callbacks(self):
-        pass
+    return dbc.Col()
