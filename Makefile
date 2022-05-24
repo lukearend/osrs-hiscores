@@ -132,7 +132,8 @@ push-app:  ## Push finalized app data to the cloud.
 	                       --collection players
 
 deploy-dev:
-	git push staging refactor-app:master
+	git push staging refactor-app:master && \
+	heroku restart -r staging
 
 deploy-prod:
 	git push heroku master:master
