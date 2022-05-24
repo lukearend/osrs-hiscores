@@ -17,7 +17,6 @@ from src.common import connect_mongo
 host = 'localhost'
 if os.getenv('OSRS_ON_CLOUD', None):
     host = '0.0.0.0'  # serve to public internet
-    server = app.server  # gunicorn finds and uses `server` in global namespace
 
 if not os.getenv('OSRS_DISABLE_AUTH', None):
     auth_coll = connect_mongo(url=os.environ['OSRS_MONGO_URI'], collection='auth')
@@ -28,4 +27,6 @@ debug = False if os.getenv('OSRS_DEBUG_OFF', None) else True
 
 app.title = "OSRS hiscores explorer"
 app.layout = root_layout()
+
+server = app.server  # gunicorn finds and uses `server` in root namespace
 app.run_server(host=host, debug=debug)
