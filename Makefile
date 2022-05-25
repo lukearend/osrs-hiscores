@@ -220,9 +220,17 @@ build-test-data:
 
 ## ---- Other ----
 
-touch-pipeline:
-	touch player-stats-raw.csv
-
+reset-timestamps:
+	touch -c player-stats-raw.csv
+	touch -c player-stats.pkl
+	touch -c player-clusterids.pkl
+	touch -c cluster-centroids.pkl
+	touch -c cluster-quartiles.pkl
+	touch -c cluster-xyz.pkl
+	touch -c app-data.pkl
+	touch -c player-stats.csv
+	touch -c player-clusterids.csv
+	touch -c cluster-centroids.csv
 
 start-mongo:
 	@bin/start_mongo
