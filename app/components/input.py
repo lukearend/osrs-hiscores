@@ -24,6 +24,7 @@ def username_input_box():
         align='center',
     )
 
+
 def current_usernames_box():
     """ Field containing currently queried usernames. """
 

@@ -16,4 +16,3 @@ load_figure_template('darkly')
 app = Dash(__name__, external_stylesheets=[themes.DARKLY])
 appdb = connect_mongo(os.environ['OSRS_MONGO_URI'], 'players')
 appdata = load_app_data(os.environ['OSRS_APPDATA_URI'])
-server = app.server  # gunicorn finds and uses `server` in root namespace

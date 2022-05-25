@@ -100,7 +100,7 @@ run-app: start-mongo  ## Run main application locally.
 	export OSRS_MONGO_URI=$(mongo_url) && \
 	export OSRS_APPDATA_URI=$(app_data) && \
 	export OSRS_DISABLE_AUTH=true && \
-	python app
+	python app.py
 
 push-app-db: mongo_url := $(OSRS_MONGO_URI_PROD)  # use production DB URI
 push-app-db: app-db

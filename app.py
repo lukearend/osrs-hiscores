@@ -28,4 +28,5 @@ debug = False if os.getenv('OSRS_DEBUG_OFF', None) else True
 app.title = "OSRS hiscores explorer"
 app.layout = root_layout()
 
+server = app.server  # gunicorn finds and uses `server` in root namespace
 app.run_server(host=host, debug=debug)
