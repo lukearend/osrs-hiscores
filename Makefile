@@ -7,14 +7,8 @@ export
 .DEFAULT_GOAL = help
 
 user: init test download postprocess build-app run-app
-nightly: init test scrape cluster export postprocess build-app push-app deploy-dev
-final: init scrape cluster export upload-data postprocess build-app push-app deploy-prod
-
-## ---- Top-level ----
-
-download: download-pkl export-csv                  ## Download pre-scraped data and clustering results.
-upload-data: upload-pkl upload-csv                    ## Upload finalized dataset.
-upload-app: app-blob app-db-prod push-app-blob
+nightly: init test scrape cluster postprocess export-csv build-app push-app deploy-dev
+final: init scrape cluster upload postprocess build-app push-app deploy-prod
 
 ## ---- Setup ----
 
@@ -33,7 +27,7 @@ pull-mongo:
 
 ## ---- Scraping and cleaning ----
 
-scrape: scrape-hiscores clean-scraped-data  ## Create account stats dataset from the OSRS hiscores.
+scrape: scrape-hiscores clean-scraped-data  ## Scrape player stats from the OSRS hiscores.
 
 player_stats_raw := $(ROOT)/data/raw/player-stats-raw.csv
 player_stats := $(ROOT)/data/interim/player-stats.pkl
@@ -59,8 +53,11 @@ $(player_stats):
 
 cluster_ids := $(ROOT)/data/interim/player-clusterids.pkl
 cluster_centroids := $(ROOT)/data/interim/cluster-centroids.pkl
+cluster_quartiles := $(ROOT)/data/interim/cluster-quartiles.pkl
+cluster_xyz := $(ROOT)/data/interim/cluster-xyz.pkl
 
 cluster: $(cluster_ids) $(cluster_centroids)  ## Cluster players according to account similarity.
+
 $(cluster_ids) $(cluster_centroids):
 	@source env/bin/activate && cd scripts && \
 	python cluster_players.py --in-file $(player_stats) \
@@ -70,19 +67,10 @@ $(cluster_ids) $(cluster_centroids):
 	                          --out-centroids $(cluster_centroids) \
 	                          --verbose
 
-cluster_xyz := $(ROOT)/data/interim/cluster-xyz.pkl
-cluster_quartiles := $(ROOT)/data/interim/cluster-quartiles.pkl
-
-postprocess: compute-quartiles dimreduce-clusters     ## Analyze and postprocess clustering results.
-
+postprocess: compute-quartiles dimreduce-clusters  ## Postprocess clustering results.
 dimreduce-clusters: $(cluster_xyz)
-$(cluster_xyz):
-	@source env/bin/activate && cd scripts && \
-	python dim_reduce_clusters.py --params-file $(ROOT)/ref/split-params.json \
-	                              --in-file $(cluster_centroids) \
-	                              --out-file $@
-
 compute-quartiles: $(cluster_quartiles)
+
 $(cluster_quartiles):
 	@source env/bin/activate && cd scripts && \
 	python compute_quartiles.py --splits-file $(ROOT)/ref/skill-splits.json \
@@ -90,23 +78,45 @@ $(cluster_quartiles):
 	                            --clusterids-file $(cluster_ids) \
 	                            --out-file $@ \
 
+
+$(cluster_xyz):
+	@source env/bin/activate && cd scripts && \
+	python dim_reduce_clusters.py --params-file $(ROOT)/ref/split-params.json \
+	                              --in-file $(cluster_centroids) \
+	                              --out-file $@
+
 .SECONDARY: $(player_stats_raw) # Don't require $(stats_raw) if $(player_stats) already exists.
 
 ## ---- Main application ----
 
+build-app: app-blob app-db  ## Build datafile and database for main application.
+push-app: push-app-blob push-app-db  ## Push datafile and database to the cloud.
+
 mongo_url := $(or $(OSRS_MONGO_URI), localhost:27017)
 app_data := $(ROOT)/data/final/app-data.pkl
 
-run-app: start-mongo  ## Run main application.
+run-app: start-mongo  ## Run main application locally.
 	@source env/bin/activate && \
 	export OSRS_MONGO_URI=$(mongo_url) && \
 	export OSRS_APPDATA_URI=$(app_data) && \
 	export OSRS_DISABLE_AUTH=true && \
 	python app
 
-build-app: app-blob app-db  ## Build data blob and database needed by main application.
+push-app-db: mongo_url := $(OSRS_MONGO_URI_PROD)  # use production DB URI
+push-app-db: app-db
+
+push-app-blob: app-blob
+	aws s3 cp $(app_data) $(OSRS_APPDATA_URI)
 
 app-blob: $(app_data)
+
+app-db: start-mongo
+	@source env/bin/activate && cd scripts && \
+	python build_app_db.py --stats-file $(player_stats) \
+	                       --clusterids-file $(cluster_ids) \
+	                       --mongo-url $(mongo_url) \
+	                       --collection players
+
 $(app_data):
 	@source env/bin/activate && cd scripts && \
 	python build_app_data.py --splits-file $(ROOT)/ref/skill-splits.json \
@@ -116,63 +126,15 @@ $(app_data):
 	                         --xyz-file $(cluster_xyz) \
 	                         --out-file $(app_data)
 
-app-db: start-mongo
-	@source env/bin/activate && cd scripts && \
-	python build_app_db.py --stats-file $(player_stats) \
-	                       --clusterids-file $(cluster_ids) \
-	                       --mongo-url $(mongo_url) \
-	                       --collection players
-
-push-app:  ## Push finalized app data to the cloud.
-	aws s3 cp $(app_data) $(OSRS_APPDATA_URI)
-	source env/bin/activate && cd scripts && \
-	python build_app_db.py --stats-file $(player_stats) \
-	                       --clusterids-file $(cluster_ids) \
-	                       --mongo-url $(OSRS_MONGO_URI_PROD) \
-	                       --collection players
-
-deploy-dev:
+deploy-dev:  ## Deploy application to development branch.
 	git push staging refactor-app:master
 
-deploy-prod:
+deploy-prod:  ## Deploy to production.
 	git push heroku master:master
-
-# ---- Upload and download ----
-
-upload-pkl: upload-centroids-pkl upload-clusterids-pkl upload-stats-pkl
-download-pkl: download-centroids-pkl download-clusterids-pkl download-stats-pkl
-    # set timestamps in order of file creation
-	touch $(player_stats)
-	touch $(cluster_ids) $(cluster_centroids)
-
-player_stats_s3      := s3://osrshiscores/player-stats.pkl
-cluster_ids_s3       := s3://osrshiscores/player-clusterids.pkl
-cluster_centroids_s3 := s3://osrshiscores/cluster-centroids.pkl
-
-upload-stats-pkl:
-	aws s3 cp $(player_stats) $(player_stats_s3)
-
-upload-clusterids-pkl:
-	aws s3 cp $(cluster_ids) $(cluster_ids_s3)
-
-upload-centroids-pkl:
-	aws s3 cp $(cluster_centroids) $(cluster_centroids_s3)
-
-download-stats-pkl:
-	@source env/bin/activate && \
-	bin/download_s3 --s3-url $(player_stats_s3) --local-file $(player_stats)
-
-download-clusterids-pkl:
-	@source env/bin/activate && \
-	bin/download_s3 --s3-url $(cluster_ids_s3) --local-file $(cluster_ids)
-
-download-centroids-pkl:
-	@source env/bin/activate && \
-	bin/download_s3 --s3-url $(cluster_centroids_s3) --local-file $(cluster_centroids)
 
 ## ---- Finalization ----
 
-export-csv: export-stats-csv export-clusterids-csv export-centroids-csv  ## Export finalized dataset to CSV.
+export-csv: export-stats-csv export-clusterids-csv export-centroids-csv  ## Export dataset in CSV format.
 
 player_stats_final      := $(ROOT)/data/final/player-stats.csv
 cluster_ids_final       := $(ROOT)/data/final/player-clusterids.csv
@@ -194,11 +156,48 @@ $(cluster_centroids_final): $(cluster_centroids)
 	@source env/bin/activate && \
 	bin/pkl_to_csv --pkl-file $< --csv-file $@ --type centroids
 
-upload-csv:
+# ---- Upload and download ----
+
+upload: export-csv upload-pkl upload-csv  ## Upload finalized dataset.
+download: download-pkl export-csv  ## Download pre-scraped data and clustering results.
+
+upload-pkl: upload-centroids-pkl upload-clusterids-pkl upload-stats-pkl
+
+upload-csv: export-csv
 	gdrive upload $(player_stats_raw) -p $(OSRS_GDRIVE_FOLDER) --name player-stats-raw.csv
 	gdrive upload $(player_stats_final) -p $(OSRS_GDRIVE_FOLDER) --name player-stats.csv
 	gdrive upload $(cluster_ids_final) -p $(OSRS_GDRIVE_FOLDER) --name player-clusters.csv
 	gdrive upload $(cluster_centroids_final) -p $(OSRS_GDRIVE_FOLDER) --name cluster-centroids.csv
+
+download-pkl: download-centroids-pkl download-clusterids-pkl download-stats-pkl
+    # set timestamps in order of file creation
+	touch $(player_stats)
+	touch $(cluster_ids) $(cluster_centroids)
+
+player_stats_s3      := s3://osrshiscores/player-stats.pkl
+cluster_ids_s3       := s3://osrshiscores/player-clusterids.pkl
+cluster_centroids_s3 := s3://osrshiscores/cluster-centroids.pkl
+
+upload-stats-pkl: clean-scraped-data
+	aws s3 cp $(player_stats) $(player_stats_s3)
+
+upload-clusterids-pkl:
+	aws s3 cp $(cluster_ids) $(cluster_ids_s3)
+
+upload-centroids-pkl:
+	aws s3 cp $(cluster_centroids) $(cluster_centroids_s3)
+
+download-stats-pkl:
+	@source env/bin/activate && \
+	bin/download_s3 --s3-url $(player_stats_s3) --local-file $(player_stats)
+
+download-clusterids-pkl:
+	@source env/bin/activate && \
+	bin/download_s3 --s3-url $(cluster_ids_s3) --local-file $(cluster_ids)
+
+download-centroids-pkl:
+	@source env/bin/activate && \
+	bin/download_s3 --s3-url $(cluster_centroids_s3) --local-file $(cluster_centroids)
 
 ## ---- Testing ----
 
