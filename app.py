@@ -13,7 +13,6 @@ from app import app
 from app.root import root_layout
 from src.common import connect_mongo
 
-
 host = 'localhost'
 if os.getenv('OSRS_ON_CLOUD', None):
     host = '0.0.0.0'  # serve to public internet

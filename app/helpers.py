@@ -16,6 +16,8 @@ VALID_UNAME_CHARS = (string.ascii_lowercase +
 
 
 def is_valid_username(username: str):
+    if not username:
+        return False
     if len(username) > 12:
         return False
     if username.strip(VALID_UNAME_CHARS):
