@@ -25,7 +25,6 @@ class DropdownMenu:
         for val, label in self.optlabels.items():
             button = dbc.DropdownMenuItem(label, id=f'{name}:item:{val}')
             item = MenuItem(label=label, button=button)
-            self.menuitems[val] = item
 
         self.component = dbc.DropdownMenu(
             [item.button for item in self.menuitems.values()],

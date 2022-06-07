@@ -45,17 +45,6 @@ def player_to_mongodoc(player: PlayerResults):
     return doc
 
 
-def mongo_get_player(coll: Collection, username: str) -> PlayerResults:
-    doc = coll.find_one({'_id': username.lower()})
-    if not doc:
-        return None
-    return PlayerResults(
-        username=doc['username'],
-        clusterids=doc['clusterids'],
-        stats=doc['stats']
-    )
-
-
 def get_cluster_sizes(cluster_ids: NDArray) -> NDArray:
     """ Compute the number of occurrences for each cluster ID in an array. """
 

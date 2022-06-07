@@ -10,9 +10,9 @@ def header():
     ])
 
 def body():
+    username_input = UsernameInput()
     return dbc.Col([
-        username_input_box(),
-        current_usernames_box(),
+        username_input.layout(),
     ])
 
 def footer():

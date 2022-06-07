@@ -1,12 +1,26 @@
 import base64
 import os
 import pickle
+import string
 from pathlib import Path
 from typing import OrderedDict
 
 from src.common import download_s3_obj
 from src.analysis.appdata import SplitResults
 from src.analysis.io import load_pkl
+
+
+VALID_UNAME_CHARS = (string.ascii_lowercase +
+                     string.ascii_uppercase +
+                     string.digits + ' -_')
+
+
+def is_valid_username(username: str):
+    if len(username) > 12:
+        return False
+    if username.strip(VALID_UNAME_CHARS):
+        return False
+    return True
 
 
 def assets_dir() -> Path:
@@ -19,7 +33,7 @@ def load_icon_b64(skill: str):
         return base64.b64encode(f.read()).decode('utf-8')
 
 
-def load_app_data(path) -> OrderedDict[str, SplitResults]:
+def load_app_data(path: str) -> OrderedDict[str, SplitResults]:
     """ Load app data from S3 bucket or local path. """
 
     if path.startswith('s3://'):
