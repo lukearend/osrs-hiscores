@@ -1,5 +1,6 @@
 import textwrap
 
+from app.components.blobs import username_blobs
 from app.components.input import username_input
 from app.components.store import store_vars
 
@@ -77,7 +78,7 @@ def root_layout():
 
     body = dbc.Col([
         username_input(),
-        store_vars(),
+        username_blobs(),
     ])
 
     return dbc.Container(
@@ -87,5 +88,6 @@ def root_layout():
             body,
             html.Br(),
             endmatter,
+            store_vars(),
         ]
     )

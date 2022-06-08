@@ -1,46 +1,54 @@
-from dataclasses import dataclass
-from typing import Dict, List
+from typing import List
 
-from dash import html, dcc, Output, Input, State, no_update, callback_context, MATCH
+from dash import Output, Input, ALL, callback_context
 import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 
-from app import app, appdb, appdata
-from app.helpers import is_valid_username
-from src.common import osrs_skills
-
-from app.colors import HALO_COLORS
+from app import app
+from app.colors import HALO_COLORS as blob_colors
+from app.helpers import triggered_id
 
 
-class UsernameBlob():
-    """ Blob displaying a username which can be clicked closed. """
+def username_blobs():
+    return dbc.Row(id='blob-container')
 
-    def __init__(self, username, index=0):
-        self.color = HALO_COLORS[index % len(HALO_COLORS)]
-        self.username = username
-        self.closer = dbc.Button(id='blob-closer', className='btn-close', style={'background-color': self.color})
 
-    def layout(self):
-        return dbc.Col(
-            dbc.Row(
-                [
-                    dbc.Col(
-                        self.username,
-                        width='auto',
-                        align='center',
-                    ),
-                    dbc.Col(
-                        self.closer,
-                        align='center',
-                    ),
-                ],
-                align='center',
-            ),
+@app.callback(
+    Output('blob-container', 'children'),
+    Input('username-list', 'data'),
+)
+def draw_blobs(unames):
+    blobs = [
+        dbc.Button(
+            uname,
+            id={
+                'type': 'blob',
+                'username': uname,
+            },
+            style={
+                'background-color': blob_colors[i % len(blob_colors)],
+                'border-radius': '1em',
+                'padding-left': '0.5em',
+                'padding-right': '0.5em',
+            }
+        ) for i, uname in enumerate(unames)
+    ]
+    return [
+        dbc.Col(
+            blob,
             width='auto',
-            className='username-blob',
-            style={'background-color': self.color},
-        )
+        ) for blob in blobs
+    ]
 
 
-class BlobContainer():
-    pass
+@app.callback(
+    Output('username-to-remove', 'data'),
+    Input({'type': 'blob', 'username': ALL}, 'n_clicks'),
+    prevent_initial_call=True,
+)
+def handle_blob_click(_):
+    trigger = triggered_id(callback_context)
+    n_clicks = callback_context.triggered[0]['value']
+    if n_clicks is None:
+        raise PreventUpdate
+    return trigger['username']

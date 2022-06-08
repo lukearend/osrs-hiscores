@@ -1,9 +1,9 @@
-from typing import Any, Dict
-
-from dash import html, dcc, Output, Input, no_update, State
+from dash import html, dcc, Output, Input, callback_context, no_update
 import dash_bootstrap_components as dbc
+from dash.exceptions import PreventUpdate
 
-from app import app, appdata
+from app import app, appdb, appdata
+from app.helpers import is_valid_username, triggered_id
 
 
 def username_input():
@@ -33,35 +33,27 @@ def username_input():
 
 
 @app.callback(
-    Output('input-username', 'data'),
-    Input('input-box', 'value'),
-    prevent_initial_call=True,
-)
-def parse_username_input(input_txt: str) -> str:
-    if not input_txt:
-        return no_update
-    return input_txt
-
-
-@app.callback(
     Output('query-text', 'children'),
-    Input('query-result', 'data'),
-    State('input-username', 'data'),
+    Output('username-to-append', 'data'),
+    Input('input-box', 'value'),
 )
-def update_query_text(result: Dict[str, Any], uname: str) -> str:
-    if result is None:
-        return ''
+def handle_username_input(input_txt: str) -> str:
+    trigger = triggered_id(callback_context)
+    if trigger is None:
+        return '', no_update
 
-    if result == 'invalid':
-        return f"'{uname}' is not a valid OSRS username"
+    if input_txt == '':
+        raise PreventUpdate
 
-    if result == 'not found':
-        return f"player '{uname}' not found in dataset"
+    if not is_valid_username(input_txt):
+        return f"'{input_txt}' is not a valid OSRS username", no_update
 
-    clusterid = result['cluster_ids']['all']
-    return "'{}': cluster {} ({} players, {:.1%} unique)".format(
-        result['username'],
-        clusterid,
-        appdata['all'].cluster_sizes[clusterid],
-        appdata['all'].cluster_uniqueness[clusterid],
-    )
+    doc = appdb.find_one({'_id': input_txt.lower()})
+    if not doc:
+        return f"player '{input_txt}' not found in dataset", no_update
+
+    uname = doc['username']
+    id = doc['clusterids']['all']
+    size = appdata['all'].cluster_sizes[id]
+    uniq = appdata['all'].cluster_uniqueness[id]
+    return f"'{uname}': cluster {id} ({size} players, {uniq:.1%} unique)", uname

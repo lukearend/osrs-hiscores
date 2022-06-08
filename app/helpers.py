@@ -1,4 +1,5 @@
 import base64
+import json
 import os
 import pickle
 import string
@@ -15,7 +16,9 @@ VALID_UNAME_CHARS = (string.ascii_lowercase +
                      string.digits + ' -_')
 
 
-def is_valid_username(username: str):
+def is_valid_username(username: str) -> bool:
+    """ Check whether a string is a valid OSRS username. """
+
     if not username:
         return False
     if len(username) > 12:
@@ -29,7 +32,9 @@ def assets_dir() -> Path:
     return Path(__file__).resolve().parents[2] / 'assets'
 
 
-def load_icon_b64(skill: str):
+def load_icon_b64(skill: str) -> str:
+    """ Load the icon for a skill as a base64-encoded string. """
+
     file = os.path.join(assets_dir(), 'icons', skill + '.png')
     with open(file, 'rb') as f:
         return base64.b64encode(f.read()).decode('utf-8')
@@ -45,3 +50,20 @@ def load_app_data(path: str) -> OrderedDict[str, SplitResults]:
         app_data = load_pkl(path)
 
     return app_data
+
+
+def triggered_id(callback_context) -> str:
+    """ Get the ID of the component that triggered a callback. """
+
+    triggered = callback_context.triggered
+    if not triggered:
+        return None
+    propid = triggered[0]['prop_id']
+    suffix = '.' + propid.split('.')[-1]
+    id = propid[:-len(suffix)]
+
+    # Pattern-matching component IDs are a JSON-serialized dict.
+    try:
+        return json.loads(id)
+    except json.JSONDecodeError:
+        return id

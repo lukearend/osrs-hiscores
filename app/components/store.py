@@ -1,61 +1,59 @@
-from typing import Any, Dict
+from typing import Any, List
 
 import dash_bootstrap_components as dbc
-from dash import Output, Input, dcc, html
+from dash import Output, Input, dcc, html, State, callback_context, no_update
 
-from app import app, appdb
-from app.helpers import is_valid_username
-from src.common import osrs_skills
+from app import app
+from app.helpers import triggered_id
 
 
 def store_vars():
     storevars = [
-        dcc.Store('input-username'),
-        dcc.Store('query-result')
+        dcc.Store('username-list', data=[]),
+        dcc.Store('username-to-append'),
+        dcc.Store('username-to-remove'),
     ]
 
-    containers = []
+    children = []
     for var in storevars:
-        containers.append(html.Div(id=f'container:{var.id}'))
+        containerid = f'container:{var.id}'
+
+        container = dbc.Col(
+            dbc.Row([
+                html.Div(var.id + ': '),
+                html.Div(id=containerid),
+            ]),
+            width='auto',
+        )
+        children.append(var)
+        children.append(container)
 
         @app.callback(
-            Output(f'container:{var.id}', 'children'),
+            Output(containerid, 'children'),
             Input(var.id, 'data'),
         )
-        def update_container(newval: Any) -> str:
+        def update_value(newval: Any) -> str:
             return str(newval)
 
-    return dbc.Row([
-        dbc.Col(
-            [
-                dbc.Row([
-                    html.Div(f'{var.id}: '),
-                    html.Div(id=f'container:{var.id}'),
-                    var,
-                ])
-            ],
-            width='auto'
-        ) for var in storevars
-    ])
+    return dbc.Row(children)
 
 
 @app.callback(
-    Output('query-result', 'data'),
-    Input('input-username', 'data'),
-    prevent_initial_call=True,
+    Output('username-list', 'data'),
+    Input('username-to-append', 'data'),
+    Input('username-to-remove', 'data'),
+    State('username-list', 'data'),
 )
-def query_player(uname: str) -> Dict[str, Any]:
-    if not is_valid_username(uname):
-        return 'invalid'
+def update_username_list(add_uname: str, rm_uname: str, uname_list: List[str]):
+    trigger = triggered_id(callback_context)
+    if trigger is None:
+        return no_update
 
-    doc = appdb.find_one({'_id': uname.lower()})
-    if not doc:
-        return 'not found'
+    if trigger == 'username-to-append':
+        if add_uname in uname_list:
+            uname_list.remove(add_uname)
+        uname_list.append(add_uname)
+    else:
+        uname_list.remove(rm_uname)
 
-    skills = osrs_skills(include_total=True)
-    stats = {skill: lvl for skill, lvl in zip(skills, doc['stats'])}
-    return {
-        'username': doc['username'],
-        'cluster_ids': doc['clusterids'],
-        'stats': stats,
-    }
+    return uname_list
