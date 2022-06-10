@@ -3,43 +3,40 @@ import dash_bootstrap_components as dbc
 from dash.exceptions import PreventUpdate
 
 from app import app, appdb, appdata
-from app.helpers import is_valid_username, triggered_id
+from app.helpers import is_valid_username
 
 
 def username_input():
     label = html.Div('Lookup username:', className='label-text')
+    querytxt = html.Div(id='query-text')
     inputbox = dcc.Input(
         id='input-box',
         type='text',
         placeholder="e.g. 'snakeylime'",
-        className='input-box',
         maxLength=12,
         debounce=True,  # don't trigger on every keystroke
+        className='input-box',
     )
-    querytxt = html.Div(id='query-text')
+    lookup = dbc.Row(
+        [
+            dbc.Col(label, width='auto'),
+            dbc.Col(inputbox),
+        ],
+        align='center',
+    ),
     return dbc.Row([
-        dbc.Col(
-            dbc.Row(
-                [
-                    dbc.Col(label, width='auto'),
-                    dbc.Col(inputbox),
-                ],
-                align='center',
-            ),
-            width='auto'
-        ),
+        dbc.Col(lookup, width='auto'),
         dbc.Col(querytxt),
     ])
 
 
 @app.callback(
     Output('query-text', 'children'),
-    Output('username-to-append', 'data'),
+    Output('last-queried-player', 'data'),
     Input('input-box', 'value'),
 )
 def handle_username_input(input_txt: str) -> str:
-    trigger = triggered_id(callback_context)
-    if trigger is None:
+    if not callback_context.triggered:
         return '', no_update
 
     if input_txt == '':

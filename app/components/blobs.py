@@ -1,12 +1,9 @@
-from typing import List
-
-from dash import Output, Input, ALL, callback_context
+from dash import Output, Input, ALL, callback_context, no_update
 import dash_bootstrap_components as dbc
-from dash.exceptions import PreventUpdate
 
 from app import app
 from app.colors import HALO_COLORS as blob_colors
-from app.helpers import triggered_id
+from app.helpers import get_trigger
 
 
 def username_blobs():
@@ -18,37 +15,71 @@ def username_blobs():
     Input('username-list', 'data'),
 )
 def draw_blobs(unames):
-    blobs = [
-        dbc.Button(
-            uname,
+    blobs = []
+    for i, uname in enumerate(unames):
+        color = blob_colors[i % len(blob_colors)]
+
+        close_x = dbc.Button(
+            className='btn-close',
             id={
-                'type': 'blob',
+                'type': 'blob-x',
                 'username': uname,
             },
             style={
-                'background-color': blob_colors[i % len(blob_colors)],
-                'border-radius': '1em',
+                'background-color': color,
+                'font-size': 'medium',
+            }
+        )
+
+        content = dbc.Row(
+            [
+                dbc.Col(uname),
+                close_x,
+            ],
+            className='g-3',
+            align='center',
+        )
+
+        blob = dbc.Button(
+            content,
+            id={
+                'type': 'blob-username',
+                'username': uname,
+            },
+            style={
+                'background-color': color,
+                'padding-top': 0,
+                'padding-bottom': 0,
                 'padding-left': '0.5em',
                 'padding-right': '0.5em',
-            }
-        ) for i, uname in enumerate(unames)
-    ]
-    return [
-        dbc.Col(
-            blob,
-            width='auto',
-        ) for blob in blobs
-    ]
+                'border-radius': '1em',
+            },
+        )
+        blobs.append(blob)
+
+    return [dbc.Col(blob, width='auto') for blob in blobs]
 
 
 @app.callback(
-    Output('username-to-remove', 'data'),
-    Input({'type': 'blob', 'username': ALL}, 'n_clicks'),
+    Output('last-clicked-blob', 'data'),
+    Input({'type': 'blob-username', 'username': ALL}, 'n_clicks'),
     prevent_initial_call=True,
 )
-def handle_blob_click(_):
-    trigger = triggered_id(callback_context)
-    n_clicks = callback_context.triggered[0]['value']
-    if n_clicks is None:
-        raise PreventUpdate
-    return trigger['username']
+def handle_blob_click(_) -> str:
+    return _clicked_username(callback_context)
+
+
+@app.callback(
+    Output('last-closed-player', 'data'),
+    Input({'type': 'blob-x', 'username': ALL}, 'n_clicks'),
+    prevent_initial_call=True,
+)
+def handle_blob_close(_) -> str:
+    return _clicked_username(callback_context)
+
+
+def _clicked_username(ctx) -> str:
+    triggerid, nclicks = get_trigger(ctx)
+    if triggerid is None or nclicks is None:
+        return no_update
+    return triggerid['username']

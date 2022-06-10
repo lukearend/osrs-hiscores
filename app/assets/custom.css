@@ -1,3 +1,4 @@
+/* Global settings */
 h1 {
     padding-top: 0.25em;
     font-size: 250%;
@@ -9,16 +10,8 @@ body {
 }
 
 /* Bootstrap overrides */
-::placeholder {
-}
-
 .btn {
     font-size: xx-large;
-    border-radius: 0.15em;
-}
-
-.btn-close { /* Alert 'x' button */
-    font-size: x-small;
 }
 
 .dropdown-item {
@@ -36,12 +29,6 @@ body {
     border-radius: 0.15em;
 }
 
-.username-blob {
-    padding-top: 0;
-    padding-bottom: 0;
-    border-radius: 1em;
-}
-
 .boxplot-graph {
     height: 20em;
 }
@@ -55,10 +42,5 @@ body {
     padding: 0;
     padding-left: 0.25em;
     padding-right: 0.25em;
-    font-size: x-large;
 }
 
-/* Utility */
-.text-smaller {
-    font-size: x-large;
-}

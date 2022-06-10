@@ -11,8 +11,7 @@ from dash import html, dcc
 def page_title():
     text = "OSRS hiscores explorer"
     text = html.Strong(text)
-    text = html.H1(text)
-    return dbc.Col(text)
+    return html.H1(text)
 
 
 def info_blurb():
@@ -25,11 +24,22 @@ def info_blurb():
         Player stats were downloaded from the [Old School Runescape hiscores]
         ({link}) in April 2022.
     """)
-    text = dcc.Markdown(text)
-    return dbc.Col(text)
+    return dcc.Markdown(text)
 
 
-def support_link():
+def github_link():
+    link = 'https://github.com/lukearend/osrs-hiscores'
+    text = f"Want to dig deeper? Check out the [source code]({link}) on Github."
+    return dcc.Markdown(text)
+
+
+def download_link():
+    link = 'https://drive.google.com/drive/u/0/folders/***REMOVED***'
+    text = f"The dataset is [available for download]({link}) in CSV format from Google Drive."
+    return dcc.Markdown(text)
+
+
+def support_msg():
     link = 'https://www.buymeacoffee.com/snakeylime'
     text = html.Div(
         f"made with ❤️ and ☕ by snakeylime",
@@ -51,43 +61,23 @@ def support_link():
     )
 
 
-def github_link():
-    link = 'https://github.com/lukearend/osrs-hiscores'
-    text = f"Want to dig deeper? Check out the [source code]({link}) on Github."
-    return dcc.Markdown(text)
-
-
-def download_link():
-    link = 'https://drive.google.com/drive/u/0/folders/***REMOVED***'
-    text = f"The dataset is [available for download]({link}) in CSV format from Google Drive."
-    return dcc.Markdown(text)
-
-
 def root_layout():
-    frontmatter = dbc.Col([
+    root = [
         page_title(),
         info_blurb(),
-    ])
-
-    endmatter = dbc.Col([
-        github_link(),
-        download_link(),
-        html.Hr(),
-        support_link(),
-    ])
-
-    body = dbc.Col([
+        html.Br(),
         username_input(),
         username_blobs(),
+        html.Br(),
+        github_link(),
+        download_link(),
+        html.Br(),
+        html.Hr(),
+        support_msg(),
+        html.Br(),
+        store_vars(),
+    ]
+    return dbc.Container([
+        dbc.Row(dbc.Col(i))
+        for i in root
     ])
-
-    return dbc.Container(
-        [
-            frontmatter,
-            html.Br(),
-            body,
-            html.Br(),
-            endmatter,
-            store_vars(),
-        ]
-    )

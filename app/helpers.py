@@ -4,7 +4,7 @@ import os
 import pickle
 import string
 from pathlib import Path
-from typing import OrderedDict
+from typing import OrderedDict, Any, Tuple
 
 from src.common import download_s3_obj
 from src.analysis.appdata import SplitResults
@@ -52,18 +52,21 @@ def load_app_data(path: str) -> OrderedDict[str, SplitResults]:
     return app_data
 
 
-def triggered_id(callback_context) -> str:
-    """ Get the ID of the component that triggered a callback. """
+def get_trigger(callback_context) -> Tuple[str, Any]:
+    if not callback_context.triggered:
+        return None, None
 
-    triggered = callback_context.triggered
-    if not triggered:
-        return None
-    propid = triggered[0]['prop_id']
-    suffix = '.' + propid.split('.')[-1]
-    id = propid[:-len(suffix)]
+    trigger = callback_context.triggered[0]
+    propid = trigger['prop_id']
+    value = trigger['value']
 
-    # Pattern-matching component IDs are a JSON-serialized dict.
+    # transform 'my-component.value' -> 'my-component'
+    id = ''.join(propid.split('.')[:-1])
+
+    # id is a stringified JSON map for pattern-matching callbacks
     try:
-        return json.loads(id)
+        id = json.loads(id)
     except json.JSONDecodeError:
-        return id
+        pass
+
+    return id, value
