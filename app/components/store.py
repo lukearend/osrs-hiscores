@@ -11,6 +11,8 @@ def store_vars():
     storevars = [
         dcc.Store('username-list', data=[]),
         dcc.Store('selected-username', data=None),
+        dcc.Store('current-split', data='all'),
+        dcc.Store('boxplot-title-data', data=None),
         dcc.Store('last-queried-player'),
         dcc.Store('last-closed-player'),
         dcc.Store('last-clicked-blob'),

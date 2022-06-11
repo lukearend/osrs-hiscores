@@ -29,13 +29,13 @@ def is_valid_username(username: str) -> bool:
 
 
 def assets_dir() -> Path:
-    return Path(__file__).resolve().parents[2] / 'assets'
+    return Path(__file__).resolve().parent / 'assets'
 
 
 def load_icon_b64(skill: str) -> str:
     """ Load the icon for a skill as a base64-encoded string. """
 
-    file = os.path.join(assets_dir(), 'icons', skill + '.png')
+    file = os.path.join(assets_dir(), 'icons', f'{skill}.png')
     with open(file, 'rb') as f:
         return base64.b64encode(f.read()).decode('utf-8')
 
