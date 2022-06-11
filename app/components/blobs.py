@@ -2,7 +2,7 @@ from dash import Output, Input, ALL, callback_context, no_update
 import dash_bootstrap_components as dbc
 
 from app import app
-from app.colors import HALO_COLORS as blob_colors
+from app.styles import BLOB_COLORS as blob_colors
 from app.helpers import get_trigger
 
 

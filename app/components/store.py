@@ -1,7 +1,7 @@
 from typing import Any, List
 
 import dash_bootstrap_components as dbc
-from dash import Output, Input, dcc, State, callback_context, no_update, html
+from dash import Output, Input, dcc, State, callback_context, no_update
 
 from app import app
 from app.helpers import get_trigger
