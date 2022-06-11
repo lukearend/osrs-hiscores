@@ -1,0 +1,10 @@
+@font-face {
+    font-family: "Classic 2007";
+    src: url("fonts/rs-regular.ttf");
+}
+
+@font-face {
+    font-family: "Classic 2007";
+    src: url("fonts/rs-bold.ttf");
+    font-weight: bold;
+}

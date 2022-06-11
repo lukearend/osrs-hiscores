@@ -10,8 +10,8 @@ import pandas as pd
 import xarray as xr
 from tqdm import tqdm
 
-from src.data.analytics import compute_stat_quartiles
-from src.data.io import load_pkl, dump_pkl, load_json
+from src.analysis.models import compute_stat_quartiles
+from src.analysis.io import load_pkl, dump_pkl, load_json
 
 
 def main(players: pd.DataFrame, clusterids: pd.DataFrame,

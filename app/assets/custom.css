@@ -1,0 +1,46 @@
+/* Global settings */
+h1 {
+    padding-top: 0.25em;
+    font-size: 250%;
+}
+
+body {
+    font-family: "Classic 2007", sans-serif;
+    font-size: xx-large;
+}
+
+/* Bootstrap overrides */
+.btn {
+    font-size: xx-large;
+}
+
+.dropdown-item {
+    font-size: xx-large;
+}
+
+/* Custom classes */
+.label-text {
+    font-weight: bold;
+}
+
+.input-box {
+    padding-left: 0.5em;
+    border: solid;
+    border-radius: 0.15em;
+}
+
+.boxplot-graph {
+    height: 20em;
+}
+
+.support-link {
+    padding-top: 0.25em;
+    font-size: x-large;
+}
+
+.support-button {
+    padding: 0;
+    padding-left: 0.25em;
+    padding-right: 0.25em;
+}
+

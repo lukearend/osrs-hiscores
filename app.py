@@ -3,34 +3,29 @@
 """ Entry point for main application. """
 
 import os
-import dash_bootstrap_components as dbc
-from dash_bootstrap_templates import load_figure_template
-from dash import Dash
-from src.app import buildapp
+import warnings
 
-load_figure_template('darkly')
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", category=UserWarning)  # uses deprecated version of dcc
+    import dash_auth
 
-mongo_url = os.getenv("OSRS_MONGO_URI", None)
-appdata_coll = os.getenv("OSRS_APPDATA_COLL", None)
-appdata_file = os.getenv("OSRS_APPDATA_FILE", None)
-auth = os.getenv("OSRS_REQUIRE_AUTH", 'false')
-debug = os.getenv("OSRS_DEBUG_MODE", 'true')
+from app import app
+from app.root import root_layout
+from src.common import connect_mongo
 
-if mongo_url is None:
-    raise ValueError("missing config variable: OSRS_MONGO_URI")
-if appdata_coll is None:
-    raise ValueError("missing config variable: OSRS_APPDATA_COLL")
-if appdata_file is None:
-    raise ValueError("missing config variable: OSRS_APPDATA_FILE")
+host = 'localhost'
+if os.getenv('OSRS_ON_CLOUD', None):
+    host = '0.0.0.0'  # serve to public internet
 
-auth = False if auth == 'false' else bool(auth)
-debug = False if debug == 'false' else bool(debug)
+if not os.getenv('OSRS_DISABLE_AUTH', None):
+    auth_coll = connect_mongo(url=os.environ['OSRS_MONGO_URI'], collection='auth')
+    auth_pairs = {doc['username']: doc['password'] for doc in auth_coll.find()}
+    dash_auth.BasicAuth(app, username_password_list=auth_pairs)
 
-app = Dash(__name__, external_stylesheets=[dbc.themes.DARKLY])
-buildapp(app, mongo_url, appdata_coll, appdata_file, auth)
+debug = False if os.getenv('OSRS_DEBUG_OFF', None) else True
 
-server = app.server
-host = "0.0.0.0" if os.getenv('ON_HEROKU', False) else 'localhost'
+app.title = "OSRS hiscores explorer"
+app.layout = root_layout()
 
-if __name__ == '__main__':
-    app.run_server(debug=debug, host=host, port=os.getenv('PORT', 8050))
+server = app.server  # gunicorn finds and uses `server` in root namespace
+app.run_server(host=host, debug=debug)

@@ -8,8 +8,7 @@ from typing import List, Tuple, Callable
 
 from aiohttp import ClientSession
 
-from src.scrape.exceptions import RequestFailed, UserNotFound, ServerBusy
-from src.data.types import PlayerRecord
+from src.scrape.common import RequestFailed, UserNotFound, ServerBusy, PlayerRecord
 from src.scrape.requests import get_hiscores_page, get_player_stats
 
 

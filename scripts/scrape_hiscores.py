@@ -8,9 +8,9 @@ import logging
 import sys
 import traceback
 
-from src.scrape.exceptions import RequestFailed
+from src.scrape.common import RequestFailed
 from src.scrape.export import get_top_rank
-from src.scrape.scrape import scrape_hiscores, N_PAGE_WORKERS
+from src.scrape.main import scrape_hiscores, N_PAGE_WORKERS
 from src.scrape.vpn import reset_vpn, askpass
 
 

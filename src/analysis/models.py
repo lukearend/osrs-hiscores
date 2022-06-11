@@ -74,3 +74,11 @@ def umap_reduce(x: NDArray, d: int, n_neighbors: int, min_dist: float) -> NDArra
         random_state=0
     )
     return fit.fit_transform(x)
+
+
+def compute_stat_quartiles(player_vectors: NDArray) -> NDArray:
+    """ Compute quartiles for each stat for a set of players. """
+
+    # It is possible to have nan as a percentile value when all of the
+    # players in a cluster happen to be unranked in a particular stat.
+    return np.nanpercentile(player_vectors, axis=0, q=[0, 25, 50, 75, 100])

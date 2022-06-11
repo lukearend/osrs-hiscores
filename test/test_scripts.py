@@ -6,15 +6,15 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 
-from scripts.build_app import build_app_data, build_app_database
+from scripts.build_app_data import main as build_app_data
+from scripts.build_app_db import main as build_app_database
 from scripts.cluster_players import main as cluster_players
 from scripts.compute_quartiles import main as compute_quartiles
 from scripts.dim_reduce_clusters import main as dim_reduce_clusters
-from src.data.db import connect_mongo, mongo_get_player
-from src.data.io import export_players_csv, export_clusterids_csv, export_centroids_csv, import_players_csv, \
-    import_clusterids_csv, import_centroids_csv
-from src.data.types import PlayerResults, SplitResults
-from src import osrs_skills
+from src.common import osrs_skills, connect_mongo
+from src.analysis.appdata import PlayerResults, SplitResults, mongo_get_player
+from src.analysis.io import import_players_csv, import_clusterids_csv, import_centroids_csv, \
+    export_players_csv, export_clusterids_csv, export_centroids_csv
 
 
 SPLITS = OrderedDict([
@@ -75,8 +75,8 @@ def test_dimreduce():
         assert tuple(split_xyz.columns) == ('x', 'y', 'z')
 
 
-def test_buildapp():
-    global players_df, clusterids_df, centroids_dict, quartiles_dict, xyz_dict
+def test_appdata():
+    global clusterids_df, centroids_dict, quartiles_dict, xyz_dict
     app_data = build_app_data(SPLITS, clusterids_df, centroids_dict, quartiles_dict, xyz_dict)
     assert app_data.keys() == SPLITS.keys()
     for split, split_data in app_data.items():
@@ -95,6 +95,8 @@ def test_buildapp():
         for axlimits in split_data.xyz_axlims.values():
             assert axlimits[0] <= axlimits[1]
 
+def test_appdb():
+    global players_df, clusterids_df
     coll = connect_mongo("localhost:27017", 'test')
     coll.drop()
     build_app_database(players_df, clusterids_df, coll, batch_size=789)
