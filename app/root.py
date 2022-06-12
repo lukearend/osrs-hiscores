@@ -76,7 +76,6 @@ def root_layout():
         html.Br(),
         github_link(),
         download_link(),
-        html.Br(),
         html.Hr(),
         support_msg(),
         html.Br(),

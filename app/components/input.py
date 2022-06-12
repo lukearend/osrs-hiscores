@@ -1,9 +1,11 @@
-from dash import html, dcc, Output, Input, callback_context, no_update
+from typing import Dict
+
 import dash_bootstrap_components as dbc
+from dash import html, dcc, State, Output, Input, callback_context, no_update
 from dash.exceptions import PreventUpdate
 
 from app import app, appdb, appdata
-from app.helpers import is_valid_username
+from app.helpers import is_valid_username, mongodoc_to_player
 
 
 def username_input():
@@ -34,8 +36,9 @@ def username_input():
     Output('query-text', 'children'),
     Output('last-queried-player', 'data'),
     Input('input-box', 'value'),
+    State('current-split', 'data'),
 )
-def handle_username_input(input_txt: str) -> str:
+def handle_username_input(input_txt: str, split: str) -> str:
     if not callback_context.triggered:
         return '', no_update
 
@@ -49,8 +52,12 @@ def handle_username_input(input_txt: str) -> str:
     if not doc:
         return f"player '{input_txt}' not found in dataset", no_update
 
-    uname = doc['username']
-    id = doc['clusterids']['all']
+    player = mongodoc_to_player(doc)
+
+    uname = player['username']
+    id = player['clusterids'][split]
     size = appdata['all'].cluster_sizes[id]
     uniq = appdata['all'].cluster_uniqueness[id]
-    return f"'{uname}': cluster {id} ({size} players, {uniq:.1%} unique)", uname
+    querytxt = f"'{uname}': cluster {id} ({size} players, {uniq:.1%} unique)"
+
+    return querytxt, player

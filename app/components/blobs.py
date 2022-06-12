@@ -70,7 +70,7 @@ def handle_blob_click(_) -> str:
 
 
 @app.callback(
-    Output('last-closed-player', 'data'),
+    Output('last-closed-username', 'data'),
     Input({'type': 'blob-x', 'username': ALL}, 'n_clicks'),
     prevent_initial_call=True,
 )

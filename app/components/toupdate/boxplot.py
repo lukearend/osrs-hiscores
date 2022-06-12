@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, Any
 
 import numpy as np
 from dash import Input, Output, html, dcc, no_update
@@ -9,11 +9,7 @@ from app.helpers import load_icon_b64
 
 
 def boxplot_title():
-    return html.Div(
-        id='boxplot-title',
-        children='',
-        className='label-text',
-    )
+    return html.Div(id='boxplot-title')
 
 
 def boxplot():
@@ -23,6 +19,27 @@ def boxplot():
         config={'displayModeBar': False},
         className='boxplot-graph',
     )
+
+
+@app.callback(
+    Output('boxplot', 'extendData'),
+    Input('boxplot-data', 'data'),
+)
+def update_boxplot_trace(data: Dict[str, Any]):
+    if data is None:
+        return no_update
+
+    stats = data['quartiles']
+    traces = {
+        'lowerfence': stats['q0'],
+        'q1': stats['q1'],
+        'median': stats['q2'],
+        'q3': stats['q3'],
+        'upperfence': stats['q4']
+    }
+    traceinds = [0]
+    maxpts = len(traces['median'])
+    return [traces, traceinds, maxpts]
 
 
 @app.callback(
@@ -72,9 +89,9 @@ def redraw_boxplot(split: str) -> go.Figure():
             source='data:image/png;base64,' + load_icon_b64(skill),
             layer='above',
             xanchor='center',  # center image horizontally on xtick
-            yanchor='top',  # dangle image below horizontal baseline
-            xref='x',  # x offset in x-axis units
-            yref='y',  # y offset in y-axis units
+            yanchor='top',     # dangle image below horizontal baseline
+            xref='x',          # x offset in x-axis units
+            yref='y',          # y offset in y-axis units
             x=i,
             y=1 - padbelow,
             sizex=imscale,
@@ -84,14 +101,14 @@ def redraw_boxplot(split: str) -> go.Figure():
 
 @app.callback(
     Output('boxplot-title', 'children'),
-    Input('boxplot-title-data', 'data'),
+    Input('boxplot-data', 'data'),
 )
-def update_boxplot_title(data: Dict[str, int]) -> html.Div:
+def update_boxplot_title(data: Dict[str, Any]) -> html.Div:
     if data is None:
         return html.Strong("Cluster stats")
 
-    clusterid = data['cluster_id']
-    nplayers = data['cluster_size']
+    clusterid = data['id']
+    nplayers = data['num_players']
     bold = html.Strong(f"Cluster {clusterid} stats")
     normal = f" ({nplayers} players)"
     return html.Div([bold, normal])

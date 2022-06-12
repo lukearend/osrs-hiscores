@@ -4,9 +4,9 @@ import os
 import pickle
 import string
 from pathlib import Path
-from typing import OrderedDict, Any, Tuple
+from typing import OrderedDict, Any, Tuple, Dict
 
-from src.common import download_s3_obj
+from src.common import download_s3_obj, osrs_skills
 from src.analysis.appdata import SplitResults
 from src.analysis.io import load_pkl
 
@@ -50,6 +50,15 @@ def load_app_data(path: str) -> OrderedDict[str, SplitResults]:
         app_data = load_pkl(path)
 
     return app_data
+
+
+def mongodoc_to_player(doc: Dict[str, Any]) -> Dict[str, Any]:
+    skills = osrs_skills(include_total=True)
+    return {
+        'username': doc['username'],
+        'stats': {skill: lvl for skill, lvl in zip(skills, doc['stats'])},
+        'clusterids': doc['clusterids']
+    }
 
 
 def get_trigger(callback_context) -> Tuple[str, Any]:

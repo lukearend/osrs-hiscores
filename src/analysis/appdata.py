@@ -1,7 +1,7 @@
 """ Analytics on clustering results. """
 
 from dataclasses import dataclass
-from typing import List, Dict, Tuple
+from typing import List, Dict, Tuple, Any
 
 import numpy as np
 import pandas as pd
@@ -32,17 +32,13 @@ class PlayerResults:
     clusterids: Dict[str, int]  # cluster ID for each split of the dataset
 
 
-def player_to_mongodoc(player: PlayerResults):
-    doc = {
+def player_to_mongodoc(player: PlayerResults) -> Dict[str, Any]:
+    return {
         '_id': player.username.lower(),
         'username': player.username,
-        'stats': player.stats
+        'stats': player.stats,
+        'clusterids': player.clusterids
     }
-    if player.clusterids:
-        doc['clusterids'] = {str(k): ids_dict for k, ids_dict in player.clusterids.items()}
-    else:
-        doc['clusterids'] = {}
-    return doc
 
 
 def get_cluster_sizes(cluster_ids: NDArray) -> NDArray:

@@ -1,20 +1,22 @@
-from typing import Any, List
+from typing import Any, List, Dict, Tuple
 
 import dash_bootstrap_components as dbc
 from dash import Output, Input, dcc, State, callback_context, no_update
 
-from app import app
+from app import app, appdata
 from app.helpers import get_trigger
 
 
 def store_vars():
     storevars = [
         dcc.Store('username-list', data=[]),
+        dcc.Store('player-data-dict', data={}),
         dcc.Store('selected-username', data=None),
         dcc.Store('current-split', data='all'),
-        dcc.Store('boxplot-title-data', data=None),
+        dcc.Store('boxplot-cluster', data=None),
+        dcc.Store('boxplot-data', data=None),
         dcc.Store('last-queried-player'),
-        dcc.Store('last-closed-player'),
+        dcc.Store('last-closed-username'),
         dcc.Store('last-clicked-blob'),
     ]
 
@@ -50,40 +52,47 @@ def store_vars():
 
 @app.callback(
     Output('username-list', 'data'),
+    Output('player-data-dict', 'data'),
     Input('last-queried-player', 'data'),
-    Input('last-closed-player', 'data'),
+    Input('last-closed-username', 'data'),
     State('username-list', 'data'),
+    State('player-data-dict', 'data'),
 )
-def update_username_list(queried_player: str,
+def update_username_list(queried_player: Dict[str, Any],
                          closed_player: str,
-                         uname_list: List[str]):
+                         uname_list: List[str],
+                         data_dict: Dict[str, Any]) -> Tuple[List[str], Dict[str, Any]]:
 
     triggerid, uname = get_trigger(callback_context)
     if triggerid is None:
-        return no_update
+        return no_update, no_update
 
     elif triggerid == 'last-queried-player':
-        if queried_player in uname_list:
-            uname_list.remove(queried_player)
-        uname_list.append(queried_player)
+        uname = queried_player['username']
+        if uname in uname_list:
+            uname_list.remove(uname)
 
-    elif triggerid == 'last-closed-player':
+        uname_list.append(uname)
+        data_dict[uname] = queried_player
+
+    elif triggerid == 'last-closed-username':
         uname_list.remove(closed_player)
+        del data_dict[closed_player]
 
-    return uname_list
+    return uname_list, data_dict
 
 
 @app.callback(
     Output('selected-username', 'data'),
     Input('last-clicked-blob', 'data'),
     Input('last-queried-player', 'data'),
-    Input('last-closed-player', 'data'),
+    Input('last-closed-username', 'data'),
     State('selected-username', 'data'),
 )
 def update_selected_username(clicked_blob: str,
-                             queried_player: str,
+                             player_query: Dict[str, Any],
                              closed_player: str,
-                             current_uname: str):
+                             current_uname: str) -> str:
 
     triggerid, uname = get_trigger(callback_context)
     if triggerid is None:
@@ -93,12 +102,54 @@ def update_selected_username(clicked_blob: str,
         current_uname = clicked_blob
 
     elif triggerid == 'last-queried-player':
-        current_uname = queried_player
+        current_uname = player_query['username']
 
-    elif triggerid == 'last-closed-player':
+    elif triggerid == 'last-closed-username':
         if closed_player == current_uname:
             current_uname = None
 
     return current_uname
 
 
+@app.callback(
+    Output('boxplot-cluster', 'data'),
+    Input('selected-username', 'data'),
+    Input('current-split', 'data'),
+    State('player-data-dict', 'data'),
+)
+def update_boxplot_cluster(uname: str, split: str, data_dict: Dict[str, Any]) -> int:
+    if uname is None:
+        return no_update
+    return data_dict[uname]['clusterids'][split]
+
+
+@app.callback(
+    Output('boxplot-data', 'data'),
+    Input('boxplot-cluster', 'data'),
+    Input('current-split', 'data'),
+)
+def update_boxplot_data(clusterid: int, split: str) -> Dict[str, Any]:
+    if clusterid is None:
+        return no_update
+
+    nplayers = appdata[split].cluster_sizes[clusterid].item()
+    data = appdata[split].cluster_quartiles.sel(clusterid=clusterid)
+
+    quartiles = {}
+    percentiles = {
+        'q0': 0,
+        'q1': 25,
+        'q2': 50,
+        'q3': 75,
+        'q4': 100
+    }
+    for q, p in percentiles.items():
+        stats = data.sel(percentile=p)
+        stats = [i.item() for i in stats]  # convert xr.DataArray to regular list of scalars
+        quartiles[q] = stats
+
+    return {
+        'id': clusterid,
+        'num_players': nplayers,
+        'quartiles': quartiles,
+    }
