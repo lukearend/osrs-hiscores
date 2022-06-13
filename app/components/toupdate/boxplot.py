@@ -1,11 +1,11 @@
 from typing import Dict, Any
 
 import numpy as np
-from dash import Input, Output, html, dcc, no_update
+from dash import State, Input, Output, html, dcc, no_update
 from plotly import graph_objects as go
 
-from app import app, appdata, styles
-from app.helpers import load_icon_b64
+from app import app, styles
+from app.helpers import load_icon_b64, load_boxplot_layout
 
 
 def boxplot_title():
@@ -24,21 +24,29 @@ def boxplot():
 @app.callback(
     Output('boxplot', 'extendData'),
     Input('boxplot-data', 'data'),
+    State('current-split', 'data'),
 )
-def update_boxplot_trace(data: Dict[str, Any]):
+def update_boxplot_trace(data: Dict[int, Any], split: str):
     if data is None:
         return no_update
 
-    stats = data['quartiles']
-    traces = {
-        'lowerfence': stats['q0'],
-        'q1': stats['q1'],
-        'median': stats['q2'],
-        'q3': stats['q3'],
-        'upperfence': stats['q4']
+    skills = load_boxplot_layout()[split]
+    quantiles = {
+        'lowerfence': 0,
+        'q1': 25,
+        'median': 50,
+        'q3': 75,
+        'upperfence': 100
     }
+    traces = {}
+    for q, p in quantiles.items():
+        print(data['quartiles'])
+        skill_lvls = data['quartiles'][str(p)]
+        trace_data = [skill_lvls[skill] for skill in skills]
+        traces[q] = [trace_data]
+
     traceinds = [0]
-    maxpts = len(traces['median'])
+    maxpts = len(skills)
     return [traces, traceinds, maxpts]
 
 
@@ -50,14 +58,14 @@ def redraw_boxplot(split: str) -> go.Figure():
     if split is None:
         return no_update
 
-    skills = appdata[split].skills
+    skills = load_boxplot_layout()[split]
     hidden = np.full(len(skills), -100)
     boxtrace = go.Box(lowerfence=hidden, upperfence=hidden,
                       median=hidden, q1=hidden, q3=hidden)
 
     imsize = 10     # icon container size in y-axis units
-    imscale = 0.75  # icon size as a proportion of container
-    padabove = 3    # padding above level 99 in y-axis units
+    imscale = 0.85  # icon size as a proportion of container
+    padabove = 5    # padding above level 99 in y-axis units
     yticks = [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 99]
 
     padbelow = (1 - imscale) * imsize
@@ -66,7 +74,6 @@ def redraw_boxplot(split: str) -> go.Figure():
         fixedrange=True,
         zeroline=False,
         tickvals=yticks,
-        tickfont={'family': 'sans-serif'},
     )
     xaxis = dict(
         range=(-0.5, len(skills) - 0.5),

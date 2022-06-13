@@ -134,22 +134,18 @@ def update_boxplot_data(clusterid: int, split: str) -> Dict[str, Any]:
 
     nplayers = appdata[split].cluster_sizes[clusterid].item()
     data = appdata[split].cluster_quartiles.sel(clusterid=clusterid)
+    data = data.drop_sel(skill='total')
+    skills = [s.item() for s in data.coords['skill']]
 
-    quartiles = {}
-    percentiles = {
-        'q0': 0,
-        'q1': 25,
-        'q2': 50,
-        'q3': 75,
-        'q4': 100
-    }
-    for q, p in percentiles.items():
-        stats = data.sel(percentile=p)
-        stats = [i.item() for i in stats]  # convert xr.DataArray to regular list of scalars
-        quartiles[q] = stats
+    boxdata = {}
+    for p in [0, 25, 50, 75, 100]:
+        skill_lvls = data.sel(percentile=p)
+        skill_lvls = [i.item() for i in skill_lvls]
+        skill_lvls = dict(zip(skills, skill_lvls))
+        boxdata[str(p)] = skill_lvls  # backend JSON needs string keys
 
     return {
         'id': clusterid,
         'num_players': nplayers,
-        'quartiles': quartiles,
+        'quartiles': boxdata
     }

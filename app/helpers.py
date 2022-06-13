@@ -1,10 +1,12 @@
 import base64
+import collections
 import json
 import os
 import pickle
 import string
+from functools import lru_cache
 from pathlib import Path
-from typing import OrderedDict, Any, Tuple, Dict
+from typing import OrderedDict, Any, Tuple, Dict, List
 
 from src.common import download_s3_obj, osrs_skills
 from src.analysis.appdata import SplitResults
@@ -32,6 +34,7 @@ def assets_dir() -> Path:
     return Path(__file__).resolve().parent / 'assets'
 
 
+@lru_cache()
 def load_icon_b64(skill: str) -> str:
     """ Load the icon for a skill as a base64-encoded string. """
 
@@ -50,6 +53,14 @@ def load_app_data(path: str) -> OrderedDict[str, SplitResults]:
         app_data = load_pkl(path)
 
     return app_data
+
+
+@lru_cache()
+def load_boxplot_layout() -> Dict[str, List[str]]:
+    file = os.path.join(assets_dir(), 'boxplot_layout.json')
+    with open(file, 'r') as f:
+        return json.load(f, object_pairs_hook=collections.OrderedDict)
+
 
 
 def mongodoc_to_player(doc: Dict[str, Any]) -> Dict[str, Any]:
