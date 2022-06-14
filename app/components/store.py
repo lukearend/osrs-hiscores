@@ -137,12 +137,12 @@ def update_boxplot_data(clusterid: int, split: str) -> Dict[str, Any]:
     data = data.drop_sel(skill='total')
     skills = [s.item() for s in data.coords['skill']]
 
-    boxdata = {}
+    boxdata = []
     for p in [0, 25, 50, 75, 100]:
         skill_lvls = data.sel(percentile=p)
         skill_lvls = [i.item() for i in skill_lvls]
         skill_lvls = dict(zip(skills, skill_lvls))
-        boxdata[str(p)] = skill_lvls  # backend JSON needs string keys
+        boxdata.append(skill_lvls)
 
     return {
         'id': clusterid,

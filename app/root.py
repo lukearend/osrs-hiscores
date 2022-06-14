@@ -7,7 +7,7 @@ from app.components.store import store_vars
 import dash_bootstrap_components as dbc
 from dash import html, dcc
 
-from app.components.toupdate.boxplot import boxplot_title, boxplot
+from app.components.boxplot import boxplot_title, boxplot
 
 
 def page_title():

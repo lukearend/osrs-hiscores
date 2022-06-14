@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 import numpy as np
 from dash import State, Input, Output, html, dcc, no_update
@@ -21,33 +21,44 @@ def boxplot():
     )
 
 
+def boxplot_skill_order(skill_lvls: Dict[str, int]) -> List[int]:
+    for skill_lvls in data['quartiles']:
+        data['quartiles'] = [{skill: skill_lvls[skill] for skill in skills}]
+
+
+
+
 @app.callback(
     Output('boxplot', 'extendData'),
     Input('boxplot-data', 'data'),
     State('current-split', 'data'),
 )
-def update_boxplot_trace(data: Dict[int, Any], split: str):
+def update_boxplot_trace(data: Dict[str, Any], split: str):
     if data is None:
         return no_update
 
     skills = load_boxplot_layout()[split]
-    quantiles = {
-        'lowerfence': 0,
-        'q1': 25,
-        'median': 50,
-        'q3': 75,
-        'upperfence': 100
-    }
-    traces = {}
-    for q, p in quantiles.items():
-        print(data['quartiles'])
-        skill_lvls = data['quartiles'][str(p)]
-        trace_data = [skill_lvls[skill] for skill in skills]
-        traces[q] = [trace_data]
+    boxdata = []
+    for i, p in enumerate([0, 25, 50, 75, 100]):
+        lvls_dict = data['quartiles'][i]
+        skill_lvls = [lvls_dict[skill] for skill in skills]
+        boxdata.append(skill_lvls)
 
-    traceinds = [0]
+    q0, q1, q2, q3, q4 = np.array(boxdata)
+    iqr = q3 - q1
+    traces = {
+        'lowerfence': np.maximum(q1 - 1.5 * iqr, q0),
+        'q1': q1,
+        'median': q2,
+        'q3': q3,
+        'upperfence': np.minimum(q3 + 1.5 * iqr, q4),
+    }
+    traces = {t: d.astype('int') for t, d in traces.items()}
+
+    extendtraces = {name: [data] for name, data in traces.items()}
+    extendinds = [0]
     maxpts = len(skills)
-    return [traces, traceinds, maxpts]
+    return [extendtraces, extendinds, maxpts]
 
 
 @app.callback(
@@ -84,6 +95,7 @@ def redraw_boxplot(split: str) -> go.Figure():
 
     fig = go.Figure(data=boxtrace)
     fig.update_layout(dict(
+        hovermode=False,
         xaxis=xaxis,
         yaxis=yaxis,
         margin=margin,
