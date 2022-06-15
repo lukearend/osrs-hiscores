@@ -26,10 +26,13 @@ def username_input():
         ],
         align='center',
     ),
-    return dbc.Row([
-        dbc.Col(lookup, width='auto'),
-        dbc.Col(querytxt),
-    ])
+    return dbc.Row(
+        [
+            dbc.Col(lookup, width='auto'),
+            dbc.Col(querytxt),
+        ],
+        align='center',
+    )
 
 
 @app.callback(

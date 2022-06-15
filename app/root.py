@@ -1,6 +1,5 @@
-import textwrap
-
 from app.components.blobs import username_blobs
+from app.components.dropdowns import dropdown_menus
 from app.components.input import username_input
 from app.components.store import store_vars
 
@@ -17,41 +16,51 @@ def page_title():
 
 
 def info_blurb():
-    link = 'https://secure.runescape.com/m=hiscore_oldschool/overall'
-    text = textwrap.dedent(f"""
-        Each point represents a cluster of OSRS players with similar stats. The
-        closer two clusters are, the more similar are the accounts in each of
-        those two clusters. The size of each point corresponds to the number
+    osrs_hiscores = dcc.Link(
+        "Old School Runescape hiscores",
+        href='https://secure.runescape.com/m=hiscore_oldschool/overall',
+        target='_blank',  # open link in new tab
+    )
+    content = [
+        """Each point represents a cluster of OSRS players with similar stats.
+        The closer two clusters are, the more similar are the accounts in each 
+        of those two clusters. The size of each point corresponds to the number
         of players in that cluster. Axes have no meaningful interpretation.
-        Player stats were downloaded from the [Old School Runescape hiscores]
-        ({link}) in April 2022.
-    """)
-    return dcc.Markdown(text)
+        Player stats were downloaded from the """, osrs_hiscores, " in April 2022.",
+    ]
+    return dbc.Col(content)
 
 
 def github_link():
-    link = 'https://github.com/lukearend/osrs-hiscores'
-    text = f"Want to dig deeper? Check out the [source code]({link}) on Github."
-    return dcc.Markdown(text)
+    source_code = dcc.Link(
+        "source code",
+        href='https://github.com/lukearend/osrs-hiscores',
+        target='_blank',
+    )
+    content = ["Want to dig deeper? Check out the ", source_code, " on Github."]
+    return dbc.Col(content)
 
 
 def download_link():
-    link = 'https://drive.google.com/drive/u/0/folders/***REMOVED***'
-    text = f"The dataset is [available for download]({link}) in CSV format from Google Drive."
-    return dcc.Markdown(text)
+    available = dcc.Link(
+        "available for download",
+        href='https://drive.google.com/drive/u/0/folders/***REMOVED***',
+        target='_blank',
+    )
+    content = ["The dataset is ", available, " in CSV format from Google Drive."]
+    return dbc.Col(content)
 
 
 def support_msg():
-    link = 'https://www.buymeacoffee.com/snakeylime'
     text = html.Div(
         f"made with ❤️ and ☕ by snakeylime",
         className='support-link',
     )
     button = dbc.Button(
         "buy me a coffee",
-        href=link,
-        target='_blank',  # open link in new tab
+        href='https://www.buymeacoffee.com/snakeylime',
         className='support-button',
+        target='_blank',
     )
     return dbc.Row(
         [
@@ -69,7 +78,9 @@ def root_layout():
         info_blurb(),
         html.Br(),
         username_input(),
+        html.Br(),
         username_blobs(),
+        dropdown_menus(),
         html.Br(),
         boxplot_title(),
         boxplot(),

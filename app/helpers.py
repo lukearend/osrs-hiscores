@@ -62,7 +62,6 @@ def load_boxplot_layout() -> Dict[str, List[str]]:
         return json.load(f, object_pairs_hook=collections.OrderedDict)
 
 
-
 def mongodoc_to_player(doc: Dict[str, Any]) -> Dict[str, Any]:
     skills = osrs_skills(include_total=True)
     return {
