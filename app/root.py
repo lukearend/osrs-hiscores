@@ -1,12 +1,13 @@
-from app.components.blobs import username_blobs
-from app.components.dropdowns import dropdown_menus
-from app.components.input import username_input
-from app.components.store import store_vars
-
 import dash_bootstrap_components as dbc
 from dash import html, dcc
 
 from app.components.boxplot import boxplot_title, boxplot
+from app.components.blobs import username_blobs
+from app.components.dropdowns import dropdown_menus
+from app.components.input import username_input
+from app.components.store import store_vars
+from app.components.table import stats_tables
+from app.components.playertxt import focused_player
 
 
 def page_title():
@@ -80,7 +81,10 @@ def root_layout():
         username_input(),
         html.Br(),
         username_blobs(),
+        focused_player(),
         dropdown_menus(),
+        html.Br(),
+        stats_tables(),
         html.Br(),
         boxplot_title(),
         boxplot(),

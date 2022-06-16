@@ -102,6 +102,8 @@ def updated_focused_player(blob_uname: str,
     if triggerid == 'last-queried-player':
         return player_query
     if triggerid == 'last-closed-username':
+        if current_player is None:
+            return None
         if closed_uname == current_player['username']:
             return None
         return current_player
@@ -116,7 +118,7 @@ def updated_focused_player(blob_uname: str,
     State('player-data-dict', 'data'),
     prevent_initial_call=True,
 )
-def update_boxplot_cluster(player: Dict[str, Any], split: str, data_dict: Dict[str, Any]) -> int:
+def update_current_cluster(player: Dict[str, Any], split: str, data_dict: Dict[str, Any]) -> int:
     if player is None:
         return no_update
 
@@ -166,7 +168,6 @@ def update_cluster_table_data(clusterid, split) -> Dict[str, int]:
     centroid = appdata[split].cluster_centroids.loc[clusterid]
     skills = centroid.index
     lvls = [int(i) for i in centroid]
-    print(dict(zip(skills, lvls)))
     return dict(zip(skills, lvls))
 
 

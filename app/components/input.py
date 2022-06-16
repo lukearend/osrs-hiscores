@@ -42,11 +42,8 @@ def username_input():
     State('current-split', 'data'),
 )
 def handle_username_input(input_txt: str, split: str) -> str:
-    if not callback_context.triggered:
+    if not input_txt:
         return '', no_update
-
-    if input_txt == '':
-        raise PreventUpdate
 
     if not is_valid_username(input_txt):
         return f"'{input_txt}' is not a valid OSRS username", no_update
@@ -56,11 +53,4 @@ def handle_username_input(input_txt: str, split: str) -> str:
         return f"player '{input_txt}' not found in dataset", no_update
 
     player = mongodoc_to_player(doc)
-
-    uname = player['username']
-    id = player['clusterids'][split]
-    size = appdata['all'].cluster_sizes[id]
-    uniq = appdata['all'].cluster_uniqueness[id]
-    querytxt = f"'{uname}': cluster {id} ({size} players, {uniq:.1%} unique)"
-
-    return querytxt, player
+    return '', player

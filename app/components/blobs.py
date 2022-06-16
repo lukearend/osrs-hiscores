@@ -18,19 +18,14 @@ def username_blobs():
 
 @app.callback(
     Output('blob-section-container', 'children'),
-    Input('username-list', 'data'),
+    Input('blob-container', 'children'),
     State('blob-section-container', 'children'),
 )
-def toggle_br_after_blobs(uname_list: List[str], children: List):
-    blobs = children[0]
-    if not uname_list:
-        children = [blobs]
-    else:
-        children = [
-            blobs,
-            html.Br()
-        ]
-    return children
+def toggle_section_br(new_blobs: List, section_children: List) -> List:
+    blobs = section_children[0]
+    if not new_blobs:
+        return [blobs]
+    return [blobs, html.Br()]
 
 
 @app.callback(

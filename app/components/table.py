@@ -22,7 +22,7 @@ def stats_table(id):
 
 
 def cluster_stats_table():
-    title = html.Div("Cluster stats")
+    title = html.Div("Cluster averages")
     table = stats_table('cluster-stats-table')
     return dbc.Col([
         title,
