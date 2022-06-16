@@ -1,8 +1,23 @@
 import dash_bootstrap_components as dbc
-from dash import html
+from dash import html, State, Output, Input
+
+from app import app, appdata
+from src.common import osrs_skills
+
+
+OSRS_SKILLS = osrs_skills(include_total=True)
 
 
 def stats_table(id):
+
+    # @app.callback(
+    #     Output('', ''),
+    #     Input('', ''),
+    #     State('current-split', ''),
+    # )
+    # def update_table():
+    #     pass
+
     return html.Div(id)
 
 
