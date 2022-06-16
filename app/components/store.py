@@ -12,7 +12,7 @@ def store_vars():
         dcc.Store('username-list', data=[]),
         dcc.Store('player-data-dict', data={}),
         dcc.Store('selected-username', data=None),
-        dcc.Store('boxplot-cluster', data=None),
+        dcc.Store('current-clusterid', data=None),
         dcc.Store('boxplot-data', data=None),
         dcc.Store('last-queried-player'),
         dcc.Store('last-closed-username'),
@@ -111,7 +111,7 @@ def update_selected_username(clicked_blob: str,
 
 
 @app.callback(
-    Output('boxplot-cluster', 'data'),
+    Output('current-clusterid', 'data'),
     Input('selected-username', 'data'),
     Input('current-split', 'data'),
     State('player-data-dict', 'data'),
@@ -124,7 +124,7 @@ def update_boxplot_cluster(uname: str, split: str, data_dict: Dict[str, Any]) ->
 
 @app.callback(
     Output('boxplot-data', 'data'),
-    Input('boxplot-cluster', 'data'),
+    Input('current-clusterid', 'data'),
     Input('current-split', 'data'),
 )
 def update_boxplot_data(clusterid: int, split: str) -> Dict[str, Any]:

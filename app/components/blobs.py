@@ -1,4 +1,6 @@
-from dash import Output, Input, ALL, callback_context, no_update
+from typing import List
+
+from dash import State, Output, Input, ALL, callback_context, no_update, html
 import dash_bootstrap_components as dbc
 
 from app import app
@@ -7,7 +9,28 @@ from app.helpers import get_trigger
 
 
 def username_blobs():
-    return dbc.Row(id='blob-container')
+    blobs = dbc.Row(id='blob-container')
+    return dbc.Col(
+        id='blob-section-container',
+        children=[blobs],
+    )
+
+
+@app.callback(
+    Output('blob-section-container', 'children'),
+    Input('username-list', 'data'),
+    State('blob-section-container', 'children'),
+)
+def toggle_br_after_blobs(uname_list: List[str], children: List):
+    blobs = children[0]
+    if not uname_list:
+        children = [blobs]
+    else:
+        children = [
+            blobs,
+            html.Br()
+        ]
+    return children
 
 
 @app.callback(
