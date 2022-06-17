@@ -11,19 +11,22 @@ def store_vars():
     storevars = [
         dcc.Store('username-list', data=[]),
         dcc.Store('player-data-dict', data={}),
-        dcc.Store('focused-player'),
-        dcc.Store('current-clusterid'),
-        dcc.Store('boxplot-data'),
-        dcc.Store('cluster-table-data'),
-        dcc.Store('player-table-data'),
-        dcc.Store('last-queried-player'),
-        dcc.Store('last-closed-username'),
-        dcc.Store('last-clicked-blob'),
+        dcc.Store('focused-player'),        # Dict[str, Any]
+        dcc.Store('current-clusterid'),     # int
+        dcc.Store('current-split'),         # str
+        dcc.Store('point-size'),            # str
+        dcc.Store('scatterplot-data'),      # Dict[str, Any]
+        dcc.Store('boxplot-data'),          # Dict[str, Any]
+        dcc.Store('cluster-table-data'),    # Dict[str, int]
+        dcc.Store('player-table-data'),     # Dict[str, int]
+        dcc.Store('last-queried-player'),   # Dict[str, Any]
+        dcc.Store('last-closed-username'),  # str
+        dcc.Store('last-clicked-blob'),     # str
     ]
 
     children = []
     for var in storevars:
-        containerid = f'container:{var.id}'
+        containerid = f'{var.id}:container'
 
         container = dbc.Row(
             [
@@ -44,10 +47,10 @@ def store_vars():
 
     return dbc.Row([
         dbc.Col(
-            preview,
+            storevar,
             width='auto',
         )
-        for preview in children
+        for storevar in children
     ])
 
 
@@ -171,15 +174,19 @@ def update_cluster_table_data(clusterid, split) -> Dict[str, int]:
     return dict(zip(skills, lvls))
 
 
-# @app.callback(
-#     Output('player-table-data', 'data'),
-#     Input('focused-player', 'data'),
-#     State('player-data-dict', 'data'),
-#     State('current-split', 'data'),
-# )
-# def update_player_table_data(player, data_dict, split):
-#     if uname is None:
-#         return no_update
-#
-#     player_data = data_dict[uname]
-#     print(player_data)
+@app.callback(
+    Output('player-table-data', 'data'),
+    Input('focused-player', 'data'),
+    State('current-split', 'data'),
+    prevent_initial_call = True,
+)
+def update_player_table_data(player, split) -> Dict[str, int]:
+    if player is None:
+        return no_update
+
+    show_skills = appdata[split].skills
+    show_skills.append('total')
+    return {
+        skill: lvl for skill, lvl in player['stats'].items()
+        if skill in show_skills
+    }

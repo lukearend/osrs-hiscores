@@ -1,23 +1,24 @@
 import plotly.express as px
 
-white = '#ffffff'
-dark_gray = '#111111'
 bg_gray = '#222222'
-table_gray = '#303030'
-success_green = '#198754'
+dark_gray = '#111111'
 error_red = '#dc3545'
+success_green = '#198754'
+table_gray = '#303030'
+white = '#ffffff'
 
 BG_COLOR = bg_gray
+MENU_VARIANT = 'dark'
+PLAYER_COLOR_SEQ = px.colors.qualitative.Plotly
 
-BLOB_COLORS = px.colors.qualitative.Plotly
-SCATTERPLOT_BG = BG_COLOR
-SCATTERPLOT_POINTS = white
+SCATTERPLOT_BG_COLOR = BG_COLOR
+SCATTERPLOT_PTS_COLOR = white
 
-TABLE_BG = table_gray
-TABLE_CELL = dark_gray
-
-BOXPLOT_BG = dark_gray
-BOXPLOT_PAPER = BG_COLOR
-BOXPLOT_GRIDLINES = BG_COLOR
+TABLE_BG_COLOR = table_gray
+TABLE_CELL_COLOR = dark_gray
+TABLE_ICON_HEIGHT = 32
 
 BOXPLOT_AXIS_FONTSIZE = 16
+BOXPLOT_AXIS_FONTFAMILY = 'sans-serif'
+BOXPLOT_BG_COLOR = dark_gray
+BOXPLOT_PAPER_COLOR = BG_COLOR
