@@ -43,6 +43,7 @@ def load_icon_b64(skill: str) -> str:
         return base64.b64encode(f.read()).decode('utf-8')
 
 
+@lru_cache()
 def load_app_data(path: str) -> OrderedDict[str, SplitResults]:
     """ Load app data from S3 bucket or local path. """
 
@@ -58,6 +59,13 @@ def load_app_data(path: str) -> OrderedDict[str, SplitResults]:
 @lru_cache()
 def load_boxplot_layout() -> Dict[str, List[str]]:
     file = os.path.join(assets_dir(), 'boxplot_layout.json')
+    with open(file, 'r') as f:
+        return json.load(f, object_pairs_hook=collections.OrderedDict)
+
+
+@lru_cache()
+def load_table_layout() -> List[List[str]]:
+    file = os.path.join(assets_dir(), 'table_layout.json')
     with open(file, 'r') as f:
         return json.load(f, object_pairs_hook=collections.OrderedDict)
 
