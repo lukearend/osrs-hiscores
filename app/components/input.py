@@ -1,10 +1,7 @@
-from typing import Dict
-
 import dash_bootstrap_components as dbc
-from dash import html, dcc, State, Output, Input, callback_context, no_update
-from dash.exceptions import PreventUpdate
+from dash import html, dcc, Output, Input, no_update
 
-from app import app, appdb, appdata
+from app import app, appdb
 from app.helpers import is_valid_username, mongodoc_to_player
 
 
@@ -12,6 +9,7 @@ def username_input():
     label = html.Div('Lookup username:', className='label-text')
     querytxt = html.Div(id='query-text')
     inputbox = dcc.Input(
+        'snakeylime',  # todo: remove after testing
         id='input-box',
         type='text',
         placeholder="e.g. 'snakeylime'",
@@ -39,9 +37,8 @@ def username_input():
     Output('query-text', 'children'),
     Output('last-queried-player', 'data'),
     Input('input-box', 'value'),
-    State('current-split', 'data'),
 )
-def handle_username_input(input_txt: str, split: str) -> str:
+def handle_username_input(input_txt: str) -> str:
     if not input_txt:
         return '', no_update
 
@@ -51,6 +48,4 @@ def handle_username_input(input_txt: str, split: str) -> str:
     doc = appdb.find_one({'_id': input_txt.lower()})
     if not doc:
         return f"player '{input_txt}' not found in dataset", no_update
-
-    player = mongodoc_to_player(doc)
-    return '', player
+    return '', mongodoc_to_player(doc)

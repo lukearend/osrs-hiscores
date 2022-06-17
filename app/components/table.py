@@ -3,12 +3,8 @@ from typing import Dict, Any
 import dash_bootstrap_components as dbc
 from dash import html, Output, Input
 
-from app import app, styles
+from app import app
 from app.helpers import load_icon_b64, load_table_layout
-from src.common import osrs_skills
-
-
-OSRS_SKILLS = osrs_skills(include_total=True)
 
 
 def stats_table(id: str, title_id: str, store_id: str):
@@ -21,9 +17,12 @@ def stats_table(id: str, title_id: str, store_id: str):
             icon = html.Img(
                 src='data:image/png;base64,' + load_icon_b64(skill),
                 title=skill.capitalize(),
-                height=styles.TABLE_ICON_HEIGHT,
+                className='table-cell-icon',
             )
-            stat_container = html.Div(id=f'{id}:{skill}'),
+            stat_container = html.Div(
+                id=f'{id}:{skill}',
+                className='table-cell-text',
+            ),
             elem = (icon, stat_container)
             row.append(elem)
 
@@ -38,10 +37,15 @@ def stats_table(id: str, title_id: str, store_id: str):
     def update_stats(stats_dict: Dict[str, Any]) -> str:
         if not stats_dict:
             return ['' for _ in skills]
-        return [
-            str(stats_dict[skill]) if skill in stats_dict else ''
-            for skill in skills
-        ]
+        outs = []
+        for skill in skills:
+            if skill in stats_dict:
+                lvl = stats_dict[skill]
+                celltxt = str(lvl) if lvl != 0 else '-'
+            else:
+                celltxt = ''
+            outs.append(celltxt)
+        return outs
 
     # Lay out table as a row of columns so the cells always stack vertically.
     cols = []
@@ -64,6 +68,7 @@ def stats_table(id: str, title_id: str, store_id: str):
                     icon,
                     stat,
                 ],
+                justify='start',
                 style={
                     # 'color': styles.TABLE_CELL,
                 },

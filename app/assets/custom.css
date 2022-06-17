@@ -41,6 +41,14 @@ body {
     border-radius: 1em;
 }
 
+.table-cell-icon {
+    height: 1em;
+}
+
+.table-cell-text {
+    padding-top: 0.2em;
+}
+
 .boxplot-graph {
     height: 10em;
 }
