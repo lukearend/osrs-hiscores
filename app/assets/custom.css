@@ -5,7 +5,7 @@ h1 {
 }
 
 body {
-    font-family: "Classic 2007", sans-serif;
+    font-family: "OSRS Chat", sans-serif;
     font-size: xx-large;
 }
 
@@ -19,6 +19,10 @@ body {
 }
 
 /* Custom classes */
+.vspace {
+    padding-top: 1em;
+}
+
 .label-text {
     font-weight: bold;
 }
@@ -27,6 +31,14 @@ body {
     padding-left: 0.5em;
     border: solid;
     border-radius: 0.15em;
+}
+
+.username-blob {
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    border-radius: 1em;
 }
 
 .boxplot-graph {

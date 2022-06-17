@@ -1,6 +1,5 @@
-from typing import List
 
-from dash import State, Output, Input, ALL, callback_context, no_update, html
+from dash import Output, Input, ALL, callback_context, no_update
 import dash_bootstrap_components as dbc
 
 from app import app
@@ -9,23 +8,7 @@ from app.helpers import get_trigger
 
 
 def username_blobs():
-    blobs = dbc.Row(id='blob-container')
-    return dbc.Col(
-        id='blob-section-container',
-        children=[blobs],
-    )
-
-
-@app.callback(
-    Output('blob-section-container', 'children'),
-    Input('blob-container', 'children'),
-    State('blob-section-container', 'children'),
-)
-def toggle_section_br(new_blobs: List, section_children: List) -> List:
-    blobs = section_children[0]
-    if not new_blobs:
-        return [blobs]
-    return [blobs, html.Br()]
+    return dbc.Row(id='blob-container')
 
 
 @app.callback(
@@ -66,12 +49,8 @@ def draw_blobs(unames):
             },
             style={
                 'background-color': color,
-                'padding-top': 0,
-                'padding-bottom': 0,
-                'padding-left': '0.5em',
-                'padding-right': '0.5em',
-                'border-radius': '1em',
             },
+            className='username-blob'
         )
         blobs.append(blob)
 

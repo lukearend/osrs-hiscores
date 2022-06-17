@@ -8,12 +8,12 @@ from app.components.input import username_input
 from app.components.store import store_vars
 from app.components.table import stats_tables
 from app.components.playertxt import focused_player
+from app.components.space import vspace, vspace_if_nonempty
 
 
 def page_title():
     text = "OSRS hiscores explorer"
-    text = html.Strong(text)
-    return html.H1(text)
+    return html.H1(text, className='title-text')
 
 
 def info_blurb():
@@ -77,18 +77,20 @@ def root_layout():
     root = [
         page_title(),
         info_blurb(),
-        html.Br(),
+        vspace(),
         username_input(),
-        html.Br(),
-        username_blobs(),
-        focused_player(),
+        vspace(),
         dropdown_menus(),
-        html.Br(),
+        vspace(),
+        username_blobs(),
+        vspace_if_nonempty(id='username-list'),
+        focused_player(),
+        vspace_if_nonempty(id='focused-player'),
         stats_tables(),
-        html.Br(),
+        vspace(),
         boxplot_title(),
         boxplot(),
-        html.Br(),
+        vspace(),
         github_link(),
         download_link(),
         html.Hr(),

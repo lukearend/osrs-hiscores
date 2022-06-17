@@ -1,29 +1,12 @@
-from typing import List, Dict, Any
+from typing import Dict, Any
 
-from dash import State, Output, Input, html
-import dash_bootstrap_components as dbc
+from dash import Output, Input, html
 
 from app import app, appdata
 
 
 def focused_player():
-    info = html.Div(id='focused-player-txt')
-    return dbc.Col(
-        id='focused-player-container',
-        children=[info]
-    )
-
-
-@app.callback(
-    Output('focused-player-container', 'children'),
-    Input('focused-player-txt', 'children'),
-    State('focused-player-container', 'children'),
-)
-def toggle_section_br(new_playertxt: str, section_children: List) -> List:
-    playertxt = section_children[0]
-    if not new_playertxt:
-        return [playertxt]
-    return [playertxt, html.Br()]
+    return html.Div(id='focused-player-txt')
 
 
 @app.callback(
