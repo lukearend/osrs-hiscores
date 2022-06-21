@@ -171,7 +171,16 @@ def update_cluster_table_data(clusterid, split) -> Dict[str, int]:
     centroid = appdata[split].cluster_centroids.loc[clusterid]
     skills = centroid.index
     lvls = [int(i) for i in centroid]
-    return dict(zip(skills, lvls))
+    stats = dict(zip(skills, lvls))
+
+    total_lvl = appdata[split].cluster_quartiles.sel(
+        skill='total',
+        clusterid=clusterid,
+        percentile=50
+    ).item()
+    total_lvl = int(total_lvl)
+    stats['total'] = total_lvl
+    return stats
 
 
 @app.callback(

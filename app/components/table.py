@@ -4,6 +4,7 @@ import dash_bootstrap_components as dbc
 from dash import html, Output, Input
 
 from app import app
+from app import styles
 from app.helpers import load_icon_b64, load_table_layout
 
 
@@ -17,11 +18,19 @@ def stats_table(id: str, title_id: str, store_id: str):
             icon = html.Img(
                 src='data:image/png;base64,' + load_icon_b64(skill),
                 title=skill.capitalize(),
-                className='table-cell-icon',
+                className='table-icon img-center',
+                style={
+                    'padding-top': 0,
+                    'padding-bottom': 0,
+                },
+                # height=styles.TABLE_ICON_HEIGHT,
             )
             stat_container = html.Div(
                 id=f'{id}:{skill}',
-                className='table-cell-text',
+                className='table-stat',
+                style={
+                    'white-space': 'pre',  # prevents collapsing whitespace
+                }
             ),
             elem = (icon, stat_container)
             row.append(elem)
@@ -34,69 +43,67 @@ def stats_table(id: str, title_id: str, store_id: str):
         *[Output(f'{id}:{skill}', 'children') for skill in skills],
         Input(store_id, 'data'),
     )
-    def update_stats(stats_dict: Dict[str, Any]) -> str:
+    def update_stats(stats_dict: Dict[str, int]) -> str:
         if not stats_dict:
             return ['' for _ in skills]
         outs = []
         for skill in skills:
-            if skill in stats_dict:
-                lvl = stats_dict[skill]
-                celltxt = str(lvl) if lvl != 0 else '-'
+            if skill not in stats_dict:
+                txt = ' '
             else:
-                celltxt = ''
-            outs.append(celltxt)
+                lvl = stats_dict[skill]
+                if lvl == 0:
+                    txt = '-'
+                elif skill == 'total':
+                    txt = dbc.Col([
+                        dbc.Row(dbc.Col('Total:', className='g-0',
+                                style={'padding-top': 0,
+                                       'padding-bottom': 0}), className='g-0'),
+                        dbc.Row(dbc.Col(str(lvl), className='g-0',
+                                style={'padding-top': 0,
+                                       'padding-bottom': 0}), className='g-0'),
+                    ], className='g-0', style={'font-size': '50%'})
+                else:
+                    txt = str(lvl)
+            outs.append(txt)
         return outs
 
-    # Lay out table as a row of columns so the cells always stack vertically.
     cols = []
-    for col_i in range(3):
-        col_cells = []
-        for row_i in range(8):
-            icon, stat = elems[row_i][col_i]
+    for j in range(3):
+        col = []
+        for i in range(8):
+            icon, stat = elems[i][j]
             icon = dbc.Col(
                 icon,
-                # width=4,
-                # className='table-icon',
+                width=4,
+                className='table-icon'
             )
             stat = dbc.Col(
                 stat,
-                # width=8,
-                # className='table-stat',
+                width=8,
             )
-            cell = dbc.Row(
-                [
-                    icon,
-                    stat,
-                ],
-                justify='start',
+            elem = dbc.Row(
+                [icon, stat],
+                className='table-cell',
                 style={
-                    # 'color': styles.TABLE_CELL,
-                },
-                # className='stats-table-cell',
+                    'background-color': styles.TABLE_CELL_COLOR,
+                    'border-color': styles.TABLE_BORDER_COLOR,
+                }
             )
-            col_cells.append(cell)
+            col.append(elem)
 
-        col = dbc.Col(
-            col_cells,
-            # className='stats-table-col',
-            width='auto'
-        )
+        col = dbc.Col(col)
         cols.append(col)
 
-    table = dbc.Row(
-        cols,
-        style={
-            # 'color': styles.TABLE_BG,
-        },
-        # className='stats-table',
-    )
-    title = html.Div(id=title_id)
+    header = dbc.Row(dbc.Col(html.Div(id=title_id)))
+    body = dbc.Row(cols)
     return dbc.Col(
-        [
-            title,
-            table
-        ],
-        # className='table-container',
+        [header, body],
+        className='stats-table',
+        style={
+            'background-color': styles.TABLE_BG_COLOR,
+            'border-color': styles.TABLE_BORDER_COLOR,
+        },
     )
 
 
