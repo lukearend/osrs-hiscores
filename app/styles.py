@@ -14,11 +14,8 @@ PLAYER_COLOR_SEQ = px.colors.qualitative.Plotly
 SCATTERPLOT_BG_COLOR = BG_COLOR
 SCATTERPLOT_PTS_COLOR = white
 
-# TABLE_BG_COLOR = table_gray
+TABLE_BG_COLOR = dark_gray
 # TABLE_CELL_COLOR = dark_gray
-# TABLE_BORDER_COLOR = table_gray
-TABLE_BG_COLOR = table_gray
-TABLE_CELL_COLOR = '#191919'
 TABLE_BORDER_COLOR = table_gray
 # TABLE_ICON_HEIGHT = 32
 

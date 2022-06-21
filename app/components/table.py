@@ -19,11 +19,6 @@ def stats_table(id: str, title_id: str, store_id: str):
                 src='data:image/png;base64,' + load_icon_b64(skill),
                 title=skill.capitalize(),
                 className='table-icon img-center',
-                style={
-                    'padding-top': 0,
-                    'padding-bottom': 0,
-                },
-                # height=styles.TABLE_ICON_HEIGHT,
             )
             stat_container = html.Div(
                 id=f'{id}:{skill}',
@@ -52,19 +47,9 @@ def stats_table(id: str, title_id: str, store_id: str):
                 txt = ' '
             else:
                 lvl = stats_dict[skill]
-                if lvl == 0:
-                    txt = '-'
-                elif skill == 'total':
-                    txt = dbc.Col([
-                        dbc.Row(dbc.Col('Total:', className='g-0',
-                                style={'padding-top': 0,
-                                       'padding-bottom': 0}), className='g-0'),
-                        dbc.Row(dbc.Col(str(lvl), className='g-0',
-                                style={'padding-top': 0,
-                                       'padding-bottom': 0}), className='g-0'),
-                    ], className='g-0', style={'font-size': '50%'})
-                else:
-                    txt = str(lvl)
+                txt = '-' if lvl == 0 else str(lvl)
+                # if skill == 'total':
+                #     txt = ' ' + txt
             outs.append(txt)
         return outs
 
@@ -82,13 +67,10 @@ def stats_table(id: str, title_id: str, store_id: str):
                 stat,
                 width=8,
             )
+            gutter = 'g-4' if table_skills[i][j] == 'total' else 'g-0'
             elem = dbc.Row(
                 [icon, stat],
-                className='table-cell',
-                style={
-                    'background-color': styles.TABLE_CELL_COLOR,
-                    'border-color': styles.TABLE_BORDER_COLOR,
-                }
+                className=f'table-cell {gutter}',
             )
             col.append(elem)
 
@@ -96,7 +78,12 @@ def stats_table(id: str, title_id: str, store_id: str):
         cols.append(col)
 
     header = dbc.Row(dbc.Col(html.Div(id=title_id)))
-    body = dbc.Row(cols)
+    body = dbc.Row(
+        cols,
+        style={
+            'background-color': styles.TABLE_BG_COLOR,
+        },
+    )
     return dbc.Col(
         [header, body],
         className='stats-table',
@@ -134,4 +121,5 @@ def stats_tables():
                 cluster_stats_table(), width='auto',
             ),
         ],
+        className='g-5',
     )

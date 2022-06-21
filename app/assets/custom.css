@@ -42,43 +42,12 @@ body {
 }
 
 .table-icon {
-    /*background-color: #A5D6D9;*/
     padding-top: 0.05em;
     height: 1.25em;
-    padding-left: 0;
 }
 
 .table-stat {
-    /*padding-top: 0.2em;*/
-    /*margin-top: 0;*/
-    /*font-size: x-large;*/
-    /*padding-top: 3px;*/
-    padding-top: 0.1em;
-    font-size: 85%;
     text-align: center;
-    padding-right: 0;
-}
-
-.total-level {
-    font-size: 50%;
-    padding-top: 0;
-}
-
-.table-cell {
-    border-width: 0.05em;
-    border-style: solid;
-    padding: 0.05em;
-    border-radius: 0.05em;
-}
-
-.stats-table {
-    /*background-color: #303030;*/
-    /*padding-left: 1em;*/
-    /*padding-right: 1em;*/
-    /*padding-top: 2px;*/
-    /*padding-bottom: 0.5px;*/
-    border-width: 0.20em;
-    border-radius: 0.10em;
 }
 
 .img-center {
