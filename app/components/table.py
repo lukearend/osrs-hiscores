@@ -48,8 +48,6 @@ def stats_table(id: str, title_id: str, store_id: str):
             else:
                 lvl = stats_dict[skill]
                 txt = '-' if lvl == 0 else str(lvl)
-                # if skill == 'total':
-                #     txt = ' ' + txt
             outs.append(txt)
         return outs
 
@@ -67,7 +65,7 @@ def stats_table(id: str, title_id: str, store_id: str):
                 stat,
                 width=8,
             )
-            gutter = 'g-4' if table_skills[i][j] == 'total' else 'g-0'
+            gutter = 'g-3' if table_skills[i][j] == 'total' else 'g-0'
             elem = dbc.Row(
                 [icon, stat],
                 className=f'table-cell {gutter}',
