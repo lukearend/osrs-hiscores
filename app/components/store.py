@@ -1,27 +1,31 @@
 from typing import Any, List, Dict, Tuple
 
 import dash_bootstrap_components as dbc
+import numpy as np
 from dash import Output, Input, dcc, State, callback_context, no_update
 
 from app import app, appdata
 from app.helpers import get_trigger
+from src.common import osrs_skills
 
 
 def store_vars():
     storevars = [
         dcc.Store('username-list', data=[]),
         dcc.Store('player-data-dict', data={}),
-        dcc.Store('focused-player'),        # Dict[str, Any]
-        dcc.Store('current-clusterid'),     # int
-        dcc.Store('current-split'),         # str
-        dcc.Store('point-size'),            # str
-        dcc.Store('scatterplot-data'),      # Dict[str, Any]
-        dcc.Store('boxplot-data'),          # Dict[str, Any]
-        dcc.Store('cluster-table-data'),    # Dict[str, int]
-        dcc.Store('player-table-data'),     # Dict[str, int]
-        dcc.Store('last-queried-player'),   # Dict[str, Any]
-        dcc.Store('last-closed-username'),  # str
-        dcc.Store('last-clicked-blob'),     # str
+        dcc.Store('focused-player'),            # Dict[str, Any]
+        dcc.Store('current-clusterid'),         # int
+        dcc.Store('current-split'),             # str
+        dcc.Store('point-size'),                # str
+        dcc.Store('scatterplot-data'),          # Dict[str, Any]
+        dcc.Store('boxplot-data'),              # Dict[str, Any]
+        dcc.Store('cluster-table-data:title'),  # int
+        dcc.Store('cluster-table-data:stats'),  # Dict[str, int]
+        dcc.Store('player-table-data:title'),   # str
+        dcc.Store('player-table-data:stats'),   # Dict[str, int]
+        dcc.Store('last-queried-player'),       # Dict[str, Any]
+        dcc.Store('last-closed-username'),      # str
+        dcc.Store('last-clicked-blob'),         # str
     ]
 
     children = []
@@ -99,6 +103,8 @@ def updated_focused_player(blob_uname: str,
                            current_player: Dict[str, Any],
                            data_dict: Dict[str, Any]) -> Dict[str, Any]:
 
+    print(callback_context.triggered)
+
     triggerid, _ = get_trigger(callback_context)
     if triggerid == 'last-clicked-blob':
         return data_dict[blob_uname]
@@ -159,43 +165,50 @@ def update_boxplot_data(clusterid: int, split: str) -> Dict[str, Any]:
 
 
 @app.callback(
-    Output('cluster-table-data', 'data'),
+    Output('cluster-table-data:title', 'data'),
+    Output('cluster-table-data:stats', 'data'),
     Input('current-clusterid', 'data'),
     State('current-split', 'data'),
     prevent_initial_call=True,
 )
-def update_cluster_table_data(clusterid, split) -> Dict[str, int]:
+def update_cluster_table_data(clusterid, split) -> Tuple[int, Dict[str, int]]:
     if clusterid is None:
-        return no_update
+        skills = appdata[split].skills
+        skills.append('total')
+        return None, {s: None for s in skills}
 
     centroid = appdata[split].cluster_centroids.loc[clusterid]
     skills = centroid.index
-    lvls = [int(i) for i in centroid]
-    stats = dict(zip(skills, lvls))
+    lvls = [np.round(i) for i in centroid]
+    stats = {skill: lvl for skill, lvl in zip(skills, lvls)}
 
     total_lvl = appdata[split].cluster_quartiles.sel(
         skill='total',
         clusterid=clusterid,
         percentile=50
     ).item()
-    total_lvl = int(total_lvl)
+    total_lvl = np.round(total_lvl)
     stats['total'] = total_lvl
-    return stats
+
+    return clusterid, stats
 
 
 @app.callback(
-    Output('player-table-data', 'data'),
+    Output('player-table-data:title', 'data'),
+    Output('player-table-data:stats', 'data'),
     Input('focused-player', 'data'),
-    State('current-split', 'data'),
-    prevent_initial_call = True,
+    prevent_initial_call=True,
 )
-def update_player_table_data(player, split) -> Dict[str, int]:
+def update_player_table_data(player) -> Tuple[str, Dict[str, int]]:
+    skills = osrs_skills(include_total=True)
     if player is None:
-        return no_update
+        return None, {s: None for s in skills}
 
-    show_skills = appdata[split].skills
-    show_skills.append('total')
-    return {
-        skill: lvl for skill, lvl in player['stats'].items()
-        if skill in show_skills
-    }
+    stats = {}
+    for skill in skills:
+        stat = player['stats'][skill]
+        if stat == 0:
+            stat = None
+        stats[skill] = stat
+
+    return player['username'], stats

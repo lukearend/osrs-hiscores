@@ -1,16 +1,28 @@
-from typing import Dict, Any
+from typing import Dict, Any, Callable
 
 import dash_bootstrap_components as dbc
-from dash import html, Output, Input
+from dash import html, Output, Input, no_update
 
 from app import app
 from app import styles
 from app.helpers import load_icon_b64, load_table_layout
 
 
-def stats_table(id: str, title_id: str, store_id: str):
-    table_skills = load_table_layout()
+def stats_table(id: str, store_id: str, title_fmt_fn: Callable):
+    title = html.Div(
+        id=f'{id}:title',
+        className='label-text',
+    )
 
+    # Table title is produced by applying format function to the title data.
+    @app.callback(
+        Output(f'{id}:title', 'children'),
+        Input(f'{store_id}:title', 'data'),
+    )
+    def update_title(title_data: Any) -> str:
+        return title_fmt_fn(title_data)
+
+    table_skills = load_table_layout()
     elems = []
     for row_i, row_skills in enumerate(table_skills):
         row = []
@@ -26,85 +38,103 @@ def stats_table(id: str, title_id: str, store_id: str):
                 style={
                     'white-space': 'pre',  # prevents collapsing whitespace
                 }
-            ),
+            )
             elem = (icon, stat_container)
             row.append(elem)
-
         elems.append(row)
-
     skills = [skill for row in table_skills for skill in row]
 
+    # Table stats are updated as individual outputs in one big callback.
     @app.callback(
         *[Output(f'{id}:{skill}', 'children') for skill in skills],
-        Input(store_id, 'data'),
+        Input(f'{store_id}:stats', 'data'),
+        prevent_initial_call=True,
     )
-    def update_stats(stats_dict: Dict[str, int]) -> str:
-        if not stats_dict:
-            return ['' for _ in skills]
-        outs = []
+    def update_stats(stats_dict: Dict[str, Any]) -> str:
+        if stats_dict is None:
+            return no_update
+
+        stats = []
         for skill in skills:
             if skill not in stats_dict:
-                txt = ' '
-            else:
-                lvl = stats_dict[skill]
-                txt = '-' if lvl == 0 else str(lvl)
-            outs.append(txt)
-        return outs
+                stats.append(' ')
+                continue
+            lvl = stats_dict[skill]
+            txt = '-' if lvl is None else str(lvl)
+            stats.append(txt)
 
-    cols = []
+        return tuple(stats)
+
+    table_cols = []
     for j in range(3):
-        col = []
+        col_elems = []
         for i in range(8):
             icon, stat = elems[i][j]
-            icon = dbc.Col(
+            icon_col = dbc.Col(
                 icon,
                 width=4,
-                className='table-icon'
             )
-            stat = dbc.Col(
+            stat_col = dbc.Col(
                 stat,
                 width=8,
             )
-            gutter = 'g-3' if table_skills[i][j] == 'total' else 'g-0'
-            elem = dbc.Row(
-                [icon, stat],
-                className=f'table-cell {gutter}',
+            icon_stat = dbc.Row(
+                [icon_col, stat_col],
+                className='g-3',  # slightly decrease space between icon and stat number (from g-4)
             )
-            col.append(elem)
+            elem = dbc.Col(
+                icon_stat,
+            )
+            col_elems.append(elem)
 
-        col = dbc.Col(col)
-        cols.append(col)
+        col = dbc.Col(
+            col_elems,
+        )
+        table_cols.append(col)
 
-    header = dbc.Row(dbc.Col(html.Div(id=title_id)))
-    body = dbc.Row(
-        cols,
+    table = dbc.Row(
+        table_cols,
         style={
             'background-color': styles.TABLE_BG_COLOR,
+            # 'border-color': styles.TABLE_BORDER_COLOR,
         },
+        className='stats-table',
     )
     return dbc.Col(
-        [header, body],
-        className='stats-table',
-        style={
-            'background-color': styles.TABLE_BG_COLOR,
-            'border-color': styles.TABLE_BORDER_COLOR,
-        },
+        [
+            title,
+            table,
+        ],
     )
 
 
 def cluster_stats_table():
+
+    def title_fn(clusterid: int) -> str:
+        if clusterid is None:
+            return "Cluster stats"
+        else:
+            return f"Cluster {clusterid} stats"
+
     return stats_table(
         id='cluster-table',
-        title_id='cluster-table-title',
         store_id='cluster-table-data',
+        title_fmt_fn=title_fn,
     )
 
 
 def player_stats_table():
+
+    def title_fn(username: str) -> str:
+        if username is None:
+            return "Player stats"
+        else:
+            return f"'{username}' stats"
+
     return stats_table(
         id='player-table',
-        title_id='player-table-title',
         store_id='player-table-data',
+        title_fmt_fn=title_fn,
     )
 
 

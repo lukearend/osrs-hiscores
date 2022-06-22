@@ -29,8 +29,6 @@ body {
 
 .input-box {
     padding-left: 0.5em;
-    border: solid;
-    border-radius: 0.15em;
 }
 
 .username-blob {
@@ -42,12 +40,18 @@ body {
 }
 
 .table-icon {
-    padding-top: 0.05em;
-    height: 1.25em;
+    padding-top: 0.1em;  /* empirical value, increasing pushes icons lower */
+    height: 1.1em;       /* empirical value */
 }
 
 .table-stat {
-    text-align: center;
+    text-align: center;  /* necessary for text to center in containers */
+    font-size: 85%;      /* empirical value, helps text size match icon size */
+}
+
+.stats-table {
+    border-radius: 0.25em;
+    padding-top: 0.20em  /* empirical value, matches top margin size with bottom */
 }
 
 .img-center {
@@ -58,7 +62,7 @@ body {
 }
 
 .boxplot-graph {
-    height: 10em;
+    height: 10em;        /* empirical value, set by eyeball */
 }
 
 .support-link {
