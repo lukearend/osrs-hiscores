@@ -82,10 +82,7 @@ def stats_table(id: str, store_id: str, title_fmt_fn: Callable):
                 [icon_col, stat_col],
                 className='g-3',  # slightly decrease space between icon and stat number (from g-4)
             )
-            elem = dbc.Col(
-                icon_stat,
-            )
-            col_elems.append(elem)
+            col_elems.append(icon_stat)
 
         col = dbc.Col(
             col_elems,
@@ -96,7 +93,6 @@ def stats_table(id: str, store_id: str, title_fmt_fn: Callable):
         table_cols,
         style={
             'background-color': styles.TABLE_BG_COLOR,
-            # 'border-color': styles.TABLE_BORDER_COLOR,
         },
         className='stats-table',
     )
@@ -149,5 +145,5 @@ def stats_tables():
                 cluster_stats_table(), width='auto',
             ),
         ],
-        className='g-5',
+        className='g-5',  # add space between the two tables (from g-0)
     )
