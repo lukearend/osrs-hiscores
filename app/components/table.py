@@ -125,7 +125,7 @@ def player_stats_table():
         if username is None:
             return "Player stats"
         else:
-            return f"'{username}' stats"
+            return f"‘{username}' stats"  # true opening single quote char needed in bold font
 
     return stats_table(
         id='player-table',

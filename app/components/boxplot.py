@@ -26,21 +26,19 @@ def boxplot_skill_order(skill_lvls: Dict[str, int]) -> List[int]:
         data['quartiles'] = [{skill: skill_lvls[skill] for skill in skills}]
 
 
-
-
 @app.callback(
     Output('boxplot', 'extendData'),
     Input('boxplot-data', 'data'),
     State('current-split', 'data'),
 )
-def update_boxplot_trace(data: Dict[str, Any], split: str):
-    if data is None:
+def update_boxplot_trace(data_dict: Dict[str, Any], split: str):
+    if data_dict is None:
         return no_update
 
     skills = load_boxplot_layout()[split]
     boxdata = []
     for i, p in enumerate([0, 25, 50, 75, 100]):
-        lvls_dict = data['quartiles'][i]
+        lvls_dict = data_dict['quartiles'][i]
         skill_lvls = [lvls_dict[skill] for skill in skills]
         boxdata.append(skill_lvls)
 
@@ -65,7 +63,7 @@ def update_boxplot_trace(data: Dict[str, Any], split: str):
     Output('boxplot', 'figure'),
     Input('current-split', 'data'),
 )
-def redraw_boxplot(split: str) -> go.Figure():
+def redraw_boxplot(split: str) -> go.Figure:
     if split is None:
         return no_update
 

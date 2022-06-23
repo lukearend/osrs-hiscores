@@ -9,7 +9,7 @@ from app.helpers import get_trigger
 from src.common import osrs_skills
 
 
-def store_vars():
+def store_vars(show=True):
     storevars = [
         dcc.Store('username-list', data=[]),
         dcc.Store('player-data-dict', data={}),
@@ -28,10 +28,13 @@ def store_vars():
         dcc.Store('last-clicked-blob'),         # str
     ]
 
-    children = []
+    layout = []
     for var in storevars:
-        containerid = f'{var.id}:container'
+        if not show:
+            layout.append(var)
+            continue
 
+        containerid = f'{var.id}:container'
         container = dbc.Row(
             [
                 var,
@@ -40,21 +43,21 @@ def store_vars():
             ],
             className='g-2',
         )
-        children.append(container)
+        layout.append(container)
 
         @app.callback(
             Output(containerid, 'children'),
             Input(var.id, 'data'),
         )
-        def update_value(newval: Any) -> str:
+        def update_container(newval: Any) -> str:
             return str(newval)
 
     return dbc.Row([
         dbc.Col(
-            storevar,
+            item,
             width='auto',
         )
-        for storevar in children
+        for item in layout
     ])
 
 
@@ -103,8 +106,6 @@ def updated_focused_player(blob_uname: str,
                            current_player: Dict[str, Any],
                            data_dict: Dict[str, Any]) -> Dict[str, Any]:
 
-    print(callback_context.triggered)
-
     triggerid, _ = get_trigger(callback_context)
     if triggerid == 'last-clicked-blob':
         return data_dict[blob_uname]
@@ -133,6 +134,36 @@ def update_current_cluster(player: Dict[str, Any], split: str, data_dict: Dict[s
 
     uname = player['username']
     return data_dict[uname]['clusterids'][split]
+
+
+@app.callback(
+    Output('scatterplot-data', 'data'),
+    Input('focused-player', 'data'),
+    Input('current-split', 'data'),
+    prevent_initial_call=True,
+)
+def update_scatterplot_data(player: Dict[str, Any], split: str) -> Dict[str, Any]:
+    if player is None:
+        return no_update
+
+    # todo: scatterplot equivalent of boxplot code below
+    # nplayers = appdata[split].cluster_sizes[clusterid].item()
+    # quartiles_xr = appdata[split].cluster_quartiles.sel(clusterid=clusterid)
+    # quartiles_xr = quartiles_xr.drop_sel(skill='total')
+    # skills = [s.item() for s in quartiles_xr.coords['skill']]
+    #
+    # boxdata = []
+    # for p in [0, 25, 50, 75, 100]:
+    #     lvls = quartiles_xr.sel(percentile=p)
+    #     lvls = [i.item() for i in lvls]
+    #     skill_lvls = dict(zip(skills, lvls))
+    #     boxdata.append(skill_lvls)
+
+    return {
+        'x': [1, 2, 3, 4, 5],
+        'y': [1, 2, 3, 4, 5],
+        'z': [1, 2, 3, 4, 5],
+    }
 
 
 @app.callback(

@@ -5,6 +5,7 @@ from app.components.boxplot import boxplot_title, boxplot
 from app.components.blobs import username_blobs
 from app.components.dropdowns import dropdown_menus
 from app.components.input import username_input
+from app.components.scatterplot import scatterplot
 from app.components.store import store_vars
 from app.components.table import stats_tables
 from app.components.playertxt import focused_player
@@ -75,6 +76,7 @@ def support_msg():
 
 def root_layout():
     root = [
+        store_vars(show=False),
         page_title(),
         info_blurb(),
         vspace(),
@@ -86,6 +88,8 @@ def root_layout():
         vspace_if_nonempty(id='username-list'),
         focused_player(),
         vspace_if_nonempty(id='focused-player'),
+        scatterplot(),
+        vspace(),
         stats_tables(),
         vspace(),
         boxplot_title(),
@@ -95,8 +99,7 @@ def root_layout():
         download_link(),
         html.Hr(),
         support_msg(),
-        html.Br(),
-        store_vars(),
+        vspace(),
     ]
     return dbc.Container([
         dbc.Row(dbc.Col(i))
