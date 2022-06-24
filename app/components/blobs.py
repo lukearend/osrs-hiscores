@@ -20,7 +20,7 @@ def draw_blobs(unames):
     for i, uname in enumerate(unames):
         color = blob_colors[i % len(blob_colors)]
 
-        close_x = dbc.Button(
+        blob_closer = dbc.Button(
             className='btn-close',
             id={
                 'type': 'blob-x',
@@ -28,21 +28,21 @@ def draw_blobs(unames):
             },
             style={
                 'background-color': color,
-                'font-size': 'medium',
-            }
+                'font-size': 'small',
+            },
         )
 
-        content = dbc.Row(
+        blob_content = dbc.Row(
             [
                 dbc.Col(uname),
-                close_x,
+                blob_closer,
             ],
-            className='g-3',
+            className='g-2',  # decrease slightly, default is g-4
             align='center',
         )
 
         blob = dbc.Button(
-            content,
+            blob_content,
             id={
                 'type': 'blob-username',
                 'username': uname,

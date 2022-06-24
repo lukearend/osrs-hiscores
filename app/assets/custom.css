@@ -6,16 +6,24 @@ h1 {
 
 body {
     font-family: "OSRS Chat", sans-serif;
-    font-size: xx-large;
+    font-size: large;
+}
+
+.info-text {
+    font-size: x-large;
+}
+
+.controls-text {
+    font-size: x-large;
+}
+
+.btn {
+    font-size: x-large;
 }
 
 /* Bootstrap overrides */
-.btn {
-    font-size: xx-large;
-}
-
 .dropdown-item {
-    font-size: xx-large;
+    font-size: x-large;
 }
 
 /* Custom classes */
@@ -24,6 +32,7 @@ body {
 }
 
 .label-text {
+    font-size: large;
     font-weight: bold;
 }
 
@@ -41,17 +50,7 @@ body {
 
 .table-icon {
     padding-top: 0.1em;  /* empirical value, increasing pushes icons lower */
-    height: 1em;         /* empirical value */
-}
-
-.table-stat {
-    text-align: center;  /* necessary for text to center in containers */
-    font-size: 85%;      /* empirical value, helps text size match icon size */
-}
-
-.stats-table {
-    border-radius: 0.25em;
-    padding-top: 0.20em  /* empirical value, matches top margin size with bottom */
+    height: 1.25em;      /* empirical value, increases icon size (anchored on bottom) */
 }
 
 .img-center {
@@ -59,6 +58,11 @@ body {
     margin-left: auto;
     margin-right: auto;
     margin-top: 0;
+}
+
+.stats-table {
+    border-radius: 0.25em;
+    padding-top: 0.20em  /* empirical value, matches top margin size with bottom */
 }
 
 .support-link {
@@ -70,5 +74,6 @@ body {
     padding: 0;
     padding-left: 0.25em;
     padding-right: 0.25em;
+    font-size: large;
 }
 

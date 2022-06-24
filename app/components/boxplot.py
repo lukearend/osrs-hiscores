@@ -97,7 +97,6 @@ def redraw_boxplot(split: str) -> go.Figure:
         margin=margin,
         paper_bgcolor=styles.BG_COLOR,
         plot_bgcolor=styles.BOXPLOT_BG_COLOR,
-        yaxis_tickfont_size=styles.BOXPLOT_AXIS_FONTSIZE,
         yaxis_tickfont_family='OSRS Chat',
     ))
     for i, skill in enumerate(skills):

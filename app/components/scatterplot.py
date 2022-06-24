@@ -14,7 +14,6 @@ def scatterplot():
         className='scatterplot-graph',
         style={
             'height': styles.SCATTERPLOT_HEIGHT,
-            'width': '75%',
         }
     )
 

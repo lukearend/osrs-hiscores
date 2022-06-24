@@ -13,7 +13,11 @@ def dropdown_menu(store_id: str, options: OrderedDict[str, str]):
 
     menuitems = []
     for optid, label in options.items():
-        button = dbc.DropdownMenuItem(label, id=f'{menuid}:{optid}')
+        button = dbc.DropdownMenuItem(
+            label,
+            id=f'{menuid}:{optid}',
+            className='controls-text'
+        )
         menuitems.append(button)
 
     @app.callback(
@@ -58,8 +62,11 @@ def split_menu():
         store_id='current-split',
         options=optlabels,
     )
-    label = html.Div("Choose split:", className='label-text')
 
+    label = html.Strong(
+        "Choose split:",
+        className='controls-text'
+    )
     return dbc.Row(
         [
             dbc.Col(label, width='auto'),
@@ -76,7 +83,10 @@ def point_size_menu():
         store_id='point-size',
         options=optlabels,
     )
-    label = html.Div("Point size:", style={'font-weight': 'bold'})
+    label = html.Strong(
+        "Point size:",
+        className='controls-text',
+    )
 
     return dbc.Row(
         [
@@ -93,5 +103,5 @@ def dropdown_menus():
             dbc.Col(split_menu(), width='auto'),
             dbc.Col(point_size_menu(), width='auto'),
         ],
-        className='g-5',  # g-4 is default, add a little separation
+        # className='g-5',  # g-4 is default, add a little separation
     )

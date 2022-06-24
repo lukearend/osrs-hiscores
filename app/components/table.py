@@ -34,7 +34,6 @@ def stats_table(id: str, store_id: str, title_fmt_fn: Callable):
             )
             stat_container = html.Div(
                 id=f'{id}:{skill}',
-                className='table-stat',
                 style={
                     'white-space': 'pre',  # prevents collapsing whitespace
                 }
@@ -80,7 +79,7 @@ def stats_table(id: str, store_id: str, title_fmt_fn: Callable):
             )
             icon_stat = dbc.Row(
                 [icon_col, stat_col],
-                className=styles.TABLE_ICON_STAT_GUTTER,
+                # className=styles.TABLE_ICON_STAT_GUTTER,
             )
             col_elems.append(icon_stat)
 
@@ -138,12 +137,13 @@ def stats_tables():
     return dbc.Row(
         [
             dbc.Col(
-                player_stats_table(),
+                table,
                 width='auto',
-            ),
-            dbc.Col(
-                cluster_stats_table(), width='auto',
-            ),
+            )
+            for table in [
+                player_stats_table(),
+                cluster_stats_table(),
+            ]
         ],
-        className=styles.TABLE_SEPARATOR_GUTTER,
+        justify='evenly',
     )

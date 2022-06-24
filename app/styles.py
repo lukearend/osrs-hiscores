@@ -20,8 +20,6 @@ SCATTERPLOT_ZAXIS_COLOR = '#303030'
 
 TABLE_BG_COLOR = dark_gray
 TABLE_BORDER_COLOR = table_gray
-TABLE_SEPARATOR_GUTTER = 'g-5'  # add space between the two tables (default is g-0)
-TABLE_ICON_STAT_GUTTER = 'g-3'  # slightly decrease space between icon and stat number (default is g-4)
 
 BOXPLOT_HEIGHT = '10em'
 BOXPLOT_AXIS_FONTSIZE = 20

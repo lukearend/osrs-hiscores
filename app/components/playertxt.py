@@ -6,7 +6,10 @@ from app import app, appdata
 
 
 def focused_player():
-    return html.Div(id='focused-player-txt')
+    return html.Div(
+        id='focused-player-txt',
+        className='controls-text',
+    )
 
 
 @app.callback(

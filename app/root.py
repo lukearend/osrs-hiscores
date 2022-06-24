@@ -14,7 +14,10 @@ from app.components.space import vspace, vspace_if_nonempty
 
 def page_title():
     text = "OSRS hiscores explorer"
-    return html.H1(text, className='title-text')
+    return html.H1(
+        text,
+        className='title-text',
+    )
 
 
 def info_blurb():
@@ -30,7 +33,10 @@ def info_blurb():
         of players in that cluster. Axes have no meaningful interpretation.
         Player stats were downloaded from the """, osrs_hiscores, " in April 2022.",
     ]
-    return dbc.Col(content)
+    return dbc.Col(
+        content,
+        className='info-text',
+    )
 
 
 def github_link():
@@ -40,7 +46,10 @@ def github_link():
         target='_blank',
     )
     content = ["Want to dig deeper? Check out the ", source_code, " on Github."]
-    return dbc.Col(content)
+    return dbc.Col(
+        content,
+        className='info-text',
+    )
 
 
 def download_link():
@@ -50,7 +59,10 @@ def download_link():
         target='_blank',
     )
     content = ["The dataset is ", available, " in CSV format from Google Drive."]
-    return dbc.Col(content)
+    return dbc.Col(
+        content,
+        className='info-text',
+    )
 
 
 def support_msg():
@@ -75,10 +87,7 @@ def support_msg():
 
 
 def root_layout():
-    root = [
-        page_title(),
-        info_blurb(),
-        vspace(),
+    col_1 = [
         username_input(),
         vspace(),
         username_blobs(),
@@ -93,6 +102,20 @@ def root_layout():
         vspace(),
         boxplot_title(),
         boxplot(),
+    ]
+    col_2 = []
+
+    body = dbc.Col(
+        dbc.Row([
+            dbc.Col(col_1),
+            dbc.Col(col_2),
+        ])
+    )
+    root = [
+        page_title(),
+        info_blurb(),
+        vspace(),
+        body,
         vspace(),
         github_link(),
         download_link(),
@@ -101,7 +124,12 @@ def root_layout():
         vspace(),
         store_vars(show=True),
     ]
-    return dbc.Container([
-        dbc.Row(dbc.Col(i))
-        for i in root
-    ])
+    return dbc.Container(
+        [
+            dbc.Row(
+                dbc.Col(elem),
+            )
+            for elem in root
+        ],
+        # fluid=True,  # allow content to fill to edges of screen
+    )

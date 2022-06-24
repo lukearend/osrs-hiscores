@@ -6,8 +6,10 @@ from app.helpers import is_valid_username, mongodoc_to_player
 
 
 def username_input():
-    label = html.Div('Lookup username:', className='label-text')
-    querytxt = html.Div(id='query-text')
+    label = html.Strong(
+        'Lookup username:',
+        className='controls-text',
+    )
     inputbox = dcc.Input(
         'snakeylime',  # todo: remove after testing
         id='input-box',
@@ -15,8 +17,13 @@ def username_input():
         placeholder="e.g. 'snakeylime'",
         maxLength=12,
         debounce=True,  # don't trigger on every keystroke
-        className='input-box',
+        className='input-box controls-text',
     )
+    querytxt = html.Div(
+        id='query-text',
+        className='controls-text'
+    )
+
     lookup = dbc.Row(
         [
             dbc.Col(label, width='auto'),
