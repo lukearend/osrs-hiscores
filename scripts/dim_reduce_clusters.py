@@ -43,6 +43,6 @@ if __name__ == '__main__':
         if split not in mindist_per_split:
             raise ValueError(f"params file is missing min_dist parameter for split '{split}'")
 
-    xyz_dict = main(centroids_dict, nn_per_split, mindist_per_split)
-    dump_pkl(xyz_dict, args.out_file)
+    xyz_in_split = main(centroids_dict, nn_per_split, mindist_per_split)
+    dump_pkl(xyz_in_split, args.out_file)
     print(f"wrote cluster xyz coordinates to {args.out_file}")
