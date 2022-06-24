@@ -104,13 +104,13 @@ def root_layout():
         vspace(),
         scatterplot(),
     ]
-
     body = dbc.Col(
         dbc.Row([
             dbc.Col(lcol),
             dbc.Col(rcol),
         ])
     )
+
     root = [
         vspace(),
         page_title(),
@@ -125,11 +125,8 @@ def root_layout():
         vspace(),
         store_vars(show=False),
     ]
-    return dbc.Container(
-        [
-            dbc.Row(
-                dbc.Col(elem),
-            )
-            for elem in root
-        ],
-    )
+
+    return dbc.Container([
+        dbc.Row(dbc.Col(elem))
+        for elem in root
+    ])
