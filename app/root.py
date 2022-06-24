@@ -76,18 +76,17 @@ def support_msg():
 
 def root_layout():
     root = [
-        store_vars(show=False),
         page_title(),
         info_blurb(),
         vspace(),
         username_input(),
         vspace(),
-        dropdown_menus(),
-        vspace(),
         username_blobs(),
         vspace_if_nonempty(id='username-list'),
         focused_player(),
         vspace_if_nonempty(id='focused-player'),
+        dropdown_menus(),
+        vspace(),
         scatterplot(),
         vspace(),
         stats_tables(),
@@ -100,6 +99,7 @@ def root_layout():
         html.Hr(),
         support_msg(),
         vspace(),
+        store_vars(show=True),
     ]
     return dbc.Container([
         dbc.Row(dbc.Col(i))

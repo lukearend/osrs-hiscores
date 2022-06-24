@@ -80,7 +80,7 @@ def stats_table(id: str, store_id: str, title_fmt_fn: Callable):
             )
             icon_stat = dbc.Row(
                 [icon_col, stat_col],
-                className='g-3',  # slightly decrease space between icon and stat number (from g-4)
+                className=styles.TABLE_ICON_STAT_GUTTER,
             )
             col_elems.append(icon_stat)
 
@@ -145,5 +145,5 @@ def stats_tables():
                 cluster_stats_table(), width='auto',
             ),
         ],
-        className='g-5',  # add space between the two tables (from g-0)
+        className=styles.TABLE_SEPARATOR_GUTTER,
     )

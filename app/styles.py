@@ -11,13 +11,19 @@ BG_COLOR = bg_gray
 MENU_VARIANT = 'dark'
 PLAYER_COLOR_SEQ = px.colors.qualitative.Plotly
 
-SCATTERPLOT_BG_COLOR = BG_COLOR
+SCATTERPLOT_HEIGHT = '17em'
+SCATTERPLOT_BG_COLOR = dark_gray
 SCATTERPLOT_PTS_COLOR = white
+SCATTERPLOT_XAXIS_COLOR = '#222222'
+SCATTERPLOT_YAXIS_COLOR = '#262626'
+SCATTERPLOT_ZAXIS_COLOR = '#303030'
 
 TABLE_BG_COLOR = dark_gray
 TABLE_BORDER_COLOR = table_gray
+TABLE_SEPARATOR_GUTTER = 'g-5'  # add space between the two tables (default is g-0)
+TABLE_ICON_STAT_GUTTER = 'g-3'  # slightly decrease space between icon and stat number (default is g-4)
 
-BOXPLOT_AXIS_FONTSIZE = 16
-BOXPLOT_AXIS_FONTFAMILY = 'sans-serif'
+BOXPLOT_HEIGHT = '10em'
+BOXPLOT_AXIS_FONTSIZE = 20
 BOXPLOT_BG_COLOR = dark_gray
 BOXPLOT_PAPER_COLOR = BG_COLOR

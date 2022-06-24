@@ -15,15 +15,13 @@ def boxplot_title():
 def boxplot():
     return dcc.Graph(
         id='boxplot',
-        figure={},  # figure must be explicitly initialized to an empty value (Dash bug)
+        figure={},  # figure must be explicitly initialized to an empty value (Dash bug) todo: still true?
         config={'displayModeBar': False},
         className='boxplot-graph',
+        style={
+            'height': styles.BOXPLOT_HEIGHT,
+        }
     )
-
-
-def boxplot_skill_order(skill_lvls: Dict[str, int]) -> List[int]:
-    for skill_lvls in data['quartiles']:
-        data['quartiles'] = [{skill: skill_lvls[skill] for skill in skills}]
 
 
 @app.callback(

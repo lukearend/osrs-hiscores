@@ -4,7 +4,19 @@ import dash_core_components as dcc
 from plotly import graph_objects as go
 from dash import State, Output, Input, no_update
 
-from app import app
+from app import app, styles
+
+
+def scatterplot():
+    return dcc.Graph(
+        id='scatterplot',
+        figure={},
+        className='scatterplot-graph',
+        style={
+            'height': styles.SCATTERPLOT_HEIGHT,
+            'width': '75%',
+        }
+    )
 
 
 @app.callback(
@@ -43,15 +55,39 @@ def redraw_scatterplot(split: str, data_dict: Dict[str, Any]) -> go.Figure:
         y=data_dict['cluster_y'],
         z=data_dict['cluster_z'],
     )
+    axlims = data_dict['axis_limits']
+
+    axcolor = {
+        'x': styles.SCATTERPLOT_XAXIS_COLOR,
+        'y': styles.SCATTERPLOT_YAXIS_COLOR,
+        'z': styles.SCATTERPLOT_ZAXIS_COLOR,
+    }
+    axes = {}
+    for coord in ['x', 'y', 'z']:
+        min, max = axlims[coord]
+        axes[coord] = dict(
+            range=(min, max),
+            title='',
+            zeroline=False,
+            showgrid=False,
+            showticklabels=False,
+            backgroundcolor=axcolor[coord],
+        )
+
+    scene = dict(
+        xaxis=axes['x'],
+        yaxis=axes['y'],
+        zaxis=axes['z'],
+        aspectmode='cube',
+        dragmode='orbit',  # use orbital (not turntable) 3d rotation
+        bgcolor=styles.SCATTERPLOT_BG_COLOR,
+    )
+    margin = dict(t=0)  # t, b, l, r
 
     fig = go.Figure(data=clustertrace)
-
+    fig.update_layout(dict(
+        uirevision='constant',  # don't reset axes when updating plot
+        scene=scene,
+        margin=margin,
+    ))
     return fig
-
-
-def scatterplot():
-    return dcc.Graph(
-        id='scatterplot',
-        figure={},
-        className='scatterplot-graph',
-    )

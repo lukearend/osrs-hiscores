@@ -148,14 +148,24 @@ def update_scatterplot_data(player: Dict[str, Any], split: str) -> Dict[str, Any
 
     xyz = appdata[split].cluster_xyz
     sizes = appdata[split].cluster_sizes
-    uniqueness = 100 * appdata[split].cluster_uniqueness
+    uniqueness = appdata[split].cluster_uniqueness * 100
+
+    axlims = appdata[split].xyz_axlims
+    xmin, xmax = axlims['x']
+    ymin, ymax = axlims['y']
+    zmin, zmax = axlims['z']
 
     return {
         'cluster_x': list(xyz['x']),
         'cluster_y': list(xyz['y']),
         'cluster_z': list(xyz['z']),
         'cluster_nplayers': list(sizes),
-        'cluster_uniqueness': list(uniqueness)
+        'cluster_uniqueness': list(uniqueness),
+        'axis_limits': {
+            'x': (xmin, xmax),
+            'y': (ymin, ymax),
+            'z': (zmin, zmax),
+        }
     }
 
 
