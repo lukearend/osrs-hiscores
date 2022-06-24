@@ -12,7 +12,7 @@ from scripts.cluster_players import main as cluster_players
 from scripts.compute_quartiles import main as compute_quartiles
 from scripts.dim_reduce_clusters import main as dim_reduce_clusters
 from src.common import osrs_skills, connect_mongo
-from src.analysis.appdata import PlayerResults, SplitResults, mongo_get_player
+from src.analysis.appdata import PlayerResults, SplitResults
 from src.analysis.io import import_players_csv, import_clusterids_csv, import_centroids_csv, \
     export_players_csv, export_clusterids_csv, export_centroids_csv
 
@@ -45,7 +45,7 @@ def test_cluster():
         players_df, k_per_split=NCLUSTERS_PER_SPLIT, splits=SPLITS, verbose=False)
     assert isinstance(clusterids_df, pd.DataFrame)
     assert len(clusterids_df) == len(players_df)
-    assert tuple(clusterids_df.columns) == tuple(SPLITS.keys())
+    assert set(clusterids_df.columns) == set(SPLITS.keys())
     for split, skills_in_split in SPLITS.items():
         split_centroids = centroids_dict[split]
         assert isinstance(split_centroids, pd.DataFrame)
@@ -103,12 +103,10 @@ def test_appdb():
     assert coll.count_documents({}) == len(players_df)
 
     for uname in [d['username'] for d in coll.find({}, limit=5)]:
-        player = mongo_get_player(coll, uname)
-        assert isinstance(player, PlayerResults)
-        assert len(player.stats) == len(osrs_skills(include_total=True))
-        for split, clusterid in player.clusterids.items():
-            assert split in SPLITS
-            assert isinstance(clusterid, int)
+        playerdoc = coll.find_one({'_id': uname.lower()})
+        assert 'username' in playerdoc
+        assert len(playerdoc['stats']) == len(osrs_skills(include_total=True))
+        assert set(playerdoc['clusterids']) == set(SPLITS)
 
     coll.drop()
 
