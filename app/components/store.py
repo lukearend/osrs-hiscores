@@ -146,23 +146,16 @@ def update_scatterplot_data(player: Dict[str, Any], split: str) -> Dict[str, Any
     if player is None:
         return no_update
 
-    # todo: scatterplot equivalent of boxplot code below
-    # nplayers = appdata[split].cluster_sizes[clusterid].item()
-    # quartiles_xr = appdata[split].cluster_quartiles.sel(clusterid=clusterid)
-    # quartiles_xr = quartiles_xr.drop_sel(skill='total')
-    # skills = [s.item() for s in quartiles_xr.coords['skill']]
-    #
-    # boxdata = []
-    # for p in [0, 25, 50, 75, 100]:
-    #     lvls = quartiles_xr.sel(percentile=p)
-    #     lvls = [i.item() for i in lvls]
-    #     skill_lvls = dict(zip(skills, lvls))
-    #     boxdata.append(skill_lvls)
+    xyz = appdata[split].cluster_xyz
+    sizes = appdata[split].cluster_sizes
+    uniqueness = 100 * appdata[split].cluster_uniqueness
 
     return {
-        'x': [1, 2, 3, 4, 5],
-        'y': [1, 2, 3, 4, 5],
-        'z': [1, 2, 3, 4, 5],
+        'cluster_x': list(xyz['x']),
+        'cluster_y': list(xyz['y']),
+        'cluster_z': list(xyz['z']),
+        'cluster_nplayers': list(sizes),
+        'cluster_uniqueness': list(uniqueness)
     }
 
 
