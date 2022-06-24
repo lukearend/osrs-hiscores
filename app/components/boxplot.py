@@ -124,6 +124,6 @@ def update_boxplot_title(data: Dict[str, Any]) -> html.Div:
 
     clusterid = data['id']
     nplayers = data['num_players']
-    bold = html.Strong(f"Cluster {clusterid} stats")
-    normal = f" ({nplayers} players)"
+    bold = html.Strong(f"Cluster {clusterid}")
+    normal = f" (n={nplayers} players)"
     return html.Div([bold, normal])

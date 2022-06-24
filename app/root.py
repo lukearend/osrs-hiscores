@@ -94,16 +94,20 @@ def root_layout():
         vspace_if_nonempty(id='username-list'),
         focused_player(),
         vspace_if_nonempty(id='focused-player'),
-        dropdown_menus(),
-        vspace(),
-        scatterplot(),
-        vspace(),
+        # dropdown_menus(),
+        # vspace(),
+        # scatterplot(),
+        # vspace(),
         stats_tables(),
         vspace(),
         boxplot_title(),
         boxplot(),
     ]
-    col_2 = []
+    col_2 = [
+        dropdown_menus(),
+        vspace(),
+        scatterplot(),
+    ]
 
     body = dbc.Col(
         dbc.Row([
@@ -122,7 +126,7 @@ def root_layout():
         html.Hr(),
         support_msg(),
         vspace(),
-        store_vars(show=True),
+        store_vars(show=False),
     ]
     return dbc.Container(
         [
