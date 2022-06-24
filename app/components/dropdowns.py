@@ -103,5 +103,4 @@ def dropdown_menus():
             dbc.Col(split_menu(), width='auto'),
             dbc.Col(point_size_menu(), width='auto'),
         ],
-        # className='g-5',  # g-4 is default, add a little separation
     )

@@ -1,6 +1,7 @@
 from typing import Dict, Any
 
 import dash_core_components as dcc
+import numpy as np
 from plotly import graph_objects as go
 from dash import State, Output, Input, no_update
 
@@ -38,24 +39,46 @@ def update_scatterplot_traces(data_dict: Dict[str, Any]):
     return [extendtraces, extendinds, maxpts]
 
 
+def ptsize_fn(x):
+    x = np.clip(x, 1, styles.SCATTERPLOT_PTSIZE_MAX_NPLAYERS)
+    x = np.sqrt(x) * styles.SCATTERPLOT_PTSIZE_CONSTANT
+    return x
+
+
 @app.callback(
     Output('scatterplot', 'figure'),
     Input('current-split', 'data'),
+    Input('point-size', 'data'),
     State('scatterplot-data', 'data'),
 )
-def redraw_scatterplot(split: str, data_dict: Dict[str, Any]) -> go.Figure:
+def redraw_scatterplot(split: str, ptsize: int, data_dict: Dict[str, Any]) -> go.Figure:
     if split is None:
+        return no_update
+    if ptsize is None:
         return no_update
     if not data_dict:
         return no_update
+
+    nplayers = data_dict['cluster_nplayers']
+    size_factor = {
+        'small': 1,
+        'medium': 2,
+        'large': 3,
+    }[ptsize]
+    ptsizes = ptsize_fn(nplayers) * size_factor
 
     clustertrace = go.Scatter3d(
         x=data_dict['cluster_x'],
         y=data_dict['cluster_y'],
         z=data_dict['cluster_z'],
+        mode='markers',
+        marker=dict(
+            size=ptsizes,
+            color=styles.SCATTERPLOT_PTS_COLOR,
+        ),
     )
-    axlims = data_dict['axis_limits']
 
+    axlims = data_dict['axis_limits']
     axcolor = {
         'x': styles.SCATTERPLOT_XAXIS_COLOR,
         'y': styles.SCATTERPLOT_YAXIS_COLOR,

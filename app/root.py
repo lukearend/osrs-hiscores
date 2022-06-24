@@ -87,23 +87,19 @@ def support_msg():
 
 
 def root_layout():
-    col_1 = [
+    lcol = [
         username_input(),
         vspace(),
         username_blobs(),
         vspace_if_nonempty(id='username-list'),
         focused_player(),
-        vspace_if_nonempty(id='focused-player'),
-        # dropdown_menus(),
-        # vspace(),
-        # scatterplot(),
-        # vspace(),
+        vspace_if_nonempty(id='focused-player', n=2),
         stats_tables(),
-        vspace(),
+        vspace(n=2),
         boxplot_title(),
         boxplot(),
     ]
-    col_2 = [
+    rcol = [
         dropdown_menus(),
         vspace(),
         scatterplot(),
@@ -111,16 +107,16 @@ def root_layout():
 
     body = dbc.Col(
         dbc.Row([
-            dbc.Col(col_1),
-            dbc.Col(col_2),
+            dbc.Col(lcol),
+            dbc.Col(rcol),
         ])
     )
     root = [
         page_title(),
         info_blurb(),
-        vspace(),
+        vspace(n=3),
         body,
-        vspace(),
+        vspace(n=3),
         github_link(),
         download_link(),
         html.Hr(),
@@ -135,5 +131,4 @@ def root_layout():
             )
             for elem in root
         ],
-        # fluid=True,  # allow content to fill to edges of screen
     )

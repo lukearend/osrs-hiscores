@@ -6,11 +6,14 @@ import dash_bootstrap_components as dbc
 from app import app
 
 
-def vspace() -> html.Div():
-    return html.Div(className='vspace')
+def vspace(n=1) -> html.Div():
+    vspace = []
+    for i in range(n):
+        vspace.append(html.Div(className='vspace'))
+    return dbc.Col(vspace)
 
 
-def vspace_if_nonempty(id: str) -> dbc.Col:
+def vspace_if_nonempty(id: str, n=1) -> dbc.Col:
     containerid = f'{id}:vspace'
 
     @app.callback(
@@ -20,6 +23,6 @@ def vspace_if_nonempty(id: str) -> dbc.Col:
     def toggle_break(value: Any):
         if not value:
             return []
-        return [vspace()]
+        return [vspace(n=1)]
 
     return dbc.Col(id=containerid)

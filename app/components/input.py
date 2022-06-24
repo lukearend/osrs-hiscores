@@ -21,7 +21,7 @@ def username_input():
     )
     querytxt = html.Div(
         id='query-text',
-        className='controls-text'
+        className='query-text',
     )
 
     lookup = dbc.Row(
@@ -31,9 +31,9 @@ def username_input():
         ],
         align='center',
     ),
-    return dbc.Row(
+    return dbc.Col(
         [
-            dbc.Col(lookup, width='auto'),
+            dbc.Col(lookup),
             dbc.Col(querytxt),
         ],
         align='center',

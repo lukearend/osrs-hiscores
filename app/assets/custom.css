@@ -17,6 +17,11 @@ body {
     font-size: x-large;
 }
 
+.query-text {
+    font-size: large;
+    color: red;
+}
+
 .btn {
     font-size: x-large;
 }

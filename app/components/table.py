@@ -71,11 +71,11 @@ def stats_table(id: str, store_id: str, title_fmt_fn: Callable):
             icon, stat = elems[i][j]
             icon_col = dbc.Col(
                 icon,
-                width=4,
+                width=5,
             )
             stat_col = dbc.Col(
                 stat,
-                width=8,
+                width=7,
             )
             icon_stat = dbc.Row(
                 [icon_col, stat_col],
