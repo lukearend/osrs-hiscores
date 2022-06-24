@@ -112,6 +112,7 @@ def root_layout():
         ])
     )
     root = [
+        vspace(),
         page_title(),
         info_blurb(),
         vspace(n=3),
