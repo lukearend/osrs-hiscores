@@ -3,9 +3,10 @@ from typing import Dict, Any
 import dash_core_components as dcc
 import numpy as np
 from plotly import graph_objects as go
-from dash import State, Output, Input, no_update
+from dash import Output, Input, no_update
 
 from app import app, styles
+from app.styles import PLAYER_COLOR_SEQ as uname_colors
 
 
 def scatterplot():
@@ -19,24 +20,24 @@ def scatterplot():
     )
 
 
-@app.callback(
-    Output('scatterplot', 'extendData'),
-    Input('scatterplot-data', 'data'),
-)
-def update_scatterplot_traces(data_dict: Dict[str, Any]):
-    if not data_dict:
-        return no_update
-
-    traces = {
-        'x': data_dict['cluster_x'],
-        'y': data_dict['cluster_y'],
-        'z': data_dict['cluster_z'],
-    }
-
-    extendtraces = {name: [data] for name, data in traces.items()}
-    extendinds = [0]
-    maxpts = len(traces['x'])
-    return [extendtraces, extendinds, maxpts]
+# @app.callback(
+#     Output('scatterplot', 'extendData'),
+#     Input('scatterplot-data', 'data'),
+# )
+# def update_scatterplot_traces(data_dict: Dict[str, Any]):
+#     if not data_dict:
+#         return no_update
+#
+#     traces = {
+#         'x': data_dict['cluster_x'],
+#         'y': data_dict['cluster_y'],
+#         'z': data_dict['cluster_z'],
+#     }
+#
+#     extendtraces = {name: [data] for name, data in traces.items()}
+#     extendinds = [0]
+#     maxpts = len(traces['x'])
+#     return [extendtraces, extendinds, maxpts]
 
 
 def ptsize_fn(x):
@@ -47,17 +48,14 @@ def ptsize_fn(x):
 
 @app.callback(
     Output('scatterplot', 'figure'),
-    Input('current-split', 'data'),
+    Input('scatterplot-data', 'data'),
     Input('point-size', 'data'),
-    State('scatterplot-data', 'data'),
 )
-def redraw_scatterplot(split: str, ptsize: int, data_dict: Dict[str, Any]) -> go.Figure:
-    if split is None:
-        return no_update
-    if ptsize is None:
-        return no_update
+def redraw_scatterplot(data_dict: Dict[str, Any], ptsize: int) -> go.Figure:
     if not data_dict:
         return no_update
+
+    fig = go.Figure()
 
     nplayers = data_dict['cluster_nplayers']
     size_factor = {
@@ -77,6 +75,23 @@ def redraw_scatterplot(split: str, ptsize: int, data_dict: Dict[str, Any]) -> go
             color=styles.SCATTERPLOT_PTS_COLOR,
         ),
     )
+    fig.add_trace(clustertrace)
+
+    # tracelen = len(data_dict['usernames'])
+    # color_seq = uname_colors[:tracelen]
+    # unametrace = go.Scatter3d(
+    #     x=data_dict['players_x'],
+    #     y=data_dict['players_y'],
+    #     z=data_dict['players_z'],
+    #     mode='text',
+    #     text=data_dict['usernames'],
+    #     textfont=dict(
+    #         size=[styles.SCATTERPLOT_TEXT_FONT_SIZE] * tracelen,
+    #         color=color_seq[:tracelen],
+    #     ),
+    # )
+    # fig.add_trace(unametrace)
+    # fig.update_layout(uniformtext_minsize=styles.SCATTERPLOT_TEXT_FONT_SIZE)
 
     axlims = data_dict['axis_limits']
     axcolor = {
@@ -96,6 +111,7 @@ def redraw_scatterplot(split: str, ptsize: int, data_dict: Dict[str, Any]) -> go
             backgroundcolor=axcolor[coord],
         )
 
+    margin = dict(t=0)  # t, b, l, r
     scene = dict(
         xaxis=axes['x'],
         yaxis=axes['y'],
@@ -104,12 +120,11 @@ def redraw_scatterplot(split: str, ptsize: int, data_dict: Dict[str, Any]) -> go
         dragmode='orbit',  # use orbital (not turntable) 3d rotation
         bgcolor=styles.SCATTERPLOT_BG_COLOR,
     )
-    margin = dict(t=0)  # t, b, l, r
 
-    fig = go.Figure(data=clustertrace)
-    fig.update_layout(dict(
+    fig.update_layout(
         uirevision='constant',  # don't reset axes when updating plot
+        showlegend=False,
         scene=scene,
         margin=margin,
-    ))
+    )
     return fig

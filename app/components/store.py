@@ -28,12 +28,16 @@ def store_vars(show=True):
         dcc.Store('last-clicked-blob'),         # str
     ]
 
-    layout = []
-    for var in storevars:
-        if not show:
-            layout.append(var)
-            continue
+    vars = dbc.Col([var for var in storevars])
+    if not show:
+        return vars
 
+    showvars = storevars
+    if isinstance(show, list):  # `show` can be a list of indices of storevars to display
+        showvars = [storevars[i] for i in show]
+
+    display = []
+    for var in showvars:
         containerid = f'{var.id}:container'
         container = dbc.Row(
             [
@@ -43,7 +47,7 @@ def store_vars(show=True):
             ],
             className='g-2',
         )
-        layout.append(container)
+        display.append(container)
 
         @app.callback(
             Output(containerid, 'children'),
@@ -52,12 +56,14 @@ def store_vars(show=True):
         def update_container(newval: Any) -> str:
             return str(newval)
 
-    return dbc.Row([
-        dbc.Col(
-            item,
-            width='auto',
-        )
-        for item in layout
+    return dbc.Col([
+        vars,
+        dbc.Row([
+            dbc.Col(
+                item,
+                width='auto',
+            ) for item in display
+        ])
     ])
 
 
@@ -138,12 +144,13 @@ def update_current_cluster(player: Dict[str, Any], split: str, data_dict: Dict[s
 
 @app.callback(
     Output('scatterplot-data', 'data'),
-    Input('focused-player', 'data'),
     Input('current-split', 'data'),
+    Input('username-list', 'data'),
+    Input('player-data-dict', 'data'),
     prevent_initial_call=True,
 )
-def update_scatterplot_data(player: Dict[str, Any], split: str) -> Dict[str, Any]:
-    if player is None:
+def update_scatterplot_data(split: str, unames: List[str], player_data: Dict[str, Any]) -> Dict[str, Any]:
+    if split is None:
         return no_update
 
     xyz = appdata[split].cluster_xyz
@@ -155,6 +162,17 @@ def update_scatterplot_data(player: Dict[str, Any], split: str) -> Dict[str, Any
     ymin, ymax = axlims['y']
     zmin, zmax = axlims['z']
 
+    players_x = []
+    players_y = []
+    players_z = []
+    for username in unames:
+        data_dict = player_data[username]
+        cid = data_dict['clusterids'][split]
+        x, y, z = appdata[split].cluster_xyz.loc[cid]
+        players_x.append(x)
+        players_y.append(y)
+        players_z.append(z)
+
     return {
         'cluster_x': list(xyz['x']),
         'cluster_y': list(xyz['y']),
@@ -165,8 +183,13 @@ def update_scatterplot_data(player: Dict[str, Any], split: str) -> Dict[str, Any
             'x': (xmin, xmax),
             'y': (ymin, ymax),
             'z': (zmin, zmax),
-        }
+        },
+        'usernames': unames,
+        'players_x': players_x,
+        'players_y': players_y,
+        'players_z': players_z,
     }
+
 
 
 @app.callback(

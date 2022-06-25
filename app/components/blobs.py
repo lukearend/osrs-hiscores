@@ -1,4 +1,3 @@
-
 from dash import Output, Input, ALL, callback_context, no_update
 import dash_bootstrap_components as dbc
 

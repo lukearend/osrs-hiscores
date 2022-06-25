@@ -11,7 +11,7 @@ def username_input():
         className='controls-text',
     )
     inputbox = dcc.Input(
-        'snakeylime',  # todo: remove after testing
+        # 'snakeylime',  # todo: remove after testing
         id='input-box',
         type='text',
         placeholder="e.g. 'snakeylime'",
