@@ -42,7 +42,7 @@ def username_input():
 
 @app.callback(
     Output('query-text', 'children'),
-    Output('last-queried-player', 'data'),
+    Output('queried-player', 'data'),
     Input('input-box', 'value'),
 )
 def handle_username_input(input_txt: str) -> str:

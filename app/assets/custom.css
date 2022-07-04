@@ -1,84 +1,84 @@
-/*!* global settings *!*/
-/*h1 {*/
-/*    padding-top: 0.25em;*/
-/*    font-size: 250%;*/
-/*}*/
+/* global settings */
+h1 {
+    padding-top: 0.25em;
+    font-size: 250%;
+}
 
-/*body {*/
-/*    font-family: "OSRS Chat", sans-serif;*/
-/*    font-size: large;*/
-/*}*/
+body {
+    font-family: "OSRS Chat", sans-serif;
+    font-size: x-large;
+}
 
-/*.info-text {*/
-/*    font-size: x-large;*/
-/*}*/
+.info-text {
+    font-size: x-large;
+}
 
-/*.controls-text {*/
-/*    font-size: x-large;*/
-/*}*/
+.controls-text {
+    font-size: x-large;
+}
 
-/*.query-text {*/
-/*    font-size: large;*/
-/*    color: red;*/
-/*}*/
+.query-text {
+    font-size: large;
+    color: red;
+}
 
-/*.btn {*/
-/*    font-size: x-large;*/
-/*}*/
+.btn {
+    font-size: x-large;
+}
 
-/*!* Bootstrap overrides *!*/
-/*.dropdown-item {*/
-/*    font-size: x-large;*/
-/*}*/
+/* Bootstrap overrides */
+.dropdown-item {
+    font-size: x-large;
+}
 
-/*!* Custom classes *!*/
-/*.vspace {*/
-/*    padding-top: 1em;*/
-/*}*/
+/* Custom classes */
+.vspace {
+    padding-top: 1em;
+}
 
-/*.label-text {*/
-/*    font-size: large;*/
-/*    font-weight: bold;*/
-/*}*/
+.label-text {
+    font-size: x-large;
+    font-weight: bold;
+}
 
-/*.input-box {*/
-/*    padding-left: 0.5em;*/
-/*}*/
+.input-box {
+    padding-left: 0.5em;
+}
 
-/*.username-blob {*/
-/*    padding-top: 0;*/
-/*    padding-bottom: 0;*/
-/*    padding-left: 0.5em;*/
-/*    padding-right: 0.5em;*/
-/*    border-radius: 1em;*/
-/*}*/
+.username-blob {
+    padding-top: 0;
+    padding-bottom: 0;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+    border-radius: 1em;
+}
 
-/*.table-icon {*/
-/*    padding-top: 0.1em;  !* empirical value, increasing pushes icons lower *!*/
-/*    height: 1.25em;      !* empirical value, increases icon size (anchored on bottom) *!*/
-/*}*/
+.table-icon {
+    padding-top: 0.1em;  /* empirical value, increasing pushes icons lower */
+    height: 1.25em;      /* empirical value, increases icon size (anchored on bottom) */
+}
 
-/*.img-center {*/
-/*    display: block;*/
-/*    margin-left: auto;*/
-/*    margin-right: auto;*/
-/*    margin-top: 0;*/
-/*}*/
+.img-center {
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 0;
+}
 
-/*.stats-table {*/
-/*    border-radius: 0.25em;*/
-/*    padding-top: 0.20em  !* empirical value, matches top margin size with bottom *!*/
-/*}*/
+.stats-table {
+    border-radius: 0.25em;
+    padding-left: 0.1em;
+}
 
-/*.support-link {*/
-/*    padding-top: 0.25em;*/
-/*    font-size: large;*/
-/*}*/
+.support-link {
+    padding-top: 0.25em;
+    font-size: large;
+}
 
-/*.support-button {*/
-/*    padding: 0;*/
-/*    padding-left: 0.25em;*/
-/*    padding-right: 0.25em;*/
-/*    font-size: large;*/
-/*}*/
+.support-button {
+    padding: 0;
+    padding-left: 0.25em;
+    padding-right: 0.25em;
+    font-size: large;
+}
 

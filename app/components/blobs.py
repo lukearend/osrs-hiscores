@@ -12,13 +12,13 @@ def username_blobs():
 
 @app.callback(
     Output('blob-container', 'children'),
-    Input('username-list', 'data'),
+    Input('current-players', 'data'),
 )
-def draw_blobs(unames):
+def draw_blobs(players):
     blobs = []
-    for i, uname in enumerate(unames):
+    for i, p in enumerate(players):
+        uname = p['username']
         color = blob_colors[i % len(blob_colors)]
-
         blob_closer = dbc.Button(
             className='btn-close',
             id={
@@ -57,7 +57,7 @@ def draw_blobs(unames):
 
 
 @app.callback(
-    Output('last-clicked-blob', 'data'),
+    Output('clicked-blob', 'data'),
     Input({'type': 'blob-username', 'username': ALL}, 'n_clicks'),
     prevent_initial_call=True,
 )
@@ -66,7 +66,7 @@ def handle_blob_click(_) -> str:
 
 
 @app.callback(
-    Output('last-closed-username', 'data'),
+    Output('closed-blob', 'data'),
     Input({'type': 'blob-x', 'username': ALL}, 'n_clicks'),
     prevent_initial_call=True,
 )

@@ -11,21 +11,20 @@ from src.common import osrs_skills
 
 def store_vars(show=True):
     storevars = [
-        dcc.Store('username-list', data=[]),
-        dcc.Store('player-data-dict', data={}),
-        dcc.Store('focused-player'),            # Dict[str, Any]
-        dcc.Store('current-clusterid'),         # int
-        dcc.Store('current-split'),             # str
-        dcc.Store('point-size'),                # str
-        dcc.Store('scatterplot-data'),          # Dict[str, Any]
-        dcc.Store('boxplot-data'),              # Dict[str, Any]
-        dcc.Store('cluster-table-data:title'),  # int
-        dcc.Store('cluster-table-data:stats'),  # Dict[str, int]
-        dcc.Store('player-table-data:title'),   # str
-        dcc.Store('player-table-data:stats'),   # Dict[str, int]
-        dcc.Store('last-queried-player'),       # Dict[str, Any]
-        dcc.Store('last-closed-username'),      # str
-        dcc.Store('last-clicked-blob'),         # str
+        dcc.Store('current-players', data=[]),   # List[Dict[str, Any]]
+        dcc.Store('queried-player'),             # Dict[str, Any]
+        dcc.Store('clicked-blob'),               # str
+        dcc.Store('closed-blob'),                # str
+        dcc.Store('focused-player'),             # str
+        dcc.Store('current-clusterid'),          # int
+        dcc.Store('current-split', data='all'),  # str
+        dcc.Store('point-size', data='small'),   # str
+        dcc.Store('cluster-table-data:title'),   # int
+        dcc.Store('player-table-data:title'),    # str
+        dcc.Store('cluster-table-data:stats'),   # Dict[str, int]
+        dcc.Store('player-table-data:stats'),    # Dict[str, int]
+        dcc.Store('scatterplot-data'),           # Dict[str, Any]
+        dcc.Store('boxplot-data'),               # Dict[str, Any]
     ]
 
     vars = dbc.Col([var for var in storevars])
@@ -41,7 +40,6 @@ def store_vars(show=True):
         containerid = f'{var.id}:container'
         container = dbc.Row(
             [
-                var,
                 dbc.Col(var.id + ': ', width='auto'),
                 dbc.Col(id=containerid),
             ],
@@ -67,89 +65,99 @@ def store_vars(show=True):
     ])
 
 
+def get_player(player_list, uname: str) -> Dict[str, Any]:
+    for p in player_list:
+        if p['username'] == uname:
+            return p
+    return None
+
+
+def del_player(player_list, uname: str) -> List[Dict[str, Any]]:
+    return [p for p in player_list if p['username'] != uname]
+
+
+def add_player(player_list, player: Dict[str, Any]) -> List[Dict[str, Any]]:
+    player_list = del_player(player_list, player['username'])
+    player_list.append(player)
+    return player_list
+
+
 @app.callback(
-    Output('username-list', 'data'),
-    Output('player-data-dict', 'data'),
-    Input('last-queried-player', 'data'),
-    Input('last-closed-username', 'data'),
-    State('username-list', 'data'),
-    State('player-data-dict', 'data'),
+    Output('current-players', 'data'),
+    Input('closed-blob', 'data'),
+    Input('queried-player', 'data'),
+    State('current-players', 'data'),
     prevent_initial_call=True,
 )
-def update_player_list(queried_player: Dict[str, Any],
-                       closed_player: str,
-                       uname_list: List[str],
-                       data_dict: Dict[str, Any]) -> Tuple[List[str], Dict[str, Any]]:
+def update_player_list(closed_uname: str,
+                       queried_player: Dict[str, Any],
+                       player_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
     triggerid, _ = get_trigger(callback_context)
-    if triggerid == 'last-queried-player':
-        uname = queried_player['username']
-        if uname in uname_list:
-            uname_list.remove(uname)
 
-        uname_list.append(uname)
-        data_dict[uname] = queried_player
+    new_players = no_update
+    if triggerid == 'closed-blob':
+        new_players = del_player(player_list, closed_uname)
+    elif triggerid == 'queried-player':
+        new_players = add_player(player_list, queried_player)
 
-    elif triggerid == 'last-closed-username':
-        uname_list.remove(closed_player)
-        del data_dict[closed_player]
-
-    return uname_list, data_dict
+    return new_players
 
 
 @app.callback(
     Output('focused-player', 'data'),
-    Input('last-clicked-blob', 'data'),
-    Input('last-queried-player', 'data'),
-    Input('last-closed-username', 'data'),
+    Input('clicked-blob', 'data'),
+    Input('closed-blob', 'data'),
+    Input('queried-player', 'data'),
     State('focused-player', 'data'),
-    State('player-data-dict', 'data'),
+    State('current-players', 'data'),
     prevent_initial_call=True,
 )
-def updated_focused_player(blob_uname: str,
-                           player_query: Dict[str, Any],
+def updated_focused_player(clicked_uname: str,
                            closed_uname: str,
-                           current_player: Dict[str, Any],
-                           data_dict: Dict[str, Any]) -> Dict[str, Any]:
+                           queried_player: Dict[str, Any],
+                           focused_player: str,
+                           player_list: List[Dict[str, Any]]) -> Dict[str, Any]:
 
     triggerid, _ = get_trigger(callback_context)
-    if triggerid == 'last-clicked-blob':
-        return data_dict[blob_uname]
-    if triggerid == 'last-queried-player':
-        return player_query
-    if triggerid == 'last-closed-username':
-        if current_player is None:
-            return None
-        if closed_uname == current_player['username']:
-            return None
-        return current_player
 
-    return no_update
+    new_player = no_update
+    if triggerid == 'clicked-blob':
+        new_player = get_player(player_list, clicked_uname)
+    elif triggerid == 'closed-blob':
+        if closed_uname == focused_player:
+            new_player = None
+    elif triggerid == 'queried-player':
+        new_player = queried_player['username']
+
+    return new_player
 
 
 @app.callback(
     Output('current-clusterid', 'data'),
     Input('focused-player', 'data'),
     Input('current-split', 'data'),
-    State('player-data-dict', 'data'),
+    State('current-players', 'data'),
     prevent_initial_call=True,
 )
-def update_current_cluster(player: Dict[str, Any], split: str, data_dict: Dict[str, Any]) -> int:
-    if player is None:
-        return no_update
+def update_current_cluster(uname: str,
+                           split: str,
+                           player_list: List[Dict[str, Any]]) -> int:
 
-    uname = player['username']
-    return data_dict[uname]['clusterids'][split]
+    player = get_player(player_list, uname)
+    if not player:
+        return no_update
+    return player['clusterids'][split]
 
 
 @app.callback(
     Output('scatterplot-data', 'data'),
     Input('current-split', 'data'),
-    Input('username-list', 'data'),
-    Input('player-data-dict', 'data'),
+    Input('current-players', 'data'),
     prevent_initial_call=True,
 )
-def update_scatterplot_data(split: str, unames: List[str], player_data: Dict[str, Any]) -> Dict[str, Any]:
+def update_scatterplot_data(split: str,
+                            player_list: List[Dict[str, Any]]) -> Dict[str, Any]:
     if split is None:
         return no_update
 
@@ -162,12 +170,13 @@ def update_scatterplot_data(split: str, unames: List[str], player_data: Dict[str
     ymin, ymax = axlims['y']
     zmin, zmax = axlims['z']
 
+    usernames = []
     players_x = []
     players_y = []
     players_z = []
-    for username in unames:
-        data_dict = player_data[username]
-        cid = data_dict['clusterids'][split]
+    for p in player_list:
+        usernames.append(p['username'])
+        cid = p['clusterids'][split]
         x, y, z = appdata[split].cluster_xyz.loc[cid]
         players_x.append(x)
         players_y.append(y)
@@ -184,12 +193,11 @@ def update_scatterplot_data(split: str, unames: List[str], player_data: Dict[str
             'y': (ymin, ymax),
             'z': (zmin, zmax),
         },
-        'usernames': unames,
+        'usernames': usernames,
         'players_x': players_x,
         'players_y': players_y,
         'players_z': players_z,
     }
-
 
 
 @app.callback(
@@ -226,7 +234,6 @@ def update_boxplot_data(clusterid: int, split: str) -> Dict[str, Any]:
     Output('cluster-table-data:stats', 'data'),
     Input('current-clusterid', 'data'),
     State('current-split', 'data'),
-    prevent_initial_call=True,
 )
 def update_cluster_table_data(clusterid, split) -> Tuple[int, Dict[str, int]]:
     if clusterid is None:
@@ -254,12 +261,17 @@ def update_cluster_table_data(clusterid, split) -> Tuple[int, Dict[str, int]]:
     Output('player-table-data:title', 'data'),
     Output('player-table-data:stats', 'data'),
     Input('focused-player', 'data'),
-    prevent_initial_call=True,
+    State('current-players', 'data'),
 )
-def update_player_table_data(player) -> Tuple[str, Dict[str, int]]:
+def update_player_table_data(uname: str,
+                             current_players: List[Dict[str, Any]]) -> Tuple[str, Dict[str, int]]:
     skills = osrs_skills(include_total=True)
-    if player is None:
+    if uname is None:
         return None, {s: None for s in skills}
+
+    player = get_player(current_players, uname)
+    if not player:
+        return no_update, no_update
 
     stats = {}
     for skill in skills:

@@ -14,14 +14,6 @@ def stats_table(id: str, store_id: str, title_fmt_fn: Callable):
         className='label-text',
     )
 
-    # Table title is produced by applying format function to the title data.
-    @app.callback(
-        Output(f'{id}:title', 'children'),
-        Input(f'{store_id}:title', 'data'),
-    )
-    def update_title(title_data: Any) -> str:
-        return title_fmt_fn(title_data)
-
     table_skills = load_table_layout()
     elems = []
     for row_i, row_skills in enumerate(table_skills):
@@ -42,6 +34,14 @@ def stats_table(id: str, store_id: str, title_fmt_fn: Callable):
             row.append(elem)
         elems.append(row)
     skills = [skill for row in table_skills for skill in row]
+
+    # Table title is produced by applying format function to the title data.
+    @app.callback(
+        Output(f'{id}:title', 'children'),
+        Input(f'{store_id}:title', 'data'),
+    )
+    def update_title(title_data: Any) -> str:
+        return title_fmt_fn(title_data)
 
     # Table stats are updated as individual outputs in one big callback.
     @app.callback(
@@ -71,15 +71,14 @@ def stats_table(id: str, store_id: str, title_fmt_fn: Callable):
             icon, stat = elems[i][j]
             icon_col = dbc.Col(
                 icon,
-                width=5,
+                width=4,
             )
             stat_col = dbc.Col(
                 stat,
-                width=7,
+                width=8,
             )
             icon_stat = dbc.Row(
                 [icon_col, stat_col],
-                # className=styles.TABLE_ICON_STAT_GUTTER,
             )
             col_elems.append(icon_stat)
 
@@ -93,7 +92,7 @@ def stats_table(id: str, store_id: str, title_fmt_fn: Callable):
         style={
             'background-color': styles.TABLE_BG_COLOR,
         },
-        className='stats-table',
+        className='stats-table g-1',
     )
     return dbc.Col(
         [
@@ -108,8 +107,7 @@ def cluster_stats_table():
     def title_fn(clusterid: int) -> str:
         if clusterid is None:
             return "Cluster stats"
-        else:
-            return f"Cluster {clusterid} stats"
+        return f"Cluster {clusterid} stats"
 
     return stats_table(
         id='cluster-table',
@@ -123,8 +121,7 @@ def player_stats_table():
     def title_fn(username: str) -> str:
         if username is None:
             return "Player stats"
-        else:
-            return f"‘{username}' stats"  # true opening single quote char needed in bold font
+        return f"‘{username}' stats"  # true opening single quote char needed in bold font
 
     return stats_table(
         id='player-table',

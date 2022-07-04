@@ -91,7 +91,7 @@ def root_layout():
         username_input(),
         vspace(),
         username_blobs(),
-        vspace_if_nonempty(id='username-list'),
+        vspace_if_nonempty(id='current-players'),
         focused_player(),
         vspace_if_nonempty(id='focused-player', n=2),
         stats_tables(),
@@ -123,7 +123,7 @@ def root_layout():
         html.Hr(),
         support_msg(),
         vspace(),
-        store_vars(show=False),
+        store_vars(show=[0, 1, 2, 3, 4]),
     ]
 
     return dbc.Container([

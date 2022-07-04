@@ -1,8 +1,9 @@
-from typing import Dict, Any
+from typing import Dict, Any, List
 
-from dash import Output, Input, html
+from dash import Output, Input, html, no_update, State
 
 from app import app, appdata
+from app.components.store import get_player
 
 
 def focused_player():
@@ -16,10 +17,16 @@ def focused_player():
     Output('focused-player-txt', 'children'),
     Input('focused-player', 'data'),
     Input('current-split', 'data'),
+    State('current-players', 'data'),
 )
-def update_focused_player_txt(player: Dict[str, Any], split: str):
-    if not player:
+def update_focused_player_txt(uname: str, split: str,
+                              player_list: List[Dict[str, Any]]) -> str:
+    if not uname:
         return ''
+
+    player = get_player(player_list, uname)
+    if not player:
+        return no_update
 
     uname = player['username']
     id = player['clusterids'][split]
