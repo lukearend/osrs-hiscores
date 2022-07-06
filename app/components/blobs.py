@@ -16,10 +16,12 @@ def username_blobs():
 )
 def draw_blobs(players):
     blobs = []
+
     for i, p in enumerate(players):
         uname = p['username']
-        color = blob_colors[i % len(blob_colors)]
-        blob_closer = dbc.Button(
+        color = p['color']
+
+        blob_x = dbc.Button(
             className='btn-close',
             id={
                 'type': 'blob-x',
@@ -30,18 +32,16 @@ def draw_blobs(players):
                 'font-size': 'small',
             },
         )
-
-        blob_content = dbc.Row(
+        blob = dbc.Row(
             [
                 dbc.Col(uname),
-                blob_closer,
+                blob_x,
             ],
             className='g-2',  # decrease slightly, default is g-4
             align='center',
         )
-
-        blob = dbc.Button(
-            blob_content,
+        blob_btn = dbc.Button(
+            blob,
             id={
                 'type': 'blob-username',
                 'username': uname,
@@ -51,7 +51,8 @@ def draw_blobs(players):
             },
             className='username-blob'
         )
-        blobs.append(blob)
+
+        blobs.append(blob_btn)
 
     return [dbc.Col(blob, width='auto') for blob in blobs]
 

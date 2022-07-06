@@ -67,7 +67,7 @@ body {
 
 .stats-table {
     border-radius: 0.25em;
-    padding-left: 0.1em;
+    padding-left: 0.1em;   /* empirical value, increases left margin width */
 }
 
 .support-link {

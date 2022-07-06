@@ -1,10 +1,11 @@
+from collections import deque, defaultdict
 from typing import Any, List, Dict, Tuple
 
 import dash_bootstrap_components as dbc
 import numpy as np
 from dash import Output, Input, dcc, State, callback_context, no_update
 
-from app import app, appdata
+from app import app, appdata, styles
 from app.helpers import get_trigger
 from src.common import osrs_skills
 
@@ -76,9 +77,29 @@ def del_player(player_list, uname: str) -> List[Dict[str, Any]]:
     return [p for p in player_list if p['username'] != uname]
 
 
-def add_player(player_list, player: Dict[str, Any]) -> List[Dict[str, Any]]:
-    player_list = del_player(player_list, player['username'])
-    player_list.append(player)
+def new_color(current_colors, color_seq=None) -> str:
+    if color_seq is None:
+        color_seq = styles.PLAYER_COLOR_SEQ
+
+    color_counts = {c: 0 for c in color_seq}
+    for c in current_colors:
+        color_counts[c] += 1
+
+    min_count = min(color_counts.values())
+    colors_to_add = [color for color, n in color_counts.items() if n == min_count]
+    for c in color_seq:
+        if c in colors_to_add:
+            return c
+
+
+def add_player(player_list, queried_player: Dict[str, Any]) -> List[Dict[str, Any]]:
+    player_list = del_player(player_list, queried_player['username'])
+
+    player_colors = [p['color'] for p in player_list]
+    new_player = queried_player.copy()
+    new_player['color'] = new_color(player_colors)
+    player_list.append(new_player)
+
     return player_list
 
 
@@ -100,7 +121,6 @@ def update_player_list(closed_uname: str,
         new_players = del_player(player_list, closed_uname)
     elif triggerid == 'queried-player':
         new_players = add_player(player_list, queried_player)
-
     return new_players
 
 
@@ -110,26 +130,22 @@ def update_player_list(closed_uname: str,
     Input('closed-blob', 'data'),
     Input('queried-player', 'data'),
     State('focused-player', 'data'),
-    State('current-players', 'data'),
     prevent_initial_call=True,
 )
 def updated_focused_player(clicked_uname: str,
                            closed_uname: str,
                            queried_player: Dict[str, Any],
-                           focused_player: str,
-                           player_list: List[Dict[str, Any]]) -> Dict[str, Any]:
+                           focused_player: str) -> str:
 
     triggerid, _ = get_trigger(callback_context)
 
     new_player = no_update
     if triggerid == 'clicked-blob':
-        new_player = get_player(player_list, clicked_uname)
+        new_player = clicked_uname
     elif triggerid == 'closed-blob':
-        if closed_uname == focused_player:
-            new_player = None
+        new_player = None if closed_uname == focused_player else no_update
     elif triggerid == 'queried-player':
         new_player = queried_player['username']
-
     return new_player
 
 
@@ -152,18 +168,20 @@ def update_current_cluster(uname: str,
 
 @app.callback(
     Output('scatterplot-data', 'data'),
-    Input('current-split', 'data'),
     Input('current-players', 'data'),
+    Input('current-split', 'data'),
     prevent_initial_call=True,
 )
-def update_scatterplot_data(split: str,
-                            player_list: List[Dict[str, Any]]) -> Dict[str, Any]:
+def update_scatterplot_data(player_list: List[Dict[str, Any]],
+                            split: str) -> Dict[str, Any]:
     if split is None:
         return no_update
 
-    xyz = appdata[split].cluster_xyz
-    sizes = appdata[split].cluster_sizes
+    total_lvls = np.array(appdata[split].cluster_quartiles.sel(skill='total', percentile=50))
     uniqueness = appdata[split].cluster_uniqueness * 100
+    sizes = appdata[split].cluster_sizes
+    xyz_df = appdata[split].cluster_xyz
+    xyz = zip(*(list(xyz_df[c]) for c in 'xyz'))
 
     axlims = appdata[split].xyz_axlims
     xmin, xmax = axlims['x']
@@ -171,32 +189,26 @@ def update_scatterplot_data(split: str,
     zmin, zmax = axlims['z']
 
     usernames = []
-    players_x = []
-    players_y = []
-    players_z = []
+    player_cids = []
+    player_colors = []
     for p in player_list:
         usernames.append(p['username'])
-        cid = p['clusterids'][split]
-        x, y, z = appdata[split].cluster_xyz.loc[cid]
-        players_x.append(x)
-        players_y.append(y)
-        players_z.append(z)
+        player_cids.append(p['clusterids'][split])
+        player_colors.append(p['color'])
 
     return {
-        'cluster_x': list(xyz['x']),
-        'cluster_y': list(xyz['y']),
-        'cluster_z': list(xyz['z']),
+        'cluster_xyz': list(xyz),
         'cluster_nplayers': list(sizes),
         'cluster_uniqueness': list(uniqueness),
+        'cluster_total_lvl': list(total_lvls),
         'axis_limits': {
             'x': (xmin, xmax),
             'y': (ymin, ymax),
             'z': (zmin, zmax),
         },
-        'usernames': usernames,
-        'players_x': players_x,
-        'players_y': players_y,
-        'players_z': players_z,
+        'player_usernames': usernames,
+        'player_clusterids': player_cids,
+        'player_colors': player_colors,
     }
 
 

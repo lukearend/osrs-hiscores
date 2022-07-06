@@ -1,4 +1,4 @@
-from typing import Dict, Any
+from typing import Dict, Any, List
 
 import dash_core_components as dcc
 import numpy as np
@@ -6,7 +6,6 @@ from plotly import graph_objects as go
 from dash import Output, Input, no_update
 
 from app import app, styles
-from app.styles import PLAYER_COLOR_SEQ as uname_colors
 
 
 def scatterplot():
@@ -20,30 +19,87 @@ def scatterplot():
     )
 
 
-# @app.callback(
-#     Output('scatterplot', 'extendData'),
-#     Input('scatterplot-data', 'data'),
-# )
-# def update_scatterplot_traces(data_dict: Dict[str, Any]):
-#     if not data_dict:
-#         return no_update
-#
-#     traces = {
-#         'x': data_dict['cluster_x'],
-#         'y': data_dict['cluster_y'],
-#         'z': data_dict['cluster_z'],
-#     }
-#
-#     extendtraces = {name: [data] for name, data in traces.items()}
-#     extendinds = [0]
-#     maxpts = len(traces['x'])
-#     return [extendtraces, extendinds, maxpts]
-
-
 def ptsize_fn(x):
-    x = np.clip(x, 1, styles.SCATTERPLOT_PTSIZE_MAX_NPLAYERS)
     x = np.sqrt(x) * styles.SCATTERPLOT_PTSIZE_CONSTANT
+    x = np.maximum(x, styles.SCATTERPLOT_MAX_PTSIZE)
     return x
+
+
+def cluster_trace(data: Dict[str, Any], ptsize: int) -> go.Scatter3d:
+    sizefactor = {
+        'small': 1,
+        'medium': 2,
+        'large': 3,
+    }[ptsize]
+    ptsizes = sizefactor * ptsize_fn(data['cluster_nplayers'])
+
+    x, y, z = zip(*data['cluster_xyz'])
+    return go.Scatter3d(
+        x=x,
+        y=y,
+        z=z,
+        mode='markers',
+        marker=dict(
+            size=ptsizes,
+            color=data['cluster_total_lvl'],
+            opacity=styles.SCATTERPLOT_PTS_OPACITY,
+            line=dict(width=0),  # hide lines bounding the marker points
+        ),
+    )
+
+
+def halo_trace(data: Dict[str, Any]) -> List[go.Scatter3d]:
+    if not data['player_usernames']:
+        return go.Scatter3d()
+
+    nshades = styles.SCATTERPLOT_HALO_NSHADES
+    trace_xyz = []
+    trace_ptsize = []
+    trace_ptcolor = []
+    for player_i, clusterid in enumerate(data['player_clusterids']):
+        x, y, z = data['cluster_xyz'][clusterid]
+        color = data['player_colors'][player_i]
+        for i in range(nshades):
+            ptsize = (i + 1) / nshades * styles.SCATTERPLOT_HALO_SIZE
+            trace_xyz.append((x, y, z))
+            trace_ptsize.append(ptsize)
+            trace_ptcolor.append(color)
+
+    x, y, z = zip(*trace_xyz)
+    return go.Scatter3d(
+        x=x,
+        y=y,
+        z=z,
+        mode='markers',
+        marker=dict(
+            size=trace_ptsize,
+            color=trace_ptcolor,
+            opacity=1 / nshades,
+        ),
+    )
+
+
+def annotations(data: Dict[str, Any]) -> List[Dict[str, Any]]:
+    out_list = []
+    for i, uname in enumerate(data['player_usernames']):
+        clusterid = data['player_clusterids'][i]
+        x, y, z = data['cluster_xyz'][clusterid]
+        font = dict(
+            color='white',
+        )
+        annotation = dict(
+            text=uname,
+            x=x,
+            y=y,
+            z=z,
+            font=font,
+            xanchor='center',
+            xshift=0,
+            yshift=styles.SCATTERPLOT_HALO_SIZE / 2,
+            showarrow=False,
+        )
+        out_list.append(annotation)
+    return out_list
 
 
 @app.callback(
@@ -51,49 +107,15 @@ def ptsize_fn(x):
     Input('scatterplot-data', 'data'),
     Input('point-size', 'data'),
 )
-def redraw_scatterplot(data_dict: Dict[str, Any], ptsize: int) -> go.Figure:
-    if not data_dict:
+def redraw_scatterplot(data: Dict[str, Any], ptsize: int) -> go.Figure:
+    if not data:
         return no_update
 
-    fig = go.Figure()
+    main_trace = cluster_trace(data, ptsize)
+    player_halos = halo_trace(data)
+    player_unames = annotations(data)
 
-    nplayers = data_dict['cluster_nplayers']
-    size_factor = {
-        'small': 1,
-        'medium': 2,
-        'large': 3,
-    }[ptsize]
-    ptsizes = ptsize_fn(nplayers) * size_factor
-
-    clustertrace = go.Scatter3d(
-        x=data_dict['cluster_x'],
-        y=data_dict['cluster_y'],
-        z=data_dict['cluster_z'],
-        mode='markers',
-        marker=dict(
-            size=ptsizes,
-            color=styles.SCATTERPLOT_PTS_COLOR,
-        ),
-    )
-    fig.add_trace(clustertrace)
-
-    # tracelen = len(data_dict['usernames'])
-    # color_seq = uname_colors[:tracelen]
-    # unametrace = go.Scatter3d(
-    #     x=data_dict['players_x'],
-    #     y=data_dict['players_y'],
-    #     z=data_dict['players_z'],
-    #     mode='text',
-    #     text=data_dict['usernames'],
-    #     textfont=dict(
-    #         size=[styles.SCATTERPLOT_TEXT_FONT_SIZE] * tracelen,
-    #         color=color_seq[:tracelen],
-    #     ),
-    # )
-    # fig.add_trace(unametrace)
-    # fig.update_layout(uniformtext_minsize=styles.SCATTERPLOT_TEXT_FONT_SIZE)
-
-    axlims = data_dict['axis_limits']
+    axlims = data['axis_limits']
     axcolor = {
         'x': styles.SCATTERPLOT_XAXIS_COLOR,
         'y': styles.SCATTERPLOT_YAXIS_COLOR,
@@ -119,8 +141,12 @@ def redraw_scatterplot(data_dict: Dict[str, Any], ptsize: int) -> go.Figure:
         aspectmode='cube',
         dragmode='orbit',  # use orbital (not turntable) 3d rotation
         bgcolor=styles.SCATTERPLOT_BG_COLOR,
+        annotations=player_unames,
     )
 
+    fig = go.Figure()
+    fig.add_trace(main_trace)
+    fig.add_trace(player_halos)
     fig.update_layout(
         uirevision='constant',  # don't reset axes when updating plot
         showlegend=False,
@@ -128,3 +154,25 @@ def redraw_scatterplot(data_dict: Dict[str, Any], ptsize: int) -> go.Figure:
         margin=margin,
     )
     return fig
+
+
+# todo: use this with range slider
+# @app.callback(
+#     Output('scatterplot', 'extendData'),
+#     Input('
+#     State('scatterplot-data', 'data'),
+# )
+# def update_scatterplot_traces(data_dict: Dict[str, Any]):
+#     if not data_dict:
+#         return no_update
+#
+#     traces = {
+#         'x': data_dict['cluster_x'],
+#         'y': data_dict['cluster_y'],
+#         'z': data_dict['cluster_z'],
+#     }
+#
+#     extendtraces = {name: [data] for name, data in traces.items()}
+#     extendinds = [0]
+#     maxpts = len(traces['x'])
+#     return [extendtraces, extendinds, maxpts]

@@ -6,6 +6,7 @@ from app.components.blobs import username_blobs
 from app.components.dropdowns import dropdown_menus
 from app.components.input import username_input
 from app.components.scatterplot import scatterplot
+from app.components.slider import total_lvl_slider
 from app.components.store import store_vars
 from app.components.table import stats_tables
 from app.components.playertxt import focused_player
@@ -40,12 +41,12 @@ def info_blurb():
 
 
 def github_link():
-    source_code = dcc.Link(
-        "source code",
+    project_page = dcc.Link(
+        "project homepage",
         href='https://github.com/lukearend/osrs-hiscores',
         target='_blank',
     )
-    content = ["Want to dig deeper? Check out the ", source_code, " on Github."]
+    content = ["Want to dig deeper? Check out the ", project_page, " on Github."]
     return dbc.Col(
         content,
         className='info-text',
@@ -101,6 +102,7 @@ def root_layout():
     ]
     rcol = [
         dropdown_menus(),
+        total_lvl_slider(),
         vspace(),
         scatterplot(),
     ]
@@ -123,7 +125,7 @@ def root_layout():
         html.Hr(),
         support_msg(),
         vspace(),
-        store_vars(show=[0, 1, 2, 3, 4]),
+        store_vars(show=False),
     ]
 
     return dbc.Container([
