@@ -125,7 +125,7 @@ def root_layout():
         html.Hr(),
         support_msg(),
         vspace(),
-        store_vars(show=False),
+        store_vars(show=[14]),
     ]
 
     return dbc.Container([

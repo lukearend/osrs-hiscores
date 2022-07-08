@@ -1,4 +1,3 @@
-from collections import deque, defaultdict
 from typing import Any, List, Dict, Tuple
 
 import dash_bootstrap_components as dbc
@@ -26,6 +25,7 @@ def store_vars(show=True):
         dcc.Store('player-table-data:stats'),    # Dict[str, int]
         dcc.Store('scatterplot-data'),           # Dict[str, Any]
         dcc.Store('boxplot-data'),               # Dict[str, Any]
+        dcc.Store('hovered-cluster')             # int (provisional)
     ]
 
     vars = dbc.Col([var for var in storevars])
@@ -177,38 +177,44 @@ def update_scatterplot_data(player_list: List[Dict[str, Any]],
     if split is None:
         return no_update
 
-    total_lvls = np.array(appdata[split].cluster_quartiles.sel(skill='total', percentile=50))
-    uniqueness = appdata[split].cluster_uniqueness * 100
-    sizes = appdata[split].cluster_sizes
-    xyz_df = appdata[split].cluster_xyz
-    xyz = zip(*(list(xyz_df[c]) for c in 'xyz'))
+    splitdata = appdata[split]
 
-    axlims = appdata[split].xyz_axlims
+    xyz = [tuple(row) for row in np.array(splitdata.cluster_xyz)]
+    sizes = list(splitdata.cluster_sizes)
+    uniqueness = list(splitdata.cluster_uniqueness * 100)
+    totlvls = list(np.array(
+        splitdata.cluster_quartiles.sel(
+            skill='total',
+            percentile=50
+        )
+    ))
+
+    axlims = splitdata.xyz_axlims
     xmin, xmax = axlims['x']
     ymin, ymax = axlims['y']
     zmin, zmax = axlims['z']
 
-    usernames = []
-    player_cids = []
-    player_colors = []
+    players = []
+    clusterids = []
+    halocolors = []
     for p in player_list:
-        usernames.append(p['username'])
-        player_cids.append(p['clusterids'][split])
-        player_colors.append(p['color'])
+        players.append(p['username'])
+        clusterids.append(p['clusterids'][split])
+        halocolors.append(p['color'])
 
     return {
-        'cluster_xyz': list(xyz),
-        'cluster_nplayers': list(sizes),
-        'cluster_uniqueness': list(uniqueness),
-        'cluster_total_lvl': list(total_lvls),
+        'cluster_xyz': xyz,
+        'cluster_nplayers': sizes,
+        'cluster_uniqueness': uniqueness,
+        'cluster_total_lvl': totlvls,
         'axis_limits': {
             'x': (xmin, xmax),
             'y': (ymin, ymax),
             'z': (zmin, zmax),
         },
-        'player_usernames': usernames,
-        'player_clusterids': player_cids,
-        'player_colors': player_colors,
+        'player_usernames': players,
+        'player_clusterids': clusterids,
+        'player_colors': halocolors,
     }
 
 
@@ -222,17 +228,17 @@ def update_boxplot_data(clusterid: int, split: str) -> Dict[str, Any]:
     if clusterid is None:
         return no_update
 
-    nplayers = appdata[split].cluster_sizes[clusterid].item()
-    quartiles_xr = appdata[split].cluster_quartiles.sel(clusterid=clusterid)
-    quartiles_xr = quartiles_xr.drop_sel(skill='total')
-    skills = [s.item() for s in quartiles_xr.coords['skill']]
+    splitdata = appdata[split]
+    nplayers = int(splitdata.cluster_sizes[clusterid])
+    quartiles = splitdata.cluster_quartiles.sel(clusterid=clusterid)
+    quartiles = quartiles.drop_sel(skill='total')
+    skills = np.array(quartiles.coords['skill'])
 
     boxdata = []
     for p in [0, 25, 50, 75, 100]:
-        lvls = quartiles_xr.sel(percentile=p)
-        lvls = [i.item() for i in lvls]
-        skill_lvls = dict(zip(skills, lvls))
-        boxdata.append(skill_lvls)
+        lvls = np.array(quartiles.sel(percentile=p))
+        d = dict(zip(skills, lvls))
+        boxdata.append(d)
 
     return {
         'id': clusterid,
@@ -248,23 +254,26 @@ def update_boxplot_data(clusterid: int, split: str) -> Dict[str, Any]:
     State('current-split', 'data'),
 )
 def update_cluster_table_data(clusterid, split) -> Tuple[int, Dict[str, int]]:
+    splitdata = appdata[split]
+
     if clusterid is None:
-        skills = appdata[split].skills
+        skills = splitdata.skills
         skills.append('total')
         return None, {s: None for s in skills}
 
-    centroid = appdata[split].cluster_centroids.loc[clusterid]
+    centroid = splitdata.cluster_centroids.loc[clusterid]
     skills = centroid.index
-    lvls = [np.round(i) for i in centroid]
-    stats = {skill: lvl for skill, lvl in zip(skills, lvls)}
+    lvls = np.round(centroid)
+    stats = dict(zip(skills, lvls))
 
-    total_lvl = appdata[split].cluster_quartiles.sel(
-        skill='total',
-        clusterid=clusterid,
-        percentile=50
-    ).item()
-    total_lvl = np.round(total_lvl)
-    stats['total'] = total_lvl
+    totlvl = int(np.round(
+        splitdata.cluster_quartiles.sel(
+            skill='total',
+            clusterid=clusterid,
+            percentile=50
+        )
+    ))
+    stats['total'] = totlvl
 
     return clusterid, stats
 
@@ -293,3 +302,14 @@ def update_player_table_data(uname: str,
         stats[skill] = stat
 
     return player['username'], stats
+
+
+@app.callback(
+    Output('hovered-cluster', 'data'),
+    Input('scatterplot', 'hoverData'),
+)
+def update_hovered_cluster(hoverdata):
+    if not hoverdata:
+        return no_update
+
+    print(hoverdata)
