@@ -19,6 +19,25 @@ def scatterplot():
     )
 
 
+def hover_template():
+    return ("cluster %{customdata[0]}<br>"
+            "%{customdata[1]} players<br>"
+            "%{customdata[2]:.2f}% unique"
+            "<extra></extra>")
+
+
+def halo_hover_template():
+    return "%{customdata[3]}<br>" + hover_template()
+
+
+def hover_data(ids, nplayers, uniqueness):
+    return list(zip(ids, nplayers, uniqueness))
+
+
+def halo_hover_data(ids, nplayers, uniqueness, usernames):
+    return list(zip(ids, nplayers, uniqueness, usernames))
+
+
 def ptsize_fn(x):
     x = np.sqrt(x) * styles.SCATTERPLOT_PTSIZE_CONSTANT
     x = np.maximum(x, styles.SCATTERPLOT_MAX_PTSIZE)
@@ -33,6 +52,13 @@ def cluster_trace(data: Dict[str, Any], ptsize: int) -> go.Scatter3d:
     }[ptsize]
     ptsizes = sizefactor * ptsize_fn(data['cluster_nplayers'])
 
+    clusterids = np.arange(len(data['cluster_xyz']))
+    hoverdata = hover_data(
+        ids=clusterids,
+        nplayers=data['cluster_nplayers'],
+        uniqueness=data['cluster_uniqueness']
+    )
+
     x, y, z = zip(*data['cluster_xyz'])
     return go.Scatter3d(
         x=x,
@@ -45,38 +71,43 @@ def cluster_trace(data: Dict[str, Any], ptsize: int) -> go.Scatter3d:
             opacity=styles.SCATTERPLOT_PTS_OPACITY,
             line=dict(width=0),  # hide lines bounding the marker points
         ),
+        hovertemplate=hover_template(),
+        customdata=hoverdata,
     )
 
 
-def halo_trace(data: Dict[str, Any]) -> List[go.Scatter3d]:
-    if not data['player_usernames']:
-        return go.Scatter3d()
-
+def halo_traces(data: Dict[str, Any]) -> List[go.Scatter3d]:
+    player_clusterids = data['player_clusterids']
     nshades = styles.SCATTERPLOT_HALO_NSHADES
-    trace_xyz = []
-    trace_ptsize = []
-    trace_ptcolor = []
-    for player_i, clusterid in enumerate(data['player_clusterids']):
-        x, y, z = data['cluster_xyz'][clusterid]
-        color = data['player_colors'][player_i]
-        for i in range(nshades):
-            ptsize = (i + 1) / nshades * styles.SCATTERPLOT_HALO_SIZE
-            trace_xyz.append((x, y, z))
-            trace_ptsize.append(ptsize)
-            trace_ptcolor.append(color)
 
-    x, y, z = zip(*trace_xyz)
-    return go.Scatter3d(
-        x=x,
-        y=y,
-        z=z,
-        mode='markers',
-        marker=dict(
-            size=trace_ptsize,
-            color=trace_ptcolor,
-            opacity=1 / nshades,
-        ),
+    hovertemplate = halo_hover_template()
+    hoverdata = halo_hover_data(
+        ids=player_clusterids,
+        nplayers=[data['cluster_nplayers'][i] for i in player_clusterids],
+        uniqueness=[data['cluster_uniqueness'][i] for i in player_clusterids],
+        usernames=data['player_usernames']
     )
+
+    traces = []
+    for i in range(nshades):
+        x, y, z = zip(*[data['cluster_xyz'][i] for i in player_clusterids])
+        ptsize = (nshades - i) / nshades * styles.SCATTERPLOT_HALO_SIZE
+        t = go.Scatter3d(
+            x=x,
+            y=y,
+            z=z,
+            mode='markers',
+            marker=dict(
+                size=ptsize,
+                opacity=1 / nshades,
+                color=data['player_colors'],
+            ),
+            hovertemplate=hovertemplate,
+            customdata=hoverdata,
+        )
+        traces.append(t)
+
+    return traces
 
 
 def annotations(data: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -112,7 +143,6 @@ def redraw_scatterplot(data: Dict[str, Any], ptsize: int) -> go.Figure:
         return no_update
 
     main_trace = cluster_trace(data, ptsize)
-    player_halos = halo_trace(data)
     player_unames = annotations(data)
 
     axlims = data['axis_limits']
@@ -146,7 +176,11 @@ def redraw_scatterplot(data: Dict[str, Any], ptsize: int) -> go.Figure:
 
     fig = go.Figure()
     fig.add_trace(main_trace)
-    fig.add_trace(player_halos)
+
+    if data['player_usernames']:
+        for t in halo_traces(data):
+            fig.add_trace(t)
+
     fig.update_layout(
         uirevision='constant',  # don't reset axes when updating plot
         showlegend=False,
