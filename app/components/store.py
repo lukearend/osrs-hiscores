@@ -25,7 +25,8 @@ def store_vars(show=True):
         dcc.Store('player-table-data:stats'),    # Dict[str, int]
         dcc.Store('scatterplot-data'),           # Dict[str, Any]
         dcc.Store('boxplot-data'),               # Dict[str, Any]
-        dcc.Store('hovered-cluster')             # int (provisional)
+        dcc.Store('hovered-cluster'),            # int (WIP)
+        dcc.Store('color-by-skill', data='total'),  # str (WIP)
     ]
 
     vars = dbc.Col([var for var in storevars])
@@ -121,6 +122,7 @@ def update_player_list(closed_uname: str,
         new_players = del_player(player_list, closed_uname)
     elif triggerid == 'queried-player':
         new_players = add_player(player_list, queried_player)
+
     return new_players
 
 
@@ -146,6 +148,7 @@ def updated_focused_player(clicked_uname: str,
         new_player = None if closed_uname == focused_player else no_update
     elif triggerid == 'queried-player':
         new_player = queried_player['username']
+
     return new_player
 
 
@@ -153,17 +156,29 @@ def updated_focused_player(clicked_uname: str,
     Output('current-clusterid', 'data'),
     Input('focused-player', 'data'),
     Input('current-split', 'data'),
+    Input('hovered-cluster', 'data'),
     State('current-players', 'data'),
     prevent_initial_call=True,
 )
 def update_current_cluster(uname: str,
                            split: str,
+                           hovered_id: int,
                            player_list: List[Dict[str, Any]]) -> int:
 
+    triggerid, _ = get_trigger(callback_context)
+
+    player_id = None
     player = get_player(player_list, uname)
-    if not player:
-        return no_update
-    return player['clusterids'][split]
+    if player:
+        player_id = player['clusterids'][split]
+
+    new_id = no_update
+    if triggerid in ['focused-player', 'current-split']:
+        new_id = player_id
+    elif triggerid == 'hovered-cluster':
+        new_id = player_id if hovered_id is None else hovered_id
+
+    return new_id
 
 
 @app.callback(
@@ -310,6 +325,8 @@ def update_player_table_data(uname: str,
 )
 def update_hovered_cluster(hoverdata):
     if not hoverdata:
-        return no_update
+        return None
 
-    print(hoverdata)
+    pt = hoverdata['points'][0]
+    clusterid = pt['customdata'][0]
+    return clusterid

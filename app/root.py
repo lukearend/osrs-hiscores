@@ -3,10 +3,9 @@ from dash import html, dcc
 
 from app.components.boxplot import boxplot_title, boxplot
 from app.components.blobs import username_blobs
-from app.components.dropdowns import dropdown_menus
+from app.components.dropdowns import scatterplot_controls
 from app.components.input import username_input
 from app.components.scatterplot import scatterplot
-from app.components.slider import total_lvl_slider
 from app.components.store import store_vars
 from app.components.table import stats_tables
 from app.components.playertxt import focused_player
@@ -101,8 +100,7 @@ def root_layout():
         boxplot(),
     ]
     rcol = [
-        dropdown_menus(),
-        total_lvl_slider(),
+        scatterplot_controls(),
         vspace(),
         scatterplot(),
     ]
@@ -125,7 +123,7 @@ def root_layout():
         html.Hr(),
         support_msg(),
         vspace(),
-        store_vars(show=[14]),
+        store_vars(show=[5, 14]),
     ]
 
     return dbc.Container([

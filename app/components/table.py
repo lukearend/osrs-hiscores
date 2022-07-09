@@ -134,13 +134,12 @@ def stats_tables():
     return dbc.Row(
         [
             dbc.Col(
-                table,
-                width='auto',
-            )
-            for table in [
                 player_stats_table(),
+                width=6,
+            ),
+            dbc.Col(
                 cluster_stats_table(),
-            ]
+                width=6,
+            ),
         ],
-        justify='evenly',
     )

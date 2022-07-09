@@ -11,8 +11,8 @@ from app import app, styles
 def scatterplot():
     return dcc.Graph(
         id='scatterplot',
-        figure={},
         className='scatterplot-graph',
+        clear_on_unhover=True,
         style={
             'height': styles.SCATTERPLOT_HEIGHT,
         }
