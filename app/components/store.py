@@ -19,6 +19,7 @@ def store_vars(show=True):
         dcc.Store('current-clusterid'),          # int
         dcc.Store('current-split', data='all'),  # str
         dcc.Store('point-size', data='small'),   # str
+        dcc.Store('color-by-skill', data='total'),  # str (WIP)
         dcc.Store('cluster-table-data:title'),   # int
         dcc.Store('player-table-data:title'),    # str
         dcc.Store('cluster-table-data:stats'),   # Dict[str, int]
@@ -26,7 +27,6 @@ def store_vars(show=True):
         dcc.Store('scatterplot-data'),           # Dict[str, Any]
         dcc.Store('boxplot-data'),               # Dict[str, Any]
         dcc.Store('hovered-cluster'),            # int (WIP)
-        dcc.Store('color-by-skill', data='total'),  # str (WIP)
     ]
 
     vars = dbc.Col([var for var in storevars])
@@ -179,6 +179,18 @@ def update_current_cluster(uname: str,
         new_id = player_id if hovered_id is None else hovered_id
 
     return new_id
+
+
+# @app.callback(
+#     Output('color-by-skill', 'data'),
+#     Input('current-split', 'data'),
+#     State('color-by-skill', 'data'),
+# )
+# def update_current_skill(new_split: str, current_skill: str) -> str:
+#     new_split_skills = appdata[new_split].skills + ['total']
+#     if current_skill not in new_split_skills:
+#         return 'total'
+#     return current_skill
 
 
 @app.callback(

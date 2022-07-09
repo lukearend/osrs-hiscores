@@ -1,14 +1,14 @@
 import collections
-from typing import OrderedDict
+from typing import OrderedDict, List
 
 import dash_bootstrap_components as dbc
 import dash_core_components as dcc
-from dash import Input, Output, html, callback_context
+from dash import State, Input, Output, html, callback_context, no_update
 
 from app import app, appdata, styles
 from app.helpers import get_trigger
-from src.common import osrs_skills
 from app.components.space import vspace
+from src.common import osrs_skills
 
 
 def dropdown_menu(store_id: str, options: OrderedDict[str, str]):
@@ -99,15 +99,58 @@ def point_size_menu():
 
 
 def color_by_menu():
+    store_id = 'color-by-skill'
     skills = osrs_skills(include_total=True)
-    # optlabels = collections.OrderedDict([
-    #     (skill, f'{skill.capitalize()} level')
-    #     for skill in skills
-    # ])
-    optlabels = collections.OrderedDict(zip(skills, skills))
-    dropdown = dropdown_menu(
-        store_id='color-by-skill',
-        options=optlabels,
+
+    menuitems = collections.OrderedDict()
+    for skill in skills:
+        menuitems[skill] = dbc.DropdownMenuItem(
+            skill,
+            id=f'{store_id}:dropdown:{skill}',
+            className='controls-text'
+        )
+
+    @app.callback(
+        Output(store_id, 'data'),
+        Input('current-split', 'data'),
+        *[Input(f'{store_id}:dropdown:{skill}', 'n_clicks') for skill in skills],
+        State(store_id, 'data'),
+        suppress_callback_exceptions=True,  # suppress error for conecting to component not (yet) in layout
+    )
+    def select_menu_item(*args) -> str:
+        split = args[0]
+        current_skill = args[-1]
+        triggerid, _ = get_trigger(callback_context)
+
+        new_skill = no_update
+        if triggerid == 'current-split':
+            split_skills = ['total'] + appdata[split].skills
+            if current_skill not in split_skills:
+                new_skill = 'total'
+        else:
+            new_skill = triggerid.split(':')[2]
+
+        return new_skill
+
+    @app.callback(
+        Output(f'{store_id}:dropdown', 'label'),
+        Input(store_id, 'data'),
+    )
+    def update_label(skill: str) -> str:
+        return skill
+
+    @app.callback(
+        Output(f'{store_id}:dropdown', 'children'),
+        Input('current-split', 'data'),
+    )
+    def update_menu_items(split) -> List[dbc.DropdownMenuItem]:
+        new_skills = ['total'] + appdata[split].skills
+        return [menuitems[s] for s in new_skills]
+
+    dropdown = dbc.DropdownMenu(
+        list(menuitems.values()),
+        id=f'{store_id}:dropdown',
+        menu_variant=styles.MENU_VARIANT,
     )
     label = html.Strong(
         "Color by:",
@@ -123,34 +166,47 @@ def color_by_menu():
 
 
 def level_range_slider():
-    ticks = [500, 750, 1000, 1250, 1500, 1750, 2000, 2277]
-    slider = dcc.RangeSlider(
-        id='level-range-slider',
-        step=1,
-        min=500,
-        max=2277,
-        value=[500, 2277],
-        marks={n: str(n) for n in ticks},
-        allowCross=False,
-        tooltip=dict(
-            placement='bottom'
-        ),
+
+    @app.callback(
+        Output('level-range-slider', 'children'),
+        Input('color-by-skill', 'data'),
     )
-    label = html.Strong(
-        "Show levels:",
-        className='controls-text',
-    )
-    return dbc.Row(
-        [
-            dbc.Col(label, width='auto'),
-            dbc.Col([
-                vspace(),  # vertically aligns slider bar with label text
-                slider,
-            ]),
-        ],
-        align='center',
-        className='g-0',
-    )
+    def redraw_slider(skill: str) -> dbc.Col:
+        if skill == 'total':
+            ticks = [500, 750, 1000, 1250, 1500, 1750, 2000, 2277]
+            minmax = [500, 2277]
+        else:
+            ticks = [1, 20, 40, 60, 80, 99]
+            minmax = [1, 99]
+
+        slider = dcc.RangeSlider(
+            step=1,
+            min=minmax[0],
+            max=minmax[1],
+            value=minmax,
+            marks={n: str(n) for n in ticks},
+            allowCross=False,
+            tooltip=dict(
+                placement='bottom'
+            ),
+        )
+        label = html.Strong(
+            "Show levels:",
+            className='controls-text',
+        )
+        return dbc.Row(
+            [
+                dbc.Col(label, width='auto'),
+                dbc.Col([
+                    vspace(),  # vertically aligns slider bar with label text
+                    slider,
+                ]),
+            ],
+            align='center',
+            className='g-0',
+        )
+
+    return dbc.Col(id='level-range-slider')
 
 
 def scatterplot_controls():

@@ -3,7 +3,7 @@ from dash import html, dcc
 
 from app.components.boxplot import boxplot_title, boxplot
 from app.components.blobs import username_blobs
-from app.components.dropdowns import scatterplot_controls
+from app.components.controls import scatterplot_controls
 from app.components.input import username_input
 from app.components.scatterplot import scatterplot
 from app.components.store import store_vars
@@ -123,7 +123,7 @@ def root_layout():
         html.Hr(),
         support_msg(),
         vspace(),
-        store_vars(show=[5, 14]),
+        store_vars(show=[8]),
     ]
 
     return dbc.Container([
