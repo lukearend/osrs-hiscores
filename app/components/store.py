@@ -221,6 +221,7 @@ def update_scatterplot_data(player_list: List[Dict[str, Any]],
         'player_usernames': players,
         'player_clusterids': clusterids,
         'player_colors': halocolors,
+        'current_skill': skill,
     }
 
 

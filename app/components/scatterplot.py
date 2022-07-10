@@ -3,7 +3,7 @@ from typing import Dict, Any, List
 import dash_core_components as dcc
 import numpy as np
 from plotly import graph_objects as go
-from dash import Output, Input, no_update
+from dash import State, Output, Input, no_update
 
 from app import app, styles
 
@@ -22,20 +22,9 @@ def scatterplot():
 def hover_template():
     return ("cluster %{customdata[0]}<br>"
             "%{customdata[1]} players<br>"
-            "%{customdata[2]:.2f}% unique"
+            "%{customdata[2]:.2f}% unique<br>"
+            "median %{customdata[3]}: %{customdata[4]}"
             "<extra></extra>")
-
-
-def halo_hover_template():
-    return "%{customdata[3]}<br>" + hover_template()
-
-
-def hover_data(ids, nplayers, uniqueness):
-    return list(zip(ids, nplayers, uniqueness))
-
-
-def halo_hover_data(ids, nplayers, uniqueness, usernames):
-    return list(zip(ids, nplayers, uniqueness, usernames))
 
 
 def ptsize_fn(x):
@@ -53,11 +42,14 @@ def cluster_trace(data: Dict[str, Any], ptsize: int) -> go.Scatter3d:
     ptsizes = sizefactor * ptsize_fn(data['cluster_nplayers'])
 
     clusterids = np.arange(len(data['cluster_xyz']))
-    hoverdata = hover_data(
-        ids=clusterids,
-        nplayers=data['cluster_nplayers'],
-        uniqueness=data['cluster_uniqueness']
-    )
+    median_lvls = ['-' if n == 0 else str(n) for n in data['cluster_medians']]
+    hoverdata = list(zip(
+        clusterids,
+        data['cluster_nplayers'],
+        data['cluster_uniqueness'],
+        [data['current_skill']] * len(clusterids),
+        median_lvls
+    ))
 
     x, y, z = zip(*data['cluster_xyz'])
     return go.Scatter3d(
@@ -78,33 +70,38 @@ def cluster_trace(data: Dict[str, Any], ptsize: int) -> go.Scatter3d:
 
 
 def halo_traces(data: Dict[str, Any]) -> List[go.Scatter3d]:
-    player_clusterids = data['player_clusterids']
-    nshades = styles.SCATTERPLOT_HALO_NSHADES
-
-    hovertemplate = halo_hover_template()
-    hoverdata = halo_hover_data(
-        ids=player_clusterids,
-        nplayers=[data['cluster_nplayers'][i] for i in player_clusterids],
-        uniqueness=[data['cluster_uniqueness'][i] for i in player_clusterids],
-        usernames=data['player_usernames']
-    )
-
     traces = []
-    for i in range(nshades):
-        x, y, z = zip(*[data['cluster_xyz'][i] for i in player_clusterids])
-        ptsize = (nshades - i) / nshades * styles.SCATTERPLOT_HALO_SIZE
+    for i, cid in enumerate(data['player_clusterids']):
+        nshades = styles.SCATTERPLOT_HALO_NSHADES
+        ptsizes = [styles.SCATTERPLOT_HALO_SIZE * i / nshades for i in range(1, nshades + 1)]
+        x, y, z = data['cluster_xyz'][cid]
+
+        hovertemplate = "<b>%{customdata[5]}</b><br>" + hover_template()
+        median_lvl = data['cluster_medians'][cid]
+        hoverdata = [(
+            cid,
+            data['cluster_nplayers'][cid],
+            data['cluster_uniqueness'][cid],
+            data['current_skill'],
+            '-' if median_lvl == 0 else str(median_lvl),
+            data['player_usernames'][i]
+        ) for _ in range(nshades)]
+
         t = go.Scatter3d(
-            x=x,
-            y=y,
-            z=z,
+            x=np.full(nshades, x),
+            y=np.full(nshades, y),
+            z=np.full(nshades, z),
             mode='markers',
             marker=dict(
-                size=ptsize,
-                opacity=1 / nshades,
-                color=data['player_colors'],
+                size=ptsizes,
+                opacity=0.8 * (1 / nshades),
+                color='white',
             ),
             hovertemplate=hovertemplate,
             customdata=hoverdata,
+            hoverlabel = dict(
+                bgcolor=data['player_colors'][i],
+            )
         )
         traces.append(t)
 
@@ -189,6 +186,16 @@ def redraw_scatterplot(data: Dict[str, Any], ptsize: int) -> go.Figure:
         margin=margin,
     )
     return fig
+
+
+@app.callback(
+    Output('scatterplot', 'extendData'),
+    Input('level-range-slider', 'drag_value'),
+    State('scatterplot', 'extendData'),
+)
+def update_main_trace(level_range, d):
+    print(level_range, d)
+    return no_update
 
 
 # todo: use this with range slider
