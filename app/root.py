@@ -107,31 +107,48 @@ def scatterplot_controls():
 
 
 def root_layout():
-    lcol = [
+    # lcol = [
+    #     username_input(),
+    #     vspace(),
+    #     username_blobs(),
+    #     vspace_if_nonempty(id='current-players'),
+    #     focused_player(),
+    #     vspace_if_nonempty(id='focused-player', n=2),
+    #     stats_tables(),
+    #     vspace(n=2),
+    #     boxplot_title(),
+    #     boxplot(),
+    # ]
+    #
+    # rcol = [
+    #     scatterplot_controls(),
+    #     vspace(),
+    #     scatterplot(),
+    # ]
+    #
+    # body = dbc.Col(
+    #     dbc.Row([
+    #         dbc.Col(lcol),
+    #         dbc.Col(rcol),
+    #     ])
+    # )
+
+    body = [
         username_input(),
         vspace(),
         username_blobs(),
         vspace_if_nonempty(id='current-players'),
         focused_player(),
         vspace_if_nonempty(id='focused-player', n=2),
+        scatterplot_controls(),
+        vspace(),
+        scatterplot(),
+        vspace(n=2),
         stats_tables(),
         vspace(n=2),
         boxplot_title(),
         boxplot(),
     ]
-
-    rcol = [
-        scatterplot_controls(),
-        vspace(),
-        scatterplot(),
-    ]
-
-    body = dbc.Col(
-        dbc.Row([
-            dbc.Col(lcol),
-            dbc.Col(rcol),
-        ])
-    )
 
     root = [
         vspace(),
