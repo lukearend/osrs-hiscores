@@ -14,15 +14,15 @@ from app.root import root_layout
 from src.common import connect_mongo
 
 host = 'localhost'
-if os.getenv('OSRS_ON_CLOUD', None):
+if os.getenv('OSRS_ON_CLOUD'):
     host = '0.0.0.0'  # serve to public internet
 
-if not os.getenv('OSRS_DISABLE_AUTH', None):
+if os.getenv('OSRS_USE_AUTH'):
     auth_coll = connect_mongo(url=os.environ['OSRS_MONGO_URI'], collection='auth')
     auth_pairs = {doc['username']: doc['password'] for doc in auth_coll.find()}
     dash_auth.BasicAuth(app, username_password_list=auth_pairs)
 
-debug = False if os.getenv('OSRS_DEBUG_OFF', None) else True
+debug = True if os.getenv('OSRS_DEBUG_ON') else False
 
 app.title = "OSRS hiscores explorer"
 app.layout = root_layout()
