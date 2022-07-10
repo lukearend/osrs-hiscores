@@ -9,7 +9,7 @@ from app.helpers import load_icon_b64, load_boxplot_layout
 
 
 def boxplot_title():
-    return html.Div(id='boxplot-title')
+    return html.Div(id='boxplot-title', className='label-text')
 
 
 def boxplot():

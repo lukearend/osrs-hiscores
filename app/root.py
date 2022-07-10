@@ -88,51 +88,18 @@ def support_msg():
 
 
 def scatterplot_controls():
-    row1 = dbc.Row([
-        dbc.Col(split_menu(), width='auto'),
-        dbc.Col(point_size_menu(), width='auto'),
-    ])
-    row2 = dbc.Row(
+    return dbc.Row(
         [
+            dbc.Col(split_menu(), width='auto'),
+            dbc.Col(point_size_menu(), width='auto'),
             dbc.Col(color_by_menu(), width='auto'),
-            dbc.Col(level_range_slider())
+            dbc.Col(level_range_slider()),
         ],
         align='center',
     )
-    return dbc.Col([
-        row1,
-        vspace(),
-        row2,
-    ])
 
 
 def root_layout():
-    # lcol = [
-    #     username_input(),
-    #     vspace(),
-    #     username_blobs(),
-    #     vspace_if_nonempty(id='current-players'),
-    #     focused_player(),
-    #     vspace_if_nonempty(id='focused-player', n=2),
-    #     stats_tables(),
-    #     vspace(n=2),
-    #     boxplot_title(),
-    #     boxplot(),
-    # ]
-    #
-    # rcol = [
-    #     scatterplot_controls(),
-    #     vspace(),
-    #     scatterplot(),
-    # ]
-    #
-    # body = dbc.Col(
-    #     dbc.Row([
-    #         dbc.Col(lcol),
-    #         dbc.Col(rcol),
-    #     ])
-    # )
-
     body = [
         username_input(),
         vspace(),
@@ -141,11 +108,10 @@ def root_layout():
         focused_player(),
         vspace_if_nonempty(id='focused-player', n=2),
         scatterplot_controls(),
-        vspace(),
         scatterplot(),
-        vspace(n=2),
+        vspace(),
         stats_tables(),
-        vspace(n=2),
+        vspace(),
         boxplot_title(),
         boxplot(),
     ]
@@ -154,9 +120,9 @@ def root_layout():
         vspace(),
         page_title(),
         info_blurb(),
-        vspace(n=3),
+        vspace(n=2),
         body,
-        vspace(n=3),
+        vspace(n=2),
         github_link(),
         download_link(),
         html.Hr(),

@@ -14,21 +14,21 @@ body {
 }
 
 .controls-text {
-    font-size: x-large;
+    font-size: large;
 }
 
 .query-text {
-    font-size: large;
+    font-size: medium;
     color: red;
 }
 
 .btn {
-    font-size: x-large;
+    font-size: large;
 }
 
 /* Bootstrap overrides */
 .dropdown-item {
-    font-size: x-large;
+    font-size: large;
 }
 
 /* Custom classes */
@@ -37,7 +37,7 @@ body {
 }
 
 .label-text {
-    font-size: x-large;
+    font-size: large;
     font-weight: bold;
 }
 
