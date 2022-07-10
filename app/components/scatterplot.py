@@ -198,9 +198,12 @@ def update_main_trace(level_range, data):
     if not data:
         return no_update
 
+    min_lvl, max_lvl = level_range
+    if min_lvl == 1:
+        min_lvl = 0
     keepinds = [
         i for i, median_lvl in enumerate(data['cluster_medians'])
-        if level_range[0] <= median_lvl <= level_range[1]
+        if min_lvl <= median_lvl <= max_lvl
     ]
     median_lvls = [data['cluster_medians'][i] for i in keepinds]
     median_lvls = ['-' if n == 0 else str(n) for n in median_lvls]
