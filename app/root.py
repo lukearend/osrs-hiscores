@@ -3,9 +3,10 @@ from dash import html, dcc
 
 from app.components.boxplot import boxplot_title, boxplot
 from app.components.blobs import username_blobs
-from app.components.controls import scatterplot_controls
+from app.components.dropdowns import split_menu, point_size_menu, color_by_menu
 from app.components.input import username_input
 from app.components.scatterplot import scatterplot
+from app.components.slider import level_range_slider
 from app.components.store import store_vars
 from app.components.table import stats_tables
 from app.components.playertxt import focused_player
@@ -86,6 +87,25 @@ def support_msg():
     )
 
 
+def scatterplot_controls():
+    row1 = dbc.Row([
+        dbc.Col(split_menu(), width='auto'),
+        dbc.Col(point_size_menu(), width='auto'),
+    ])
+    row2 = dbc.Row(
+        [
+            dbc.Col(color_by_menu(), width='auto'),
+            dbc.Col(level_range_slider())
+        ],
+        align='center',
+    )
+    return dbc.Col([
+        row1,
+        vspace(),
+        row2,
+    ])
+
+
 def root_layout():
     lcol = [
         username_input(),
@@ -99,11 +119,13 @@ def root_layout():
         boxplot_title(),
         boxplot(),
     ]
+
     rcol = [
         scatterplot_controls(),
         vspace(),
         scatterplot(),
     ]
+
     body = dbc.Col(
         dbc.Row([
             dbc.Col(lcol),
@@ -116,6 +138,8 @@ def root_layout():
         page_title(),
         info_blurb(),
         vspace(n=3),
+        store_vars(show=[6, 7, 8]),
+        vspace(n=3),
         body,
         vspace(n=3),
         github_link(),
@@ -123,7 +147,6 @@ def root_layout():
         html.Hr(),
         support_msg(),
         vspace(),
-        store_vars(show=[8]),
     ]
 
     return dbc.Container([

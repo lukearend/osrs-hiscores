@@ -26,7 +26,7 @@ def store_vars(show=True):
         dcc.Store('player-table-data:stats'),    # Dict[str, int]
         dcc.Store('scatterplot-data'),           # Dict[str, Any]
         dcc.Store('boxplot-data'),               # Dict[str, Any]
-        dcc.Store('hovered-cluster'),            # int (WIP)
+        dcc.Store('hovered-cluster'),            # int
     ]
 
     vars = dbc.Col([var for var in storevars])
@@ -116,14 +116,11 @@ def update_player_list(closed_uname: str,
                        player_list: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
 
     triggerid, _ = get_trigger(callback_context)
-
-    new_players = no_update
     if triggerid == 'closed-blob':
-        new_players = del_player(player_list, closed_uname)
+        return del_player(player_list, closed_uname)
     elif triggerid == 'queried-player':
-        new_players = add_player(player_list, queried_player)
-
-    return new_players
+        return add_player(player_list, queried_player)
+    return no_update
 
 
 @app.callback(
@@ -140,16 +137,13 @@ def updated_focused_player(clicked_uname: str,
                            focused_player: str) -> str:
 
     triggerid, _ = get_trigger(callback_context)
-
-    new_player = no_update
     if triggerid == 'clicked-blob':
-        new_player = clicked_uname
+        return clicked_uname
     elif triggerid == 'closed-blob':
-        new_player = None if closed_uname == focused_player else no_update
+        return None if closed_uname == focused_player else no_update
     elif triggerid == 'queried-player':
-        new_player = queried_player['username']
-
-    return new_player
+        return queried_player['username']
+    return no_update
 
 
 @app.callback(
@@ -165,32 +159,17 @@ def update_current_cluster(uname: str,
                            hovered_id: int,
                            player_list: List[Dict[str, Any]]) -> int:
 
-    triggerid, _ = get_trigger(callback_context)
-
     player_id = None
     player = get_player(player_list, uname)
     if player:
         player_id = player['clusterids'][split]
 
-    new_id = no_update
+    triggerid, _ = get_trigger(callback_context)
     if triggerid in ['focused-player', 'current-split']:
-        new_id = player_id
+        return player_id
     elif triggerid == 'hovered-cluster':
-        new_id = player_id if hovered_id is None else hovered_id
-
-    return new_id
-
-
-# @app.callback(
-#     Output('color-by-skill', 'data'),
-#     Input('current-split', 'data'),
-#     State('color-by-skill', 'data'),
-# )
-# def update_current_skill(new_split: str, current_skill: str) -> str:
-#     new_split_skills = appdata[new_split].skills + ['total']
-#     if current_skill not in new_split_skills:
-#         return 'total'
-#     return current_skill
+        return player_id if hovered_id is None else hovered_id
+    return no_update
 
 
 @app.callback(
