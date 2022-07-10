@@ -67,9 +67,10 @@ def cluster_trace(data: Dict[str, Any], ptsize: int) -> go.Scatter3d:
         mode='markers',
         marker=dict(
             size=ptsizes,
-            color=data['cluster_total_lvl'],
+            color=data['cluster_medians'],
             opacity=styles.SCATTERPLOT_PTS_OPACITY,
             line=dict(width=0),  # hide lines bounding the marker points
+            colorscale='viridis',
         ),
         hovertemplate=hover_template(),
         customdata=hoverdata,

@@ -176,21 +176,21 @@ def update_current_cluster(uname: str,
     Output('scatterplot-data', 'data'),
     Input('current-players', 'data'),
     Input('current-split', 'data'),
+    Input('color-by-skill', 'data'),
     prevent_initial_call=True,
 )
 def update_scatterplot_data(player_list: List[Dict[str, Any]],
-                            split: str) -> Dict[str, Any]:
-    if split is None:
-        return no_update
+                            split: str,
+                            skill: str) -> Dict[str, Any]:
 
     splitdata = appdata[split]
 
     xyz = [tuple(row) for row in np.array(splitdata.cluster_xyz)]
     sizes = list(splitdata.cluster_sizes)
     uniqueness = list(splitdata.cluster_uniqueness * 100)
-    totlvls = list(np.array(
+    medians = list(np.array(
         splitdata.cluster_quartiles.sel(
-            skill='total',
+            skill=skill,
             percentile=50
         )
     ))
@@ -212,7 +212,7 @@ def update_scatterplot_data(player_list: List[Dict[str, Any]],
         'cluster_xyz': xyz,
         'cluster_nplayers': sizes,
         'cluster_uniqueness': uniqueness,
-        'cluster_total_lvl': totlvls,
+        'cluster_medians': medians,
         'axis_limits': {
             'x': (xmin, xmax),
             'y': (ymin, ymax),
@@ -231,10 +231,11 @@ def update_scatterplot_data(player_list: List[Dict[str, Any]],
     prevent_initial_call=True,
 )
 def update_boxplot_data(clusterid: int, split: str) -> Dict[str, Any]:
+    splitdata = appdata[split]
+
     if clusterid is None:
         return no_update
 
-    splitdata = appdata[split]
     nplayers = int(splitdata.cluster_sizes[clusterid])
     quartiles = splitdata.cluster_quartiles.sel(clusterid=clusterid)
     quartiles = quartiles.drop_sel(skill='total')
@@ -263,8 +264,7 @@ def update_cluster_table_data(clusterid, split) -> Tuple[int, Dict[str, int]]:
     splitdata = appdata[split]
 
     if clusterid is None:
-        skills = splitdata.skills
-        skills.append('total')
+        skills = splitdata.skills + ['total']
         return None, {s: None for s in skills}
 
     centroid = splitdata.cluster_centroids.loc[clusterid]

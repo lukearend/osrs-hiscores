@@ -138,8 +138,6 @@ def root_layout():
         page_title(),
         info_blurb(),
         vspace(n=3),
-        store_vars(show=[6, 7, 8]),
-        vspace(n=3),
         body,
         vspace(n=3),
         github_link(),
@@ -147,6 +145,7 @@ def root_layout():
         html.Hr(),
         support_msg(),
         vspace(),
+        store_vars(show=[]),
     ]
 
     return dbc.Container([
