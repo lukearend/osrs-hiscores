@@ -127,7 +127,7 @@ $(app_data):
 	                         --out-file $(app_data)
 
 deploy-dev:  ## Deploy application to development branch.
-	git push staging refactor-app:master
+	git push staging development:master
 
 deploy-prod:  ## Deploy to production.
 	git push heroku master:master
@@ -201,17 +201,12 @@ download-centroids-pkl:
 
 ## ---- Testing ----
 
-test: lint test-units test-system  ## Run test suite.
-
 lint:
 	@source env/bin/activate && pycodestyle src scripts --ignore=E301,E302,E402,E501
 	@echo "code check passed"
 
-test-units:
+test: lint  # Run test suite.
 	@source env/bin/activate && pytest test
-
-test-system:
-	@: # todo: run bash script which does a small scrape, analysis, and run-app
 
 build-test-data:
 	@source env/bin/activate && \
