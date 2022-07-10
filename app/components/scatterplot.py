@@ -3,7 +3,7 @@ from typing import Dict, Any, List
 import dash_core_components as dcc
 import numpy as np
 from plotly import graph_objects as go
-from dash import State, Output, Input, no_update
+from dash import Output, Input, no_update
 
 from app import app, styles
 
