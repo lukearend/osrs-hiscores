@@ -29,7 +29,7 @@ def hover_template():
 
 def ptsize_fn(x):
     x = np.sqrt(x) * styles.SCATTERPLOT_PTSIZE_CONSTANT
-    x = np.maximum(x, styles.SCATTERPLOT_MAX_PTSIZE)
+    x = np.minimum(x, styles.SCATTERPLOT_MAX_PTSIZE)
     return x
 
 
@@ -191,30 +191,37 @@ def redraw_scatterplot(data: Dict[str, Any], ptsize: int) -> go.Figure:
 @app.callback(
     Output('scatterplot', 'extendData'),
     Input('level-range-slider', 'drag_value'),
-    State('scatterplot', 'extendData'),
+    State('scatterplot-data', 'data'),
+    prevent_initial_call=True,
 )
-def update_main_trace(level_range, d):
-    print(level_range, d)
-    return no_update
+def update_main_trace(level_range, data):
+    if not data:
+        return no_update
 
+    keepinds = [
+        i for i, median_lvl in enumerate(data['cluster_medians'])
+        if level_range[0] <= median_lvl <= level_range[1]
+    ]
+    median_lvls = [data['cluster_medians'][i] for i in keepinds]
+    median_lvls = ['-' if n == 0 else str(n) for n in median_lvls]
 
-# todo: use this with range slider
-# @app.callback(
-#     Output('scatterplot', 'extendData'),
-#     Input('
-#     State('scatterplot-data', 'data'),
-# )
-# def update_scatterplot_traces(data_dict: Dict[str, Any]):
-#     if not data_dict:
-#         return no_update
-#
-#     traces = {
-#         'x': data_dict['cluster_x'],
-#         'y': data_dict['cluster_y'],
-#         'z': data_dict['cluster_z'],
-#     }
-#
-#     extendtraces = {name: [data] for name, data in traces.items()}
-#     extendinds = [0]
-#     maxpts = len(traces['x'])
-#     return [extendtraces, extendinds, maxpts]
+    hoverdata = list(zip(
+        keepinds,
+        [data['cluster_nplayers'][i] for i in keepinds],
+        [data['cluster_uniqueness'][i] for i in keepinds],
+        [data['current_skill']] * len(keepinds),
+        median_lvls
+    ))
+
+    xyz = np.array(data['cluster_xyz'])
+    traces = {
+        'x': xyz[keepinds, 0],
+        'y': xyz[keepinds, 1],
+        'z': xyz[keepinds, 2],
+        'customdata': hoverdata,
+    }
+
+    extendtraces = {name: [data] for name, data in traces.items()}
+    extendinds = [0]
+    maxpts = len(keepinds)
+    return [extendtraces, extendinds, maxpts]

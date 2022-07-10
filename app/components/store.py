@@ -188,12 +188,13 @@ def update_scatterplot_data(player_list: List[Dict[str, Any]],
     xyz = [tuple(row) for row in np.array(splitdata.cluster_xyz)]
     sizes = list(splitdata.cluster_sizes)
     uniqueness = list(splitdata.cluster_uniqueness * 100)
-    medians = list(np.array(
+    medians = np.array(
         splitdata.cluster_quartiles.sel(
             skill=skill,
             percentile=50
         )
-    ))
+    )
+    medians = list(np.round(medians))
 
     axlims = splitdata.xyz_axlims
     xmin, xmax = axlims['x']
