@@ -64,7 +64,7 @@ def split_menu():
         options=opts,
     )
     label = html.Strong(
-        "Choose split:",
+        "Cluster by:",
         className='controls-text'
     )
     return dbc.Row(

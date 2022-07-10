@@ -177,52 +177,58 @@ def update_current_cluster(uname: str,
     Input('current-players', 'data'),
     Input('current-split', 'data'),
     Input('color-by-skill', 'data'),
+    Input('level-range-slider', 'drag_value'),
     prevent_initial_call=True,
 )
 def update_scatterplot_data(player_list: List[Dict[str, Any]],
                             split: str,
-                            skill: str) -> Dict[str, Any]:
+                            skill: str,
+                            lvl_range: Tuple[int, int]) -> Dict[str, Any]:
+
+    if lvl_range is None:
+        return no_update
 
     splitdata = appdata[split]
+    median_lvls = np.array(splitdata.cluster_quartiles.sel(skill=skill, percentile=50))
+    median_lvls = np.round(median_lvls)
+    cluster_xyz = np.array(splitdata.cluster_xyz)
+    cluster_nplayers = splitdata.cluster_sizes
+    cluster_uniqueness = 100 * splitdata.cluster_uniqueness
 
-    xyz = [tuple(row) for row in np.array(splitdata.cluster_xyz)]
-    sizes = list(splitdata.cluster_sizes)
-    uniqueness = list(splitdata.cluster_uniqueness * 100)
-    medians = np.array(
-        splitdata.cluster_quartiles.sel(
-            skill=skill,
-            percentile=50
-        )
-    )
-    medians = list(np.round(medians))
+    show_min = lvl_range[0] if lvl_range[0] != 1 else 0
+    show_max = lvl_range[1]
+    gt = show_min <= median_lvls
+    lt = median_lvls <= show_max
+    show_inds = np.logical_and(gt, lt).nonzero()[0]
 
     axlims = splitdata.xyz_axlims
     xmin, xmax = axlims['x']
     ymin, ymax = axlims['y']
     zmin, zmax = axlims['z']
 
-    players = []
-    clusterids = []
-    halocolors = []
+    player_usernames = []
+    player_clusterids = []
+    player_colors = []
     for p in player_list:
-        players.append(p['username'])
-        clusterids.append(p['clusterids'][split])
-        halocolors.append(p['color'])
+        player_usernames.append(p['username'])
+        player_clusterids.append(p['clusterids'][split])
+        player_colors.append(p['color'])
 
     return {
-        'cluster_xyz': xyz,
-        'cluster_nplayers': sizes,
-        'cluster_uniqueness': uniqueness,
-        'cluster_medians': medians,
+        'current_skill': skill,
+        'show_inds': show_inds,
+        'cluster_xyz': cluster_xyz,
+        'cluster_nplayers': cluster_nplayers,
+        'cluster_uniqueness': cluster_uniqueness,
+        'cluster_medians': median_lvls,
         'axis_limits': {
             'x': (xmin, xmax),
             'y': (ymin, ymax),
             'z': (zmin, zmax),
         },
-        'player_usernames': players,
-        'player_clusterids': clusterids,
-        'player_colors': halocolors,
-        'current_skill': skill,
+        'player_usernames': player_usernames,
+        'player_clusterids': player_clusterids,
+        'player_colors': player_colors,
     }
 
 
@@ -233,11 +239,10 @@ def update_scatterplot_data(player_list: List[Dict[str, Any]],
     prevent_initial_call=True,
 )
 def update_boxplot_data(clusterid: int, split: str) -> Dict[str, Any]:
-    splitdata = appdata[split]
-
     if clusterid is None:
         return no_update
 
+    splitdata = appdata[split]
     nplayers = int(splitdata.cluster_sizes[clusterid])
     quartiles = splitdata.cluster_quartiles.sel(clusterid=clusterid)
     quartiles = quartiles.drop_sel(skill='total')
@@ -263,12 +268,11 @@ def update_boxplot_data(clusterid: int, split: str) -> Dict[str, Any]:
     State('current-split', 'data'),
 )
 def update_cluster_table_data(clusterid, split) -> Tuple[int, Dict[str, int]]:
-    splitdata = appdata[split]
-
     if clusterid is None:
-        skills = splitdata.skills + ['total']
+        skills = appdata[split].skills + ['total']
         return None, {s: None for s in skills}
 
+    splitdata = appdata[split]
     centroid = splitdata.cluster_centroids.loc[clusterid]
     skills = centroid.index
     lvls = np.round(centroid)
@@ -294,6 +298,7 @@ def update_cluster_table_data(clusterid, split) -> Tuple[int, Dict[str, int]]:
 )
 def update_player_table_data(uname: str,
                              current_players: List[Dict[str, Any]]) -> Tuple[str, Dict[str, int]]:
+
     skills = osrs_skills(include_total=True)
     if uname is None:
         return None, {s: None for s in skills}

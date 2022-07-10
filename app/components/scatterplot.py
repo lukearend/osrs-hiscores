@@ -34,15 +34,22 @@ def ptsize_fn(x):
 
 
 def cluster_trace(data: Dict[str, Any], ptsize: int) -> go.Scatter3d:
+    xyz = np.array(data['cluster_xyz'])
+    x = xyz[:, 0]
+    y = xyz[:, 1]
+    z = xyz[:, 2]
+
     sizefactor = {
         'small': 1,
         'medium': 2,
         'large': 3,
     }[ptsize]
     ptsizes = sizefactor * ptsize_fn(data['cluster_nplayers'])
+    ptcolors = np.array(data['cluster_medians'])
 
     clusterids = np.arange(len(data['cluster_xyz']))
-    median_lvls = ['-' if n == 0 else str(n) for n in data['cluster_medians']]
+    median_lvls = data['cluster_medians']
+    median_lvls = [str(n) if n > 0 else '-' for n in median_lvls]
     hoverdata = list(zip(
         clusterids,
         data['cluster_nplayers'],
@@ -51,21 +58,21 @@ def cluster_trace(data: Dict[str, Any], ptsize: int) -> go.Scatter3d:
         median_lvls
     ))
 
-    x, y, z = zip(*data['cluster_xyz'])
+    show_inds = data['show_inds']
     return go.Scatter3d(
-        x=x,
-        y=y,
-        z=z,
+        x=x[show_inds],
+        y=y[show_inds],
+        z=z[show_inds],
         mode='markers',
         marker=dict(
-            size=ptsizes,
-            color=data['cluster_medians'],
+            size=ptsizes[show_inds],
+            color=ptcolors[show_inds],
             opacity=styles.SCATTERPLOT_PTS_OPACITY,
-            line=dict(width=0),  # hide lines bounding the marker points
             colorscale='viridis',
+            line=dict(width=0),  # no lines between markers
         ),
         hovertemplate=hover_template(),
-        customdata=hoverdata,
+        customdata=[d for i, d in enumerate(hoverdata) if i in show_inds],
     )
 
 
@@ -186,45 +193,3 @@ def redraw_scatterplot(data: Dict[str, Any], ptsize: int) -> go.Figure:
         margin=margin,
     )
     return fig
-
-
-@app.callback(
-    Output('scatterplot', 'extendData'),
-    Input('level-range-slider', 'drag_value'),
-    State('scatterplot-data', 'data'),
-    prevent_initial_call=True,
-)
-def update_main_trace(level_range, data):
-    if not data:
-        return no_update
-
-    min_lvl, max_lvl = level_range
-    if min_lvl == 1:
-        min_lvl = 0
-    keepinds = [
-        i for i, median_lvl in enumerate(data['cluster_medians'])
-        if min_lvl <= median_lvl <= max_lvl
-    ]
-    median_lvls = [data['cluster_medians'][i] for i in keepinds]
-    median_lvls = ['-' if n == 0 else str(n) for n in median_lvls]
-
-    hoverdata = list(zip(
-        keepinds,
-        [data['cluster_nplayers'][i] for i in keepinds],
-        [data['cluster_uniqueness'][i] for i in keepinds],
-        [data['current_skill']] * len(keepinds),
-        median_lvls
-    ))
-
-    xyz = np.array(data['cluster_xyz'])
-    traces = {
-        'x': xyz[keepinds, 0],
-        'y': xyz[keepinds, 1],
-        'z': xyz[keepinds, 2],
-        'customdata': hoverdata,
-    }
-
-    extendtraces = {name: [data] for name, data in traces.items()}
-    extendinds = [0]
-    maxpts = len(keepinds)
-    return [extendtraces, extendinds, maxpts]
