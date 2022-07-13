@@ -1,5 +1,8 @@
-from typing import Dict, Any, List
+""" A boxplot displaying cluster stat quartiles. """
 
+from typing import Dict, Any
+
+import dash_bootstrap_components as dbc
 import numpy as np
 from dash import State, Input, Output, html, dcc, no_update
 from plotly import graph_objects as go
@@ -8,12 +11,9 @@ from app import app, styles
 from app.helpers import load_icon_b64, load_boxplot_layout
 
 
-def boxplot_title():
-    return html.Div(id='boxplot-title', className='label-text')
-
-
 def boxplot():
-    return dcc.Graph(
+    title = html.Div(id='boxplot-title', className='label-text')
+    figure = dcc.Graph(
         id='boxplot',
         figure={},  # figure must be explicitly initialized to an empty value (Dash bug) todo: still true?
         config={'displayModeBar': False},
@@ -22,6 +22,10 @@ def boxplot():
             'height': styles.BOXPLOT_HEIGHT,
         }
     )
+    return dbc.Col([
+        title,
+        figure,
+    ])
 
 
 @app.callback(

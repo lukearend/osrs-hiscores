@@ -1,3 +1,5 @@
+""" Dropdown menus for selecting plot parameters. """
+
 import collections
 from typing import OrderedDict, List, Dict
 

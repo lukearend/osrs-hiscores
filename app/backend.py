@@ -1,6 +1,7 @@
+""" Hidden state variables and logic. """
+
 from typing import Any, List, Dict, Tuple
 
-import dash_bootstrap_components as dbc
 import numpy as np
 from dash import Output, Input, dcc, State, callback_context, no_update
 
@@ -9,62 +10,60 @@ from app.helpers import get_trigger
 from src.common import osrs_skills
 
 
-def store_vars(show=True):
-    storevars = [
-        dcc.Store('current-players', data=[]),   # List[Dict[str, Any]]
-        dcc.Store('queried-player'),             # Dict[str, Any]
-        dcc.Store('clicked-blob'),               # str
-        dcc.Store('closed-blob'),                # str
-        dcc.Store('focused-player'),             # str
-        dcc.Store('current-clusterid'),          # int
-        dcc.Store('current-split', data='all'),  # str
-        dcc.Store('point-size', data='small'),   # str
-        dcc.Store('color-by-skill', data='total'),  # str (WIP)
-        dcc.Store('cluster-table-data:title'),   # int
-        dcc.Store('player-table-data:title'),    # str
-        dcc.Store('cluster-table-data:stats'),   # Dict[str, int]
-        dcc.Store('player-table-data:stats'),    # Dict[str, int]
-        dcc.Store('scatterplot-data'),           # Dict[str, Any]
-        dcc.Store('boxplot-data'),               # Dict[str, Any]
-        dcc.Store('hovered-cluster'),            # int
-    ]
+STORE = [
+    dcc.Store('current-players', data=[]),     # List[Dict[str, Any]]
+    dcc.Store('queried-player'),               # Dict[str, Any]
+    dcc.Store('clicked-blob'),                 # str
+    dcc.Store('closed-blob'),                  # str
+    dcc.Store('focused-player'),               # str
+    dcc.Store('current-clusterid'),            # int
+    dcc.Store('current-split', data='all'),    # str
+    dcc.Store('point-size', data='small'),     # str
+    dcc.Store('color-by-skill', data='total'), # str (WIP)
+    dcc.Store('cluster-table-data:title'),     # int
+    dcc.Store('player-table-data:title'),      # str
+    dcc.Store('cluster-table-data:stats'),     # Dict[str, int]
+    dcc.Store('player-table-data:stats'),      # Dict[str, int]
+    dcc.Store('scatterplot-data'),             # Dict[str, Any]
+    dcc.Store('boxplot-data'),                 # Dict[str, Any]
+    dcc.Store('hovered-cluster'),              # int
+]
 
-    vars = dbc.Col([var for var in storevars])
-    if not show:
-        return vars
 
-    showvars = storevars
-    if isinstance(show, list):  # `show` can be a list of indices of storevars to display
-        showvars = [storevars[i] for i in show]
+# The current-players list is a core data structure.
+#
+# It is populated by successful queries from the player stats database
+# and holds the players currently being displayed by the application.
+#
+# [
+#     {
+#         'username': 'snakeylime',
+#         'color': '#636EFA',
+#         'stats': {
+#             'total': 1830,
+#             'attack': 60,
+#             ...
+#             'construction': 84
+#         }
+#         'clusterids': {
+#             'all': 471,
+#             'cb': 1000,
+#             'noncb': 642,
+#         }
+#     },
+#     ...,
+# ]
 
-    display = []
-    for var in showvars:
-        containerid = f'{var.id}:container'
-        container = dbc.Row(
-            [
-                dbc.Col(var.id + ': ', width='auto'),
-                dbc.Col(id=containerid),
-            ],
-            className='g-2',
-        )
-        display.append(container)
 
-        @app.callback(
-            Output(containerid, 'children'),
-            Input(var.id, 'data'),
-        )
-        def update_container(newval: Any) -> str:
-            return str(newval)
+def add_player(player_list, queried_player: Dict[str, Any]) -> List[Dict[str, Any]]:
+    player_list = del_player(player_list, queried_player['username'])
 
-    return dbc.Col([
-        vars,
-        dbc.Row([
-            dbc.Col(
-                item,
-                width='auto',
-            ) for item in display
-        ])
-    ])
+    player_colors = [p['color'] for p in player_list]
+    new_player = queried_player.copy()
+    new_player['color'] = new_color(player_colors)
+    player_list.append(new_player)
+
+    return player_list
 
 
 def get_player(player_list, uname: str) -> Dict[str, Any]:
@@ -91,17 +90,6 @@ def new_color(current_colors, color_seq=None) -> str:
     for c in color_seq:
         if c in colors_to_add:
             return c
-
-
-def add_player(player_list, queried_player: Dict[str, Any]) -> List[Dict[str, Any]]:
-    player_list = del_player(player_list, queried_player['username'])
-
-    player_colors = [p['color'] for p in player_list]
-    new_player = queried_player.copy()
-    new_player['color'] = new_color(player_colors)
-    player_list.append(new_player)
-
-    return player_list
 
 
 @app.callback(

@@ -1,3 +1,5 @@
+""" Spacer elements """
+
 from typing import Any
 
 from dash import Output, Input, html
@@ -7,22 +9,22 @@ from app import app
 
 
 def vspace(n=1) -> html.Div():
-    vspace = []
+    spacers = []
     for i in range(n):
-        vspace.append(html.Div(className='vspace'))
-    return dbc.Col(vspace)
+        spacers.append(html.Div(className='vspace'))
+    return dbc.Col(spacers)
 
 
-def vspace_if_nonempty(id: str, n=1) -> dbc.Col:
-    containerid = f'{id}:vspace'
+def vspace_if_nonempty(id: str) -> dbc.Col:
+    container_id = f'{id}:vspace'
 
     @app.callback(
-        Output(containerid, 'children'),
+        Output(container_id, 'children'),
         Input(id, 'data'),
     )
     def toggle_break(value: Any):
         if not value:
             return []
-        return [vspace(n=1)]
+        return [vspace()]
 
-    return dbc.Col(id=containerid)
+    return dbc.Col(id=container_id)

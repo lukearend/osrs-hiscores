@@ -1,3 +1,5 @@
+""" Visual styling constants. """
+
 import plotly.express as px
 
 bg_gray = '#222222'

@@ -1,8 +1,9 @@
+""" Clickable blobs displaying the current users. """
+
 from dash import Output, Input, ALL, callback_context, no_update
 import dash_bootstrap_components as dbc
 
 from app import app
-from app.styles import PLAYER_COLOR_SEQ as blob_colors
 from app.helpers import get_trigger
 
 

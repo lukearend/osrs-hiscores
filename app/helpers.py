@@ -1,3 +1,5 @@
+""" Helpful odds and ends """
+
 import base64
 import collections
 import json

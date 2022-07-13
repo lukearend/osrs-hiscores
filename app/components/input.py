@@ -1,3 +1,5 @@
+""" Input box for player lookup. """
+
 import dash_bootstrap_components as dbc
 from dash import html, dcc, Output, Input, no_update
 
@@ -11,7 +13,6 @@ def username_input():
         className='controls-text',
     )
     inputbox = dcc.Input(
-        # 'snakeylime',  # todo: remove after testing
         id='input-box',
         type='text',
         placeholder="e.g. 'snakeylime'",

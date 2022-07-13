@@ -1,3 +1,5 @@
+""" Main scatterplot figure. """
+
 from typing import Dict, Any, List
 
 import dash_core_components as dcc

@@ -1,3 +1,5 @@
+""" Tables containing player/cluster stats for all skills. """
+
 from typing import Dict, Any, Callable
 
 import dash_bootstrap_components as dbc
@@ -121,25 +123,10 @@ def player_stats_table():
     def title_fn(username: str) -> str:
         if username is None:
             return "Player stats"
-        return f"‘{username}' stats"  # true opening single quote char needed in bold font
+        return f"‘{username}' stats"  # true opening single quote char needed for bold font
 
     return stats_table(
         id='player-table',
         store_id='player-table-data',
         title_fmt_fn=title_fn,
-    )
-
-
-def stats_tables():
-    return dbc.Row(
-        [
-            dbc.Col(
-                player_stats_table(),
-                width=6,
-            ),
-            dbc.Col(
-                cluster_stats_table(),
-                width=6,
-            ),
-        ],
     )
