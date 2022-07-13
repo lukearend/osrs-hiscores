@@ -4,14 +4,16 @@ import dash_bootstrap_components as dbc
 from app.containers import header, footer, lookup, controls, scatterplot, tables, boxplot, store
 
 def root_layout():
-    device = 'small'
+    device = 'phone'
+    # device = 'desktop'
+    # device = 'tablet'
 
-    if device == 'small':
+    if device == 'phone':
         body = dbc.Col([
             lookup(),
+            tables(),
             controls(),
             scatterplot(),
-            tables(),
             boxplot(),
         ])
     else:
