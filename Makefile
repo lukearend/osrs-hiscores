@@ -71,7 +71,7 @@ dim-reduce-clusters: $(CLUSTER_XYZ_FILE)
 .SECONDARY: $(SCRAPE_OUT_FILE) # Don't run scraping if player stats already exists.
 
 $(SCRAPE_OUT_FILE):
-	cmd/scrape_hiscores $@.tmp && mv $@.tmp $@
+	cmd/scrape_hiscores $@
 
 $(PLAYER_STATS_FILE):
 	@source env/bin/activate && scripts/clean_raw_data.py \
@@ -109,11 +109,11 @@ download-dataset:
 	@source env/bin/activate && cmd/download_dataset
 
 build-test-data:
-	@source env/bin/activate && bin/build_test_data \
+	source env/bin/activate && bin/build_test_data \
 	--base-file $(PLAYER_STATS_FILE) --out-file test/data/test-data.csv
 
 ec2-%: # status, start, stop, connect, setup
-	@bin/ec2_instance $*
+	bin/ec2_instance $*
 
 help: ## Print this help.
 	@grep -E '^[0-9a-zA-Z%_-]+:.*## .*$$' $(firstword $(MAKEFILE_LIST)) | \
