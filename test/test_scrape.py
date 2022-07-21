@@ -14,7 +14,7 @@ from src.scrape.common import PlayerRecord
 from src.scrape.export import get_top_rank, get_page_jobs, player_to_csv, csv_to_player
 from src.scrape.requests import get_hiscores_page, get_player_stats
 from src.scrape.workers import JobQueue, JobCounter
-from src.scrape.main import scrape_hiscores
+from scripts.scrape_hiscores import main as scrape_hiscores
 from scripts.clean_raw_data import main as clean_raw_data
 
 
@@ -126,7 +126,7 @@ async def test_scrape_hiscores():
     end_rank = start_rank + 99
     if os.path.isfile(STATS_RAW_FILE):
         os.remove(STATS_RAW_FILE)
-    await scrape_hiscores(start_rank, end_rank, STATS_RAW_FILE, num_workers=25)
+    await scrape_hiscores(STATS_RAW_FILE, start_rank, end_rank, num_workers=25)
     assert get_top_rank(STATS_RAW_FILE) == end_rank
 
 

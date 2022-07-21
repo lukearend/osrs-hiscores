@@ -4,7 +4,7 @@ export
 
 .DEFAULT_GOAL = help
 
-app: init download postprocess build-app run-app
+app: init download-dataset postprocess build-app run-app
 all: init test scrape cluster postprocess build-app run-app
 finalize: scrape cluster export-csv publish-dataset push-app-data deploy-prod
 
@@ -105,7 +105,7 @@ populate-app-db:
 
 ## ---- Other ----
 
-download:
+download-dataset:
 	@source env/bin/activate && cmd/download_dataset
 
 build-test-data:
