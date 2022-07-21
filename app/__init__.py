@@ -17,7 +17,14 @@ if os.getenv("OSRS_APPDATA_URI") is None:
 
 load_figure_template('darkly')
 
-app = Dash(__name__, external_stylesheets=[themes.DARKLY])
+app = Dash(
+    __name__,
+    external_stylesheets=[themes.DARKLY],
+    meta_tags=[{  # tell mobile browser that app has been optimized for mobile
+        'name': 'viewport',
+        'content': 'width=device-width, initial-scale=1',
+    }],
+)
 appdb = connect_mongo(os.environ['OSRS_MONGO_URI'], 'players')
 appdata: Dict[str, SplitResults] = load_app_data(os.environ['OSRS_APPDATA_URI'])
 

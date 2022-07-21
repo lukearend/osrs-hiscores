@@ -13,6 +13,6 @@ server = app.server  # used by gunicorn
 if not os.getenv('ON_HEROKU'):
     app.run_server(
         host='0.0.0.0' if os.getenv('ON_HEROKU') else 'localhost',
-        debug=True if os.getenv('OSRS_DEBUG_ON') else False,
+        debug=True if os.getenv('OSRS_DEBUG') else False,
         port=os.getenv('PORT', 8050)
     )

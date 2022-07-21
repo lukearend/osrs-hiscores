@@ -1,7 +1,7 @@
 export SHELL := /bin/bash
 ROOT := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 
-include .env
+-include .env
 export
 
 .DEFAULT_GOAL = help
@@ -37,7 +37,7 @@ scrape-hiscores: $(player_stats_raw)
 $(player_stats_raw):
 	echo $(player_stats_raw)
 	@source env/bin/activate && cd scripts && \
-	python scrape_hiscores.py --start-rank 1 --stop-rank 2000000 --num-workers 28 \
+	python scrape_hiscores.py --start-rank 1 --stop-rank 2000000 --num-workers 25 \
 	                          --log-file $(ROOT)/data/raw/scrape.log --log-level INFO \
 	                          --out-file $(player_stats_raw).tmp --vpn
 	mv $(player_stats_raw).tmp $(player_stats_raw)
@@ -99,7 +99,7 @@ run-app: start-mongo  ## Run main application locally.
 	@source env/bin/activate && \
 	export OSRS_MONGO_URI=$(mongo_url) && \
 	export OSRS_APPDATA_URI=$(app_data) && \
-	export OSRS_DEBUG_ON=true & \
+	export OSRS_DEBUG=true && \
 	python main.py
 
 push-app-db: mongo_url := $(OSRS_MONGO_URI_PROD)  # use production DB URI

@@ -1,40 +1,23 @@
 """ Base application container. """
 
 import dash_bootstrap_components as dbc
-from app.containers import header, footer, lookup, controls, scatterplot, tables, boxplot, store
+from app.components.space import vspace
+from app.components.store import store
+from app.containers import header, footer, body
+
 
 def root_layout():
-    device = 'phone'
-    # device = 'desktop'
-    # device = 'tablet'
-
-    if device == 'phone':
-        body = dbc.Col([
-            lookup(),
-            tables(),
-            controls(),
-            scatterplot(),
-            boxplot(),
-        ])
-    else:
-        lcol = dbc.Col([
-            lookup(),
-            tables(),
-            boxplot(),
-        ])
-        rcol = dbc.Col([
-            controls(),
-            scatterplot(),
-        ])
-        body = dbc.Row([lcol, rcol])
-
     root = [
+        vspace(),
         header(),
-        body,
+        vspace(),
+        body(),
+        vspace(),
         footer(),
+        vspace(),
         store(),
     ]
-
     return dbc.Container([
-        dbc.Row(dbc.Col(c)) for c in root
+        dbc.Row(dbc.Col(obj))
+        for obj in root
     ])

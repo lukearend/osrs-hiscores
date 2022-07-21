@@ -9,6 +9,18 @@ from dash import State, Input, Output, html, callback_context, no_update
 
 from app import app, appdata, styles
 from app.helpers import get_trigger
+from app.layout import DROPDOWN_LABEL_WIDTHS
+
+
+def generic_layout(title, dropdown):
+    label = html.Strong(title, className='controls-text')
+    return dbc.Col(dbc.Row(
+        [
+            dbc.Col(label, **DROPDOWN_LABEL_WIDTHS),
+            dbc.Col(dropdown),
+        ],
+        align='center',
+    ))
 
 
 def generic_dropdown(id: str, store_var: str, label_var: str,
@@ -65,17 +77,7 @@ def split_menu():
         label_var='current-split',
         options=opts,
     )
-    label = html.Strong(
-        "Cluster by:",
-        className='controls-text'
-    )
-    return dbc.Row(
-        [
-            dbc.Col(label, width='auto'),
-            dbc.Col(dropdown),
-        ],
-        align='center',
-    )
+    return generic_layout("Cluster by:", dropdown)
 
 
 def point_size_menu():
@@ -86,17 +88,7 @@ def point_size_menu():
         label_var='point-size',
         options=collections.OrderedDict(zip(opts, opts)),
     )
-    label = html.Strong(
-        "Point size:",
-        className='controls-text',
-    )
-    return dbc.Row(
-        [
-            dbc.Col(label, width='auto'),
-            dbc.Col(dropdown),
-        ],
-        align='center',
-    )
+    return generic_layout("Point size:", dropdown)
 
 
 def color_by_menu():
@@ -144,15 +136,8 @@ def color_by_menu():
         visible = [True if split == new_split else False for split in splits]
         return [{'display': 'inline' if v else 'none'} for v in visible]
 
-    label = html.Strong(
-        "Color by:",
-        className='controls-text',
-    )
-    return dbc.Row(
-        [
-            *vars,
-            dbc.Col(label, width='auto'),
-            dbc.Col(menus),
-        ],
-        align='center',
-    )
+    dropdown = dbc.Col([
+        *vars,
+        dbc.Row(menus),
+    ])
+    return generic_layout("Color by:", dropdown)

@@ -21,7 +21,7 @@ restart() {
     ./mkserver &&
         sudo openvpn --config server.ovpn --auth-user-pass ~/.openvpn --writepid openvpn.pid --daemon
     sleep 2 && echo -n "setting up tunnel... " && sleep 3
-    ps -p $(cat openvpn.pid) >/dev/null 2>&1
+    ps -p $(cat openvpn.pid)
 }
 
 until restart; do echo "setup failed, retrying"; done

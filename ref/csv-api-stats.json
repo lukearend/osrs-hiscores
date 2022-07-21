@@ -93,6 +93,8 @@
     "clue_scrolls_master_score",
     "lms_rank_rank",
     "lms_rank_score",
+    "pvp_arena_rank",
+    "pvp_arena_score",
     "soul_wars_zeal_rank",
     "soul_wars_zeal_score",
     "rifts_closed_rank",

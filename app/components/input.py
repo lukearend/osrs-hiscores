@@ -28,7 +28,7 @@ def username_input():
     lookup = dbc.Row(
         [
             dbc.Col(label, width='auto'),
-            dbc.Col(inputbox),
+            dbc.Col(inputbox, width=True),
         ],
         align='center',
     ),

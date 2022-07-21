@@ -10,7 +10,7 @@ from app.helpers import get_trigger
 from src.common import osrs_skills
 
 
-STORE = [
+STORE_VARS = [
     dcc.Store('current-players', data=[]),     # List[Dict[str, Any]]
     dcc.Store('queried-player'),               # Dict[str, Any]
     dcc.Store('clicked-blob'),                 # str
@@ -78,6 +78,8 @@ def del_player(player_list, uname: str) -> List[Dict[str, Any]]:
 
 
 def new_color(current_colors, color_seq=None) -> str:
+    """ Return the next color used in the player sequence. """
+
     if color_seq is None:
         color_seq = styles.PLAYER_COLOR_SEQ
 
@@ -85,11 +87,48 @@ def new_color(current_colors, color_seq=None) -> str:
     for c in current_colors:
         color_counts[c] += 1
 
+    # Pick the color which is least represented on screen
     min_count = min(color_counts.values())
-    colors_to_add = [color for color, n in color_counts.items() if n == min_count]
+    new_colors = [color for color, n in color_counts.items() if n == min_count]
     for c in color_seq:
-        if c in colors_to_add:
+        if c in new_colors:
             return c
+
+
+def store(show_inds: List[int] = None):
+    if show_inds is None:
+        return dbc.Col([v for v in STORE_VARS])
+
+    show_ids = [v.id for i, v in STORE_VARS if i in show_inds]
+    containers = []
+    for var_id in show_ids:
+        container_id = f'{var_id}:container'
+
+        @app.callback(
+            Output(container_id, 'children'),
+            Input(var_id, 'data'),
+        )
+        def update_container(newval: Any) -> str:
+            return str(newval)
+
+        c = dbc.Row(
+            [
+                dbc.Col(var_id + ': ', width='auto'),
+                dbc.Col(id=container_id),
+            ],
+            className='g-2',
+        )
+        containers.append(c)
+
+    return dbc.Col([
+        dbc.Col([v for v in STORE_VARS]),
+        dbc.Row([
+            dbc.Col(
+                c,
+                width='auto',
+            ) for c in containers
+        ])
+    ])
 
 
 @app.callback(
