@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+
+@source env/bin/activate && \
+bin/download_s3 --s3-url $(player_stats_s3) --local-file $(PLAYER_STATS_FILE)
+bin/download_s3 --s3-url $(cluster_ids_s3) --local-file $(CLUSTER_IDS_FILE)
+bin/download_s3 --s3-url $(cluster_centroids_s3) --local-file

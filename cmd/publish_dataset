@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+
+aws s3 cp $(PLAYER_STATS_FILE) $(player_stats_s3)
+aws s3 cp $(CLUSTER_IDS_FILE) $(cluster_ids_s3)
+aws s3 cp $(CLUSTER_CENTROIDS_FILE) $(cluster_centroids_s3)
+
+gdrive upload $(player_stats_raw) -p $(OSRS_GDRIVE_FOLDER) --name player-stats-raw.csv
+gdrive upload $(player_stats_final) -p $(OSRS_GDRIVE_FOLDER) --name player-stats.csv
+gdrive upload $(cluster_ids_final) -p $(OSRS_GDRIVE_FOLDER) --name player-clusters.csv
+gdrive upload $(cluster_centroids_final) -p $(OSRS_GDRIVE_FOLDER) --name cluster-centroids.csv
