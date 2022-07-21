@@ -98,33 +98,21 @@ def scatter():
 def body():
     return dbc.Row([
         dbc.Col(
-            [
-                dbc.Col(
-                    lookup(),
-                    xs=dict(order=1),
-                    lg=dict(order=1)
-                ),
-                dbc.Col(
-                    tables(),
-                    xs=dict(order=2),
-                    lg=dict(order=3)
-                ),
-                dbc.Col(
-                    boxplot(),
-                    xs=dict(order=4),
-                    lg=dict(order=4)
-                ),
-            ],
-            xs=dict(size=12),
-            lg=dict(size=6)
+            lookup(),
+            **LOOKUP_SECTION_LAYOUT,
         ),
         dbc.Col(
-            dbc.Col(
-                scatter(),
-                xs=dict(order=3),
-                lg=dict(order=2),
-            ),
-            xs=dict(size=12),
-            lg=dict(size=6)
-        )
-    ])
+            tables(),
+            **TABLE_SECTION_LAYOUT,
+        ),
+        dbc.Col(
+            scatter(),
+            **SCATTER_SECTION_LAYOUT,
+        ),
+        dbc.Col(
+            boxplot(),
+            **BOXPLOT_SECTION_LAYOUT,
+        ),
+    ],
+    className='body-container',
+)
