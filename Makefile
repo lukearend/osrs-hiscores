@@ -1,4 +1,5 @@
 ROOT := $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+-include .env.default
 -include .env
 export
 
@@ -46,7 +47,7 @@ run-app: ## Run main application locally.
 ## ---- Finalization ----
 
 push-app-data: ## Upload application data to production.
-	cmd/push_app_data
+	@cmd/push_app_data
 
 deploy-dev: ## Deploy app to development staging area.
 	git push staging development:master
@@ -55,10 +56,10 @@ deploy-prod: ## Deploy app to production.
 	git push heroku master:master
 
 export-csv: ## Export dataset files from .pkl to CSV format.
-	cmd/export_dataset_csv
+	@source env/bin/activate && cmd/export_dataset_csv.py
 
 publish-dataset: ## Publish dataset CSV files to Google Drive.
-	cmd/publish_dataset
+	@cmd/publish_dataset
 
 ## ---- Data processing ----
 
@@ -74,32 +75,32 @@ $(SCRAPE_OUT_FILE):
 	cmd/scrape_hiscores $@
 
 $(PLAYER_STATS_FILE):
-	@source env/bin/activate && scripts/clean_raw_data.py \
+	source env/bin/activate && scripts/clean_raw_data.py \
 	--in-file $(SCRAPE_OUT_FILE) --out-file $@
 
 
 $(CLUSTER_IDS_FILE) $(CLUSTER_CENTROIDS_FILE):
-	@source env/bin/activate && scripts/cluster_players.py \
+	source env/bin/activate && scripts/cluster_players.py \
 	--in-file $(PLAYER_STATS_FILE) --splits-file $(SPLITS_FILE) --params-file $(PARAMS_FILE) \
 	--out-clusterids $(CLUSTER_IDS_FILE) --out-centroids $(CLUSTER_CENTROIDS_FILE) --verbose
 
 $(CLUSTER_QUARTILES_FILE):
-	@source env/bin/activate && scripts/compute_quartiles.py \
+	source env/bin/activate && scripts/compute_quartiles.py \
 	--splits-file $(SPLITS_FILE) --stats-file $(PLAYER_STATS_FILE) \
 	--clusterids-file $(CLUSTER_IDS_FILE) --out-file $@
 
 $(CLUSTER_XYZ_FILE):
-	@source env/bin/activate && scripts/dim_reduce_clusters.py \
+	source env/bin/activate && scripts/dim_reduce_clusters.py \
 	--params-file $(PARAMS_FILE) --in-file $(CLUSTER_CENTROIDS_FILE) --out-file $@
 
 $(APP_DATA_FILE):
-	@source env/bin/activate && scripts/build_app_data.py \
+	source env/bin/activate && scripts/build_app_data.py \
 	--splits-file $(SPLITS_FILE) --clusterids-file $(CLUSTER_IDS_FILE) \
 	--centroids-file $(CLUSTER_CENTROIDS_FILE) --quartiles-file $(CLUSTER_QUARTILES_FILE) \
 	--xyz-file $(CLUSTER_XYZ_FILE) --out-file $(APP_DATA_FILE)
 
 populate-app-db:
-	@source env/bin/activate && bin/start_mongo && scripts/build_app_db.py \
+	source env/bin/activate && bin/start_mongo && scripts/build_app_db.py \
 	--stats-file $(PLAYER_STATS_FILE) --clusterids-file $(CLUSTER_IDS_FILE) \
 	--mongo-url $(OSRS_MONGO_URI) --collection $(OSRS_MONGO_COLL)
 
@@ -109,11 +110,11 @@ download-dataset:
 	@source env/bin/activate && cmd/download_dataset
 
 build-test-data:
-	source env/bin/activate && bin/build_test_data \
+	source env/bin/activate && bin/build_test_data.py \
 	--base-file $(PLAYER_STATS_FILE) --out-file test/data/test-data.csv
 
 ec2-%: # status, start, stop, connect, setup
-	bin/ec2_instance $*
+	@bin/ec2_instance $*
 
 help: ## Print this help.
 	@grep -E '^[0-9a-zA-Z%_-]+:.*## .*$$' $(firstword $(MAKEFILE_LIST)) | \

@@ -95,6 +95,13 @@ def scatter():
     ])
 
 
+def box():
+    return dbc.Col([
+        boxplot(),
+        vspace(),
+    ])
+
+
 def body():
     return dbc.Row([
         dbc.Col(
@@ -110,7 +117,7 @@ def body():
             **SCATTER_SECTION_LAYOUT,
         ),
         dbc.Col(
-            boxplot(),
+            box(),
             **BOXPLOT_SECTION_LAYOUT,
         ),
     ],

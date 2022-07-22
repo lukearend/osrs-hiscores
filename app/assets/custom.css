@@ -9,15 +9,6 @@ body {
     font-size: x-large;
 }
 
-@media screen and (min-width: 991px) { /* `lg` breakpoint */
-    .body-container {
-        display: flex;
-        flex-wrap: wrap;
-        flex-direction: column;
-        height: 800px;
-    }
-}
-
 .info-text {
     font-size: x-large;
 }
@@ -91,3 +82,11 @@ body {
     font-size: large;
 }
 
+@media screen and (min-width: 991px) { /* `lg` breakpoint */
+    .body-container {
+        display: flex;
+        flex-wrap: wrap;
+        flex-direction: column;
+        height: 35;
+    }
+}

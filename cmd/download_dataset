@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-@source env/bin/activate && \
-bin/download_s3 --s3-url $(player_stats_s3) --local-file $(PLAYER_STATS_FILE)
-bin/download_s3 --s3-url $(cluster_ids_s3) --local-file $(CLUSTER_IDS_FILE)
-bin/download_s3 --s3-url $(cluster_centroids_s3) --local-file
+ROOT_DIR="$(cd "$(dirname "$0")" && pwd)/.."
+cd "$ROOT_DIR" && source env/bin/activate
+bin/download_s3.py s3://osrshiscores/player-stats.pkl "$PLAYER_STATS_FILE"
+bin/download_s3.py s3://osrshiscores/player-clusterids.pkl "$CLUSTER_IDS_FILE"
+bin/download_s3.py s3://osrshiscores/cluster-centroids.pkl "$CLUSTER_CENTROIDS_FILE"

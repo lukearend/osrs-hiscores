@@ -104,7 +104,7 @@ if __name__ == '__main__':
     last_rank = get_top_rank(args.out_file)
     if last_rank and last_rank >= args.start_rank:
         args.start_rank = last_rank + 1
-        logprint(f"found an existing record at rank {last_rank},"
+        logprint(f"found an existing record at rank {last_rank}, "
                  f"continuing from {args.start_rank}", level='info')
 
     try:

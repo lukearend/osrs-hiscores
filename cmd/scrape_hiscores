@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+# Usage: ./scrape_hiscores OUT_FILE
+
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)/.."
 
 cd $ROOT_DIR && bin/reset_vpn &&

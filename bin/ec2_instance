@@ -15,6 +15,6 @@ elif [ "$1" == 'connect' ]; then # connect to instance through SSH
 elif [ "$1" == 'setup' ]; then # copy setup script up to instance
     scp bin/ec2_setup "ec2-user@$ipaddr:/home/ec2-user/"
 else
-    echo "usage: ./ec2_instance [status|start|stop|connect|setup]"
+    echo "usage: ./ec2_instance status|start|stop|connect|setup"
     exit 1
 fi
