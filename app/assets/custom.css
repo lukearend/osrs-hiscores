@@ -82,6 +82,6 @@ body {
         display: flex;
         flex-wrap: wrap;
         flex-direction: column;
-        height: 38em;
+        height: 38em; /* supports up to three lines of blobs before layout fails */
     }
 }
