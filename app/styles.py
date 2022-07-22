@@ -33,9 +33,9 @@ BOXPLOT_AXIS_FONTSIZE = 20
 BOXPLOT_BG_COLOR = dark_gray
 BOXPLOT_PAPER_COLOR = BG_COLOR
 
-DROPDOWN_LABEL_WIDTHS = dict(xs=12, xl='auto')
-DROPDOWN_WIDTHS = dict(xs=4, xl='auto')
-LOOKUP_SECTION_LAYOUT = dict(xs=dict(order=1, size=12), xl=dict(order=1, size=6))
-TABLE_SECTION_LAYOUT = dict(xs=dict(order=2, size=12), xl=dict(order=2, size=6))
-SCATTER_SECTION_LAYOUT = dict(xs=dict(order=3, size=12), xl=dict(order=4, size=6))
-BOXPLOT_SECTION_LAYOUT = dict(xs=dict(order=4, size=12), xl=dict(order=3, size=6))
+DROPDOWN_LABEL_WIDTHS = dict(xs=12, lg='auto')
+DROPDOWN_WIDTHS = dict(xs=4, lg='auto')
+LOOKUP_SECTION_LAYOUT = dict(xs=dict(order=1, size=12), lg=dict(order=1, size=5))
+TABLE_SECTION_LAYOUT = dict(xs=dict(order=2, size=12), lg=dict(order=2, size=5))
+SCATTER_SECTION_LAYOUT = dict(xs=dict(order=3, size=12), lg=dict(order=4, size=7))
+BOXPLOT_SECTION_LAYOUT = dict(xs=dict(order=4, size=12), lg=dict(order=3, size=5))

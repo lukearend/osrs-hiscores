@@ -9,7 +9,7 @@ from dash import State, Input, Output, html, callback_context, no_update
 
 from app import app, appdata, styles
 from app.helpers import get_trigger
-from app.layout import DROPDOWN_LABEL_WIDTHS
+from app.styles import DROPDOWN_LABEL_WIDTHS
 
 
 def generic_layout(title, dropdown):
