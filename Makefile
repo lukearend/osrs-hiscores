@@ -47,7 +47,7 @@ run-app: ## Run main application locally.
 ## ---- Finalization ----
 
 push-app-data: ## Upload application data to production.
-	@cmd/push_app_data
+	@bin/push_app_data
 
 deploy-dev: ## Deploy app to development staging area.
 	git push staging development:master
@@ -56,10 +56,10 @@ deploy-prod: ## Deploy app to production.
 	git push heroku master:master
 
 export-csv: ## Export dataset files from .pkl to CSV format.
-	@source env/bin/activate && cmd/export_dataset_csv.py
+	@source env/bin/activate && bin/export_dataset_csv.py
 
 publish-dataset: ## Publish dataset CSV files to Google Drive.
-	@cmd/publish_dataset
+	@bin/publish_dataset
 
 ## ---- Data processing ----
 
@@ -72,7 +72,7 @@ dim-reduce-clusters: $(CLUSTER_XYZ_FILE)
 .SECONDARY: $(SCRAPE_OUT_FILE) # Don't run scraping if player stats already exists.
 
 $(SCRAPE_OUT_FILE):
-	cmd/scrape_hiscores $@
+	bin/scrape_hiscores $@
 
 $(PLAYER_STATS_FILE):
 	source env/bin/activate && scripts/clean_raw_data.py \
@@ -106,8 +106,8 @@ populate-app-db:
 
 ## ---- Other ----
 
-download-dataset:
-	@source env/bin/activate && cmd/download_dataset
+download-dataset:  ## Download and unpack pre-processed dataset from S3 bucket.
+	@source env/bin/activate && bin/download_dataset
 
 build-test-data:
 	source env/bin/activate && bin/build_test_data.py \

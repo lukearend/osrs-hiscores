@@ -1,18 +1,24 @@
 osrs-hiscores
 =============
 
-A quantitative analysis of the OSRS hiscores, complete with open-source dataset and code.
+A quantitative analysis of the Old School Runescape hiscores.
 
-This repository is accompanied by a few important data files:
+This repository contributes the following:
 
-1. `player-stats.csv`: Skill levels in all 23 skills for the top 2 million OSRS accounts (163 MB).
-2. `cluster-centroids.csv`: Central values for clusters that emerge from partitioning player dataset into groups based on account similarity. Each centroid is a vector of values between 1-99 in "OSRS skill" space (1 MB).
-3. `player-clusters.csv`: Cluster IDs per player for three separate clustering runs, grouping similar accounts according to (i) all skills, (ii) combat skills only and (iii) non-combat skills only (44.6 MB).
-4. `stats-raw.csv`: Rank, level, xp, clues, minigame and boss stats for the top 2 million OSRS players. This file is the raw output from the scraping process (1.1 GB).
+1. Code for web scraping the OSRS hiscores, along with the resulting dataset.
+2. Code for a machine learning pipeline which clusters the player population by account similarity.
+3. An interactive [web application](todo: link) for visualizing player results.
 
-These files are **not included in the repo** due to file size constraints, and can be downloaded separately from the following public Google Drive folder: <https://drive.google.com/drive/folders/***REMOVED***?usp=sharing>
+The dataset consists of the following files:
 
-Player stats were scraped from the [official OSRS hiscores](https://secure.runescape.com/m=hiscore_oldschool/overall) [TODO: between 00:00 and 18:00 CST on Dec 28, 2021].
+1. `player-stats.csv`: Skill levels in all 23 skills for the top 2 million OSRS accounts.
+2. `cluster-centroids.csv`: Central values for clusters that emerge from partitioning player dataset into groups based on account similarity. Each centroid is a vector of values between 1-99 in "OSRS skill" space.
+3. `player-clusters.csv`: Cluster IDs per player for three separate clustering runs, grouping similar accounts by looking at (i) all skills, (ii) combat skills only and (iii) non-combat skills only.
+4. `player-stats-raw.csv`: Rank, level, xp, clues, minigame and boss stats for the top 2 million OSRS players. This file is the raw output from the scraping process (1.6 GB).
+
+These files are **not checked in to the repo** due to file size constraints. They can be downloaded separately from Google Drive: <https://drive.google.com/drive/folders/***REMOVED***?usp=sharing>
+
+Player stats were downloaded from the [official OSRS hiscores](https://secure.runescape.com/m=hiscore_oldschool/overall) over a 24-hour period on July 21, 2022.
 
 Project organization
 --------------------
@@ -23,6 +29,7 @@ Project organization
     │
     ├── assets           <- Assets used by Dash application.           
     ├── bin              <- Utility executables.
+    ├── cmd              <- Makefile command scripts.
     │
     ├── data
     │   ├── final        <- The final, canonical data set.
@@ -63,52 +70,62 @@ At a high level, this repository implements two things:
 
 2. A [Dash](https://plotly.com/dash/) application for visualizing the results.
 
-The stages of the data pipeline are driven by a [Makefile](https://opensource.com/article/18/8/what-how-makefile) with top-level `make` targets for each data processing stage:
+The stages of the data pipeline are driven by a [Makefile](https://opensource.com/article/18/8/what-how-makefile) with top-level `make` targets for each processing stage:
 
 1. `make init`: set up project environment and install dependencies.
-2. `make scrape`: scrape data from the official OSRS hiscores. The scraping process takes about 12 hours.
-3. `make clean`: transform raw output from the scraping process into a cleaned data set.
-4. `make cluster`: cluster players into groups of similar accounts according to their stats. The clustering algorithm used is [k-means](https://en.wikipedia.org/wiki/K-means_clustering), implemented by the [faiss](https://github.com/facebookresearch/faiss) library. Running the clustering process for 2 million players and 2000 clusters takes about 2.5 hours on a 2021 M1 Macbook Pro.
-5. `make dimreduce`: map cluster centroids from high-dimensional space to 3D for visualization purposes. Uses [UMAP](https://umap-learn.readthedocs.io/en/latest/index.html#) for dimensionality reduction.
-6. `make quartiles`: Compute quartiles for each cluster based on the player population it contains.
-7. `make appdata`: build application data and database from analytic results. By default, this target will launch a [MongoDB](https://www.mongodb.com/) instance inside a [Docker](https://www.docker.com/) container at the URL `localhost:27017`. If the environment variable `OSRS_MONGO_URI` is set, the Mongo instance will run at that URL instead.
+2. `make scrape`: scrape data from the official OSRS hiscores and transform into a cleaned dataset.
+3. `make cluster`: cluster players into groups of similar accounts according to their stats. Uses [k-means](https://en.wikipedia.org/wiki/K-means_clustering) as the clustering algorithm, implemented by the [faiss](https://github.com/facebookresearch/faiss) library.
+4. `make postprocess`: project the cluster centroids from high-dimensional space to 3D for visualization purposes ([UMAP](https://umap-learn.readthedocs.io/en/latest/index.html#) is the algorithm used for dimensionality reduction). Compute quartiles for each cluster based on the player population it contains.
+5. `make build-app`: build application data and database using all previous analytic results. This target will launch a [MongoDB](https://www.mongodb.com/) instance inside a [Docker](https://www.docker.com/) container at the URL `localhost:27017` (by default).
 
-Steps 2-4 can be skipped by simply running `make download`, which fetches the scraped data and clustering results from an S3 bucket.
+Steps 2 and 3 can (and should) be skipped by simply running `make download-dataset`, which fetches the scraped data and clustering results from an S3 bucket.
 
-All steps can be run in one shot via `make build` (which starts from pre-downloaded data) or `make all` (which actually scrapes and clusters the data from scratch).
+To launch the application, run `make run-app` and visit the URL `localhost:8050` in a web browser.
 
-To launch the application, run `make app` and visit the URL `localhost:8050` in a web browser. The application expects to find the Mongo instance running at `localhost:27017` (or the environment variable `OSRS_MONGO_URI`, if set).
+The final application can be built and run in one shot via `make app`, which uses pre-downloaded data rather than scraping and clustering the data from scratch. The target `make all` builds all results from scratch, including scraping and clustering the hiscores data. When attempting to scrape hiscores data, note that high usage of the API may result in your IP being blocked. **Please be sparing and respectful of Jagex's server resources in your usage of this code**.
 
-Run `make help` to see a list of all top-level targets.
+Run `make help` to see more top-level targets.
+
+Configuration
+-------------
+
+A number of environment variables are used to configure the application.
+
+* `OSRS_APPDATA_URI`: path to application data .pkl file (S3 or local)
+* `OSRS_MONGO_URI`: URL at which MongoDB instance is running
+* `OSRS_MONGO_COLL`: store/retrieve player data from collection with this name
+
+There are also environment variables defining filenames at each stage of the data pipeline.
+
+The default environment is defined in `.env.default` and imported whenever a `make` target is run. If a file called `.env` exists, any settings there will override those in `.env.default`.
 
 Dependencies
 ------------
 
-* Python 3.7+ (download [here](https://www.python.org/downloads/))
+* Python 3.9+ (download [here](https://www.python.org/downloads/))
 * Docker (download [here](https://docs.docker.com/get-docker/))
 
 Methods
 -------
 
 * Data were scraped for the top 2 million players on the OSRS hiscores.
-* Account data was deduplicated, sorted and subsampled to take skill level columns only.
+* Account data were deduplicated, sorted and subsampled to take skill level columns only.
 * Accounts were segmented into 2000 clusters based on similarity of skills for three different splits:
   * 'all': all 23 OSRS skills
   * 'cb': the 7 combat skills
   * 'noncb': the 16 non-combat skills
-* For each split of the dataset, clustering resulted in a cluster ID for each player and a set of cluster centroids.
+* For each split of the dataset, clustering resulted in a set of cluster centroids and a cluster ID for each player.
 * Cluster centroids were projected from their ambient dimensionality to 3D space.
-* Quartiles (0, 25, 50, 75 and 100th percentiles) in each skill were computed based on the accounts in each cluster.
-* The results are assembled into application data. Player stats are written to a database to provide stat and cluster lookups. The cluster centroids are visualized in a 3D scatterplot. Quartile ranges for individual clusters are presented in a boxplot. Cluster stats and player stats can be compared side-by-side in two tables.
+* Quartiles (the 0, 25, 50, 75 and 100th percentiles) in each skill were computed by aggregating the accounts in each cluster.
+* The clustering results were assembled into a serialized data file. Player stats were written to a database to provide quick result lookups. These two resources are used by the final application.
 
-Other notes
------------
+Project ideas
+-------------
 
-Free ideas for future work:
+Here are some ideas for data science projects using the dataset. I think any of these would be a nice extension to the results here.
 
-* Run the same analysis on the Ironman hiscores.
-* Attempt to identify clusters of bot accounts within the dataset.
-* Try to predict an unknown skill given all other skills for an account.
-* Perform hierarchical clustering to identify super-clusters, or to explore fine-grained structure within clusters.
-
-If scraping hiscores data for a prolonged period of time, you may get blocked due to the high volume of requests. For this reason it is recommended that you use a small number of workers if scraping 25000+ records. There is an option to proxy requests through a VPN using the flag `--vpn`, but this requires access to an OpenVPN-based service and some advanced setup. Please respectful of Jagex's server resources in your usage of this code.
+* Run the same analysis on the OSRS Ironman hiscores.
+* Create a method for identifying bot clusters within the dataset.
+* See how well you can predict one unknown skill given all other skills for an account. Is it easier for some skills than others, and can this be explained in terms of the game meta?
+* Perform hierarchical clustering to identify super-clusters or search for fine-grained structure within clusters. Annotating these clusters would be a step toward a true taxonomy of OSRS accounts.
+* Create a reverse lookup tool which, given a username, finds other accounts with similar stats.
