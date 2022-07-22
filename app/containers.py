@@ -13,12 +13,12 @@ from app.components.scatterplot import scatterplot
 from app.components.space import vspace, vspace_if_nonempty
 from app.components.table import player_stats_table, cluster_stats_table
 from app.components.texts import page_title, info_blurb, github_link, download_link, support_msg
-from app.layout import (
+from app.styles import (
     DROPDOWN_WIDTHS,
     LOOKUP_SECTION_LAYOUT,
     TABLE_SECTION_LAYOUT,
     BOXPLOT_SECTION_LAYOUT,
-    SCATTER_SECTION_LAYOUT,
+    SCATTER_SECTION_LAYOUT
 )
 
 
@@ -26,7 +26,7 @@ def header():
     return dbc.Col([
         page_title(),
         info_blurb(),
-        vspace(),
+        vspace()
     ])
 
 
@@ -36,7 +36,7 @@ def footer():
         download_link(),
         html.Hr(),
         support_msg(),
-        vspace(),
+        vspace()
     ])
 
 
@@ -48,7 +48,7 @@ def lookup():
         vspace_if_nonempty(id='current-players'),
         focused_player(),
         vspace_if_nonempty(id='focused-player'),
-        vspace(),
+        vspace()
     ])
 
 
@@ -56,9 +56,9 @@ def tables():
     return dbc.Col([
         dbc.Row([
             player_stats_table(),
-            cluster_stats_table(),
+            cluster_stats_table()
         ]),
-        vspace(),
+        vspace()
     ])
 
 
@@ -66,24 +66,12 @@ def controls():
     return dbc.Row(
         [
             dbc.Row([
-                dbc.Col(
-                    split_menu(),
-                    **DROPDOWN_WIDTHS,
-                ),
-                dbc.Col(
-                    point_size_menu(),
-                    **DROPDOWN_WIDTHS,
-                ),
-                dbc.Col(
-                    color_by_menu(),
-                    **DROPDOWN_WIDTHS,
-                ),
+                dbc.Col(split_menu(), **DROPDOWN_WIDTHS),
+                dbc.Col(point_size_menu(), **DROPDOWN_WIDTHS),
+                dbc.Col(color_by_menu(), **DROPDOWN_WIDTHS)
             ]),
-            dbc.Col(
-                level_range_slider(),
-                width=12,
-            ),
-        ],
+            dbc.Col(level_range_slider(), width=12)
+        ]
     )
 
 
@@ -91,35 +79,23 @@ def scatter():
     return dbc.Col([
         controls(),
         scatterplot(),
-        vspace(),
+        vspace()
     ])
 
 
 def box():
     return dbc.Col([
         boxplot(),
-        vspace(),
+        vspace()
     ])
 
 
 def body():
     return dbc.Row([
-        dbc.Col(
-            lookup(),
-            **LOOKUP_SECTION_LAYOUT,
-        ),
-        dbc.Col(
-            tables(),
-            **TABLE_SECTION_LAYOUT,
-        ),
-        dbc.Col(
-            scatter(),
-            **SCATTER_SECTION_LAYOUT,
-        ),
-        dbc.Col(
-            box(),
-            **BOXPLOT_SECTION_LAYOUT,
-        ),
+        dbc.Col(lookup(), **LOOKUP_SECTION_LAYOUT),
+        dbc.Col(tables(), **TABLE_SECTION_LAYOUT),
+        dbc.Col(scatter(), **SCATTER_SECTION_LAYOUT),
+        dbc.Col(box(), **BOXPLOT_SECTION_LAYOUT)
     ],
-    className='body-container',
+    className='body-container'
 )

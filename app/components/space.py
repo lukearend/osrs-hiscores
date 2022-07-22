@@ -20,7 +20,7 @@ def vspace_if_nonempty(id: str) -> dbc.Col:
 
     @app.callback(
         Output(container_id, 'children'),
-        Input(id, 'data'),
+        Input(id, 'data')
     )
     def toggle_break(value: Any):
         if not value:

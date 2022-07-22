@@ -15,9 +15,7 @@ def scatterplot():
         id='scatterplot',
         className='scatterplot-graph',
         clear_on_unhover=True,
-        style={
-            'height': styles.SCATTERPLOT_HEIGHT,
-        }
+        style={'height': styles.SCATTERPLOT_HEIGHT}
     )
 
 
@@ -44,7 +42,7 @@ def cluster_trace(data: Dict[str, Any], ptsize: int) -> go.Scatter3d:
     sizefactor = {
         'small': 1,
         'medium': 2,
-        'large': 3,
+        'large': 3
     }[ptsize]
     ptsizes = sizefactor * ptsize_fn(data['cluster_nplayers'])
     ptcolors = np.array(data['cluster_medians'])
@@ -71,10 +69,10 @@ def cluster_trace(data: Dict[str, Any], ptsize: int) -> go.Scatter3d:
             color=ptcolors[show_inds],
             opacity=styles.SCATTERPLOT_PTS_OPACITY,
             colorscale='viridis',
-            line=dict(width=0),  # no lines between markers
+            line=dict(width=0)  # no lines between markers
         ),
         hovertemplate=hover_template(),
-        customdata=[d for i, d in enumerate(hoverdata) if i in show_inds],
+        customdata=[d for i, d in enumerate(hoverdata) if i in show_inds]
     )
 
 
@@ -104,12 +102,12 @@ def halo_traces(data: Dict[str, Any]) -> List[go.Scatter3d]:
             marker=dict(
                 size=ptsizes,
                 opacity=0.8 * (1 / nshades),
-                color='white',
+                color='white'
             ),
             hovertemplate=hovertemplate,
             customdata=hoverdata,
-            hoverlabel = dict(
-                bgcolor=data['player_colors'][i],
+            hoverlabel=dict(
+                bgcolor=data['player_colors'][i]
             )
         )
         traces.append(t)
@@ -122,9 +120,7 @@ def annotations(data: Dict[str, Any]) -> List[Dict[str, Any]]:
     for i, uname in enumerate(data['player_usernames']):
         clusterid = data['player_clusterids'][i]
         x, y, z = data['cluster_xyz'][clusterid]
-        font = dict(
-            color='white',
-        )
+        font = dict(color='white')
         annotation = dict(
             text=uname,
             x=x,
@@ -134,7 +130,7 @@ def annotations(data: Dict[str, Any]) -> List[Dict[str, Any]]:
             xanchor='center',
             xshift=0,
             yshift=styles.SCATTERPLOT_HALO_SIZE / 2,
-            showarrow=False,
+            showarrow=False
         )
         out_list.append(annotation)
     return out_list
@@ -143,7 +139,7 @@ def annotations(data: Dict[str, Any]) -> List[Dict[str, Any]]:
 @app.callback(
     Output('scatterplot', 'figure'),
     Input('scatterplot-data', 'data'),
-    Input('point-size', 'data'),
+    Input('point-size', 'data')
 )
 def redraw_scatterplot(data: Dict[str, Any], ptsize: int) -> go.Figure:
     if not data:
@@ -156,7 +152,7 @@ def redraw_scatterplot(data: Dict[str, Any], ptsize: int) -> go.Figure:
     axcolor = {
         'x': styles.SCATTERPLOT_XAXIS_COLOR,
         'y': styles.SCATTERPLOT_YAXIS_COLOR,
-        'z': styles.SCATTERPLOT_ZAXIS_COLOR,
+        'z': styles.SCATTERPLOT_ZAXIS_COLOR
     }
     axes = {}
     for coord in ['x', 'y', 'z']:
@@ -167,7 +163,7 @@ def redraw_scatterplot(data: Dict[str, Any], ptsize: int) -> go.Figure:
             zeroline=False,
             showgrid=False,
             showticklabels=False,
-            backgroundcolor=axcolor[coord],
+            backgroundcolor=axcolor[coord]
         )
 
     margin = dict(t=0)  # t, b, l, r
@@ -178,7 +174,7 @@ def redraw_scatterplot(data: Dict[str, Any], ptsize: int) -> go.Figure:
         aspectmode='cube',
         dragmode='orbit',  # use orbital (not turntable) 3d rotation
         bgcolor=styles.SCATTERPLOT_BG_COLOR,
-        annotations=player_unames,
+        annotations=player_unames
     )
 
     fig = go.Figure()
@@ -192,6 +188,6 @@ def redraw_scatterplot(data: Dict[str, Any], ptsize: int) -> go.Figure:
         uirevision='constant',  # don't reset axes when updating plot
         showlegend=False,
         scene=scene,
-        margin=margin,
+        margin=margin
     )
     return fig

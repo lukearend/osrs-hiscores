@@ -14,24 +14,19 @@ def level_range_slider():
         id='level-range-slider',
         step=1,
         allowCross=False,
-        tooltip=dict(
-            placement='bottom'
-        ),
+        tooltip=dict(placement='bottom')
     )
-    label = html.Strong(
-        "Show levels:",
-        className='controls-text',
-    )
+    label = html.Strong("Show levels:", className='controls-text')
     return dbc.Row(
         [
             dbc.Col(label, width='auto'),
             dbc.Col([
                 vspace(),  # vertically aligns slider bar with label text
-                slider,
-            ]),
+                slider
+            ])
         ],
         align='center',
-        className='g-0',
+        className='g-0'
     )
 
 @app.callback(
@@ -39,7 +34,7 @@ def level_range_slider():
     Output('level-range-slider', 'max'),
     Output('level-range-slider', 'value'),
     Output('level-range-slider', 'marks'),
-    Input('color-by-skill', 'data'),
+    Input('color-by-skill', 'data')
 )
 def update_range(skill: str) -> dbc.Col:
     if skill == 'total':

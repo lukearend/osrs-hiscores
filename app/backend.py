@@ -9,7 +9,6 @@ from app import app, appdata, styles
 from app.helpers import get_trigger
 from src.common import osrs_skills
 
-
 STORE_VARS = [
     dcc.Store('current-players', data=[]),     # List[Dict[str, Any]]
     dcc.Store('queried-player'),               # Dict[str, Any]
@@ -19,16 +18,15 @@ STORE_VARS = [
     dcc.Store('current-clusterid'),            # int
     dcc.Store('current-split', data='all'),    # str
     dcc.Store('point-size', data='small'),     # str
-    dcc.Store('color-by-skill', data='total'), # str (WIP)
+    dcc.Store('color-by-skill', data='total'), # str
     dcc.Store('cluster-table-data:title'),     # int
     dcc.Store('player-table-data:title'),      # str
     dcc.Store('cluster-table-data:stats'),     # Dict[str, int]
     dcc.Store('player-table-data:stats'),      # Dict[str, int]
     dcc.Store('scatterplot-data'),             # Dict[str, Any]
     dcc.Store('boxplot-data'),                 # Dict[str, Any]
-    dcc.Store('hovered-cluster'),              # int
+    dcc.Store('hovered-cluster')               # int
 ]
-
 
 # The current-players list is a core data structure.
 #
@@ -53,7 +51,6 @@ STORE_VARS = [
 #     },
 #     ...,
 # ]
-
 
 def add_player(player_list, queried_player: Dict[str, Any]) -> List[Dict[str, Any]]:
     player_list = del_player(player_list, queried_player['username'])
@@ -95,48 +92,12 @@ def new_color(current_colors, color_seq=None) -> str:
             return c
 
 
-def store(show_inds: List[int] = None):
-    if show_inds is None:
-        return dbc.Col([v for v in STORE_VARS])
-
-    show_ids = [v.id for i, v in STORE_VARS if i in show_inds]
-    containers = []
-    for var_id in show_ids:
-        container_id = f'{var_id}:container'
-
-        @app.callback(
-            Output(container_id, 'children'),
-            Input(var_id, 'data'),
-        )
-        def update_container(newval: Any) -> str:
-            return str(newval)
-
-        c = dbc.Row(
-            [
-                dbc.Col(var_id + ': ', width='auto'),
-                dbc.Col(id=container_id),
-            ],
-            className='g-2',
-        )
-        containers.append(c)
-
-    return dbc.Col([
-        dbc.Col([v for v in STORE_VARS]),
-        dbc.Row([
-            dbc.Col(
-                c,
-                width='auto',
-            ) for c in containers
-        ])
-    ])
-
-
 @app.callback(
     Output('current-players', 'data'),
     Input('closed-blob', 'data'),
     Input('queried-player', 'data'),
     State('current-players', 'data'),
-    prevent_initial_call=True,
+    prevent_initial_call=True
 )
 def update_player_list(closed_uname: str,
                        queried_player: Dict[str, Any],
@@ -156,7 +117,7 @@ def update_player_list(closed_uname: str,
     Input('closed-blob', 'data'),
     Input('queried-player', 'data'),
     State('focused-player', 'data'),
-    prevent_initial_call=True,
+    prevent_initial_call=True
 )
 def updated_focused_player(clicked_uname: str,
                            closed_uname: str,
@@ -179,7 +140,7 @@ def updated_focused_player(clicked_uname: str,
     Input('current-split', 'data'),
     Input('hovered-cluster', 'data'),
     State('current-players', 'data'),
-    prevent_initial_call=True,
+    prevent_initial_call=True
 )
 def update_current_cluster(uname: str,
                            split: str,
@@ -205,7 +166,7 @@ def update_current_cluster(uname: str,
     Input('current-split', 'data'),
     Input('color-by-skill', 'data'),
     Input('level-range-slider', 'drag_value'),
-    prevent_initial_call=True,
+    prevent_initial_call=True
 )
 def update_scatterplot_data(player_list: List[Dict[str, Any]],
                             split: str,
@@ -251,11 +212,11 @@ def update_scatterplot_data(player_list: List[Dict[str, Any]],
         'axis_limits': {
             'x': (xmin, xmax),
             'y': (ymin, ymax),
-            'z': (zmin, zmax),
+            'z': (zmin, zmax)
         },
         'player_usernames': player_usernames,
         'player_clusterids': player_clusterids,
-        'player_colors': player_colors,
+        'player_colors': player_colors
     }
 
 
@@ -263,7 +224,7 @@ def update_scatterplot_data(player_list: List[Dict[str, Any]],
     Output('boxplot-data', 'data'),
     Input('current-clusterid', 'data'),
     Input('current-split', 'data'),
-    prevent_initial_call=True,
+    prevent_initial_call=True
 )
 def update_boxplot_data(clusterid: int, split: str) -> Dict[str, Any]:
     if clusterid is None:
@@ -292,7 +253,7 @@ def update_boxplot_data(clusterid: int, split: str) -> Dict[str, Any]:
     Output('cluster-table-data:title', 'data'),
     Output('cluster-table-data:stats', 'data'),
     Input('current-clusterid', 'data'),
-    State('current-split', 'data'),
+    State('current-split', 'data')
 )
 def update_cluster_table_data(clusterid, split) -> Tuple[int, Dict[str, int]]:
     if clusterid is None:
@@ -321,7 +282,7 @@ def update_cluster_table_data(clusterid, split) -> Tuple[int, Dict[str, int]]:
     Output('player-table-data:title', 'data'),
     Output('player-table-data:stats', 'data'),
     Input('focused-player', 'data'),
-    State('current-players', 'data'),
+    State('current-players', 'data')
 )
 def update_player_table_data(uname: str,
                              current_players: List[Dict[str, Any]]) -> Tuple[str, Dict[str, int]]:
@@ -346,7 +307,7 @@ def update_player_table_data(uname: str,
 
 @app.callback(
     Output('hovered-cluster', 'data'),
-    Input('scatterplot', 'hoverData'),
+    Input('scatterplot', 'hoverData')
 )
 def update_hovered_cluster(hoverdata):
     if not hoverdata:

@@ -4,17 +4,14 @@ from app import app, appdata
 
 
 def focused_player():
-    return html.Div(
-        id='focused-player-txt',
-        className='controls-text',
-    )
+    return html.Div(id='focused-player-txt', className='controls-text')
 
 
 @app.callback(
     Output('focused-player-txt', 'children'),
     Input('focused-player', 'data'),
     Input('current-split', 'data'),
-    State('current-players', 'data'),
+    State('current-players', 'data')
 )
 def update_focused_player_txt(uname: str, split: str,
                               player_list: List[Dict[str, Any]]) -> str:

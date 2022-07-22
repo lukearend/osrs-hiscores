@@ -11,10 +11,7 @@ from app.helpers import load_icon_b64, load_table_layout
 
 
 def stats_table(id: str, store_id: str, title_fmt_fn: Callable):
-    title = html.Div(
-        id=f'{id}:title',
-        className='label-text',
-    )
+    title = html.Div(id=f'{id}:title', className='label-text')
 
     table_skills = load_table_layout()
     elems = []
@@ -24,13 +21,11 @@ def stats_table(id: str, store_id: str, title_fmt_fn: Callable):
             icon = html.Img(
                 src='data:image/png;base64,' + load_icon_b64(skill),
                 title=skill.capitalize(),
-                className='table-icon img-center',
+                className='table-icon img-center'
             )
             stat_container = html.Div(
                 id=f'{id}:{skill}',
-                style={
-                    'white-space': 'pre',  # prevents collapsing whitespace
-                }
+                style={'white-space': 'pre'}  # prevents collapsing whitespace
             )
             elem = (icon, stat_container)
             row.append(elem)
@@ -40,7 +35,7 @@ def stats_table(id: str, store_id: str, title_fmt_fn: Callable):
     # Table title is produced by applying format function to the title data.
     @app.callback(
         Output(f'{id}:title', 'children'),
-        Input(f'{store_id}:title', 'data'),
+        Input(f'{store_id}:title', 'data')
     )
     def update_title(title_data: Any) -> str:
         return title_fmt_fn(title_data)
@@ -49,7 +44,7 @@ def stats_table(id: str, store_id: str, title_fmt_fn: Callable):
     @app.callback(
         *[Output(f'{id}:{skill}', 'children') for skill in skills],
         Input(f'{store_id}:stats', 'data'),
-        prevent_initial_call=True,
+        prevent_initial_call=True
     )
     def update_stats(stats_dict: Dict[str, Any]) -> str:
         if stats_dict is None:
@@ -71,37 +66,20 @@ def stats_table(id: str, store_id: str, title_fmt_fn: Callable):
         col_elems = []
         for i in range(8):
             icon, stat = elems[i][j]
-            icon_col = dbc.Col(
-                icon,
-                width=4,
-            )
-            stat_col = dbc.Col(
-                stat,
-                width=8,
-            )
-            icon_stat = dbc.Row(
-                [icon_col, stat_col],
-            )
+            icon_col = dbc.Col(icon, width=4)
+            stat_col = dbc.Col(stat, width=8)
+            icon_stat = dbc.Row([icon_col, stat_col])
             col_elems.append(icon_stat)
 
-        col = dbc.Col(
-            col_elems,
-        )
+        col = dbc.Col(col_elems)
         table_cols.append(col)
 
     table = dbc.Row(
         table_cols,
-        style={
-            'background-color': styles.TABLE_BG_COLOR,
-        },
-        className='stats-table g-1',
+        style={'background-color': styles.TABLE_BG_COLOR},
+        className='stats-table g-1'
     )
-    return dbc.Col(
-        [
-            title,
-            table,
-        ],
-    )
+    return dbc.Col([title, table])
 
 
 def cluster_stats_table():
@@ -114,7 +92,7 @@ def cluster_stats_table():
     return stats_table(
         id='cluster-table',
         store_id='cluster-table-data',
-        title_fmt_fn=title_fn,
+        title_fmt_fn=title_fn
     )
 
 
@@ -128,5 +106,5 @@ def player_stats_table():
     return stats_table(
         id='player-table',
         store_id='player-table-data',
-        title_fmt_fn=title_fn,
+        title_fmt_fn=title_fn
     )

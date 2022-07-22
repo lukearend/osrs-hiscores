@@ -15,9 +15,11 @@ def root_layout():
         vspace(),
         footer(),
         vspace(),
-        store(),
+        store()
     ]
-    return dbc.Container([
-        dbc.Row(dbc.Col(obj))
-        for obj in root
-    ])
+    return dbc.Container(
+        [
+            dbc.Row(dbc.Col(obj)) for obj in root
+        ],
+        fluid=True
+    )

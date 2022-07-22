@@ -17,9 +17,10 @@ def generic_layout(title, dropdown):
     return dbc.Col(dbc.Row(
         [
             dbc.Col(label, **DROPDOWN_LABEL_WIDTHS),
-            dbc.Col(dropdown),
+            dbc.Col(dropdown)
         ],
         align='center',
+        className='gx-3'
     ))
 
 
@@ -47,18 +48,14 @@ def generic_dropdown(id: str, store_var: str, label_var: str,
 
     @app.callback(
         Output(id, 'label'),
-        Input(label_var, 'data'),
+        Input(label_var, 'data')
     )
     def update_label(opt: str) -> str:
         if opt not in options:
             return no_update
         return options[opt]
 
-    return dbc.DropdownMenu(
-        btns,
-        id=id,
-        menu_variant=styles.MENU_VARIANT,
-    )
+    return dbc.DropdownMenu(btns, id=id, menu_variant=styles.MENU_VARIANT)
 
 
 def split_menu():
@@ -67,7 +64,7 @@ def split_menu():
         opt_label = {
             'all': "all skills",
             'cb': "combat skills",
-            'noncb': "non-combat skills",
+            'noncb': "non-combat skills"
         }[split]
         opts[split] = opt_label
 
@@ -75,7 +72,7 @@ def split_menu():
         id='current-split:dropdown',
         store_var='current-split',
         label_var='current-split',
-        options=opts,
+        options=opts
     )
     return generic_layout("Cluster by:", dropdown)
 
@@ -86,7 +83,7 @@ def point_size_menu():
         id='point-size:dropdown',
         store_var='point-size',
         label_var='point-size',
-        options=collections.OrderedDict(zip(opts, opts)),
+        options=collections.OrderedDict(zip(opts, opts))
     )
     return generic_layout("Point size:", dropdown)
 
@@ -103,7 +100,7 @@ def color_by_menu():
             id=f'color-by-skill:{split}:dropdown',
             store_var=f'color-by-skill:{split}',
             label_var='color-by-skill',
-            options= collections.OrderedDict(zip(skills, skills)),
+            options= collections.OrderedDict(zip(skills, skills))
         )
         var = dcc.Store(f'color-by-skill:{split}')
         menus.append(menu)
@@ -114,7 +111,7 @@ def color_by_menu():
         Output('color-by-skill', 'data'),
         *[Input(f'color-by-skill:{split}', 'data') for split in splits],
         Input('current-split', 'data'),
-        State('color-by-skill', 'data'),
+        State('color-by-skill', 'data')
     )
     def update_current_skill(*args) -> str:
         split: str = args[-2]
@@ -130,14 +127,14 @@ def color_by_menu():
     # Only the dropdown for the current split is visible.
     @app.callback(
         *[Output(f'color-by-skill:{split}:dropdown', 'style') for split in splits],
-        Input('current-split', 'data'),
+        Input('current-split', 'data')
     )
     def update_visibility(new_split) -> List[Dict[str, str]]:
         visible = [True if split == new_split else False for split in splits]
         return [{'display': 'inline' if v else 'none'} for v in visible]
 
     dropdown = dbc.Col([
-        *vars,
         dbc.Row(menus),
+        *vars
     ])
     return generic_layout("Color by:", dropdown)
