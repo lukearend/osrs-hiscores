@@ -73,7 +73,7 @@ def import_centroids_csv(file: str) -> OrderedDict[str, pd.DataFrame]:
 def export_players_csv(players_df: pd.DataFrame, file: str):
     """ Write a player stats dataset to CSV file. """
 
-    print("writing player stats to CSV...")
+    print("writing player stats...")
     with open(file, 'w') as f:
         writer = csv.writer(f)
         writer.writerow(['username', 'rank'] + list(players_df.columns))

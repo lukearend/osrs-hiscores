@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
+aws s3 cp "$APP_DATA_FILE" "$OSRS_APPDATA_URI"
 source env/bin/activate && scripts/build_app_db.py \
 --stats-file "$PLAYER_STATS_FILE" --clusterids-file "$CLUSTER_IDS_FILE" \
 --mongo-url "$OSRS_MONGO_URI" --collection "$OSRS_MONGO_COLL" && \
-aws s3 cp "$APP_DATA_FILE" "$OSRS_APPDATA_URI"

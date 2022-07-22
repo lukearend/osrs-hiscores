@@ -40,15 +40,15 @@ STORE_VARS = [
 #         'username': 'snakeylime',
 #         'color': '#636EFA',
 #         'stats': {
-#             'total': 1830,
+#             'total': 1691,
 #             'attack': 60,
 #             ...
 #             'construction': 84
 #         }
 #         'clusterids': {
-#             'all': 471,
-#             'cb': 1000,
-#             'noncb': 642,
+#             'all': 533,
+#             'cb': 1064,
+#             'noncb': 410,
 #         }
 #     },
 #     ...,

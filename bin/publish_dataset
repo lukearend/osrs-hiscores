@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 
-aws s3 cp "$PLAYER_STATS_FILE" s3://osrshiscores/player-stats.pkl
-aws s3 cp "$CLUSTER_IDS_FILE" s3://osrshiscores/player-clusterids.pkl
 aws s3 cp "$CLUSTER_CENTROIDS_FILE" s3://osrshiscores/cluster-centroids.pkl
+aws s3 cp "$CLUSTER_IDS_FILE" s3://osrshiscores/player-clusterids.pkl
+aws s3 cp "$PLAYER_STATS_FILE" s3://osrshiscores/player-stats.pkl
 
-gdrive upload "$SCRAPE_OUT_FILE" -p "$OSRS_GDRIVE_FOLDER" --name player-stats-raw.csv
-gdrive upload "$PLAYER_STATS_CSV" -p "$OSRS_GDRIVE_FOLDER" --name player-stats.csv
-gdrive upload "$CLUSTER_IDS_CSV" -p "$OSRS_GDRIVE_FOLDER" --name player-clusters.csv
 gdrive upload "$CLUSTER_CENTROIDS_CSV" -p "$OSRS_GDRIVE_FOLDER" --name cluster-centroids.csv
+gdrive upload "$CLUSTER_IDS_CSV" -p "$OSRS_GDRIVE_FOLDER" --name player-clusters.csv
+gdrive upload "$PLAYER_STATS_CSV" -p "$OSRS_GDRIVE_FOLDER" --name player-stats.csv
+gdrive upload "$SCRAPE_OUT_FILE" -p "$OSRS_GDRIVE_FOLDER" --name player-stats-raw.csv

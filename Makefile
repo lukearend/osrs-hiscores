@@ -7,7 +7,7 @@ export
 
 app: init download-dataset postprocess build-app run-app
 all: init test scrape cluster postprocess build-app run-app
-finalize: scrape cluster export-csv publish-dataset push-app-data deploy-prod
+finalize: scrape cluster export-csv publish-dataset push-app-data
 
 ## ---- Setup and test ----
 
@@ -68,39 +68,40 @@ clean-scraped-data: $(PLAYER_STATS_FILE)
 cluster-players: $(CLUSTER_IDS_FILE) $(CLUSTER_CENTROIDS_FILE)
 compute-quartiles: $(CLUSTER_QUARTILES_FILE)
 dim-reduce-clusters: $(CLUSTER_XYZ_FILE)
+build-app-data: $(APP_DATA_FILE)
 
 .SECONDARY: $(SCRAPE_OUT_FILE) # Don't run scraping if player stats already exists.
 
 $(SCRAPE_OUT_FILE):
-	bin/scrape_hiscores $@
+	@bin/scrape_hiscores $@
 
 $(PLAYER_STATS_FILE):
-	source env/bin/activate && scripts/clean_raw_data.py \
+	@source env/bin/activate && scripts/clean_raw_data.py \
 	--in-file $(SCRAPE_OUT_FILE) --out-file $@
 
 
 $(CLUSTER_IDS_FILE) $(CLUSTER_CENTROIDS_FILE):
-	source env/bin/activate && scripts/cluster_players.py \
+	@source env/bin/activate && scripts/cluster_players.py \
 	--in-file $(PLAYER_STATS_FILE) --splits-file $(SPLITS_FILE) --params-file $(PARAMS_FILE) \
 	--out-clusterids $(CLUSTER_IDS_FILE) --out-centroids $(CLUSTER_CENTROIDS_FILE) --verbose
 
 $(CLUSTER_QUARTILES_FILE):
-	source env/bin/activate && scripts/compute_quartiles.py \
+	@source env/bin/activate && scripts/compute_quartiles.py \
 	--splits-file $(SPLITS_FILE) --stats-file $(PLAYER_STATS_FILE) \
 	--clusterids-file $(CLUSTER_IDS_FILE) --out-file $@
 
 $(CLUSTER_XYZ_FILE):
-	source env/bin/activate && scripts/dim_reduce_clusters.py \
+	@source env/bin/activate && scripts/dim_reduce_clusters.py \
 	--params-file $(PARAMS_FILE) --in-file $(CLUSTER_CENTROIDS_FILE) --out-file $@
 
 $(APP_DATA_FILE):
-	source env/bin/activate && scripts/build_app_data.py \
+	@source env/bin/activate && scripts/build_app_data.py \
 	--splits-file $(SPLITS_FILE) --clusterids-file $(CLUSTER_IDS_FILE) \
 	--centroids-file $(CLUSTER_CENTROIDS_FILE) --quartiles-file $(CLUSTER_QUARTILES_FILE) \
 	--xyz-file $(CLUSTER_XYZ_FILE) --out-file $(APP_DATA_FILE)
 
 populate-app-db:
-	source env/bin/activate && bin/start_mongo && scripts/build_app_db.py \
+	@source env/bin/activate && bin/start_mongo && scripts/build_app_db.py \
 	--stats-file $(PLAYER_STATS_FILE) --clusterids-file $(CLUSTER_IDS_FILE) \
 	--mongo-url $(OSRS_MONGO_URI) --collection $(OSRS_MONGO_COLL)
 
@@ -110,7 +111,7 @@ download-dataset:  ## Download and unpack pre-processed dataset from S3 bucket.
 	@source env/bin/activate && bin/download_dataset
 
 build-test-data:
-	source env/bin/activate && bin/build_test_data.py \
+	@source env/bin/activate && bin/build_test_data.py \
 	--base-file $(PLAYER_STATS_FILE) --out-file test/data/test-data.csv
 
 ec2-%: # status, start, stop, connect, setup

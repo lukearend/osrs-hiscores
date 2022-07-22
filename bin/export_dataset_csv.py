@@ -7,10 +7,10 @@ from src.analysis.io import load_pkl, export_players_csv, export_clusterids_csv,
 
 centroids_pkl = os.environ['CLUSTER_CENTROIDS_FILE']
 centroids_csv = os.environ['CLUSTER_CENTROIDS_CSV']
-clusterids_pkl = os.environ['CLUSTER_CENTROIDS_FILE']
-clusterids_csv = os.environ['CLUSTER_CENTROIDS_CSV']
-stats_pkl = os.environ['CLUSTER_CENTROIDS_FILE']
-stats_csv = os.environ['CLUSTER_CENTROIDS_CSV']
+clusterids_pkl = os.environ['CLUSTER_IDS_FILE']
+clusterids_csv = os.environ['CLUSTER_IDS_CSV']
+stats_pkl = os.environ['PLAYER_STATS_FILE']
+stats_csv = os.environ['PLAYER_STATS_CSV']
 
 print(f"exporting cluster centroids to csv...")
 export_centroids_csv(load_pkl(centroids_pkl), centroids_csv)
