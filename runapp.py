@@ -4,10 +4,12 @@
 
 import os
 from app import app
+from app.helpers import index_html
 from app.root import root_layout
 
 app.title = "OSRS hiscores explorer"
 app.layout = root_layout()
+app.index_string = index_html()
 
 server = app.server  # used by gunicorn
 if not os.getenv('ON_HEROKU'):

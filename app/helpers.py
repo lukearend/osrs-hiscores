@@ -99,3 +99,32 @@ def get_trigger(callback_context) -> Tuple[str, Any]:
         pass
 
     return id, value
+
+
+def index_html() -> str:
+    return """ <!DOCTYPE html>
+    <html>
+        <head>
+            <!-- Global site tag (gtag.js) - Google Analytics -->
+            <script async src="https://www.googletagmanager.com/gtag/js?id=G-M17WECJWQW"></script>
+            <script>
+              window.dataLayer = window.dataLayer || [];
+              function gtag(){dataLayer.push(arguments);}
+              gtag('js', new Date());
+
+              gtag('config', 'G-M17WECJWQW');
+            </script>
+            {%metas%}
+            <title>{%title%}</title>
+            {%favicon%}
+            {%css%}
+        </head>
+        <body>
+            {%app_entry%}
+            <footer>
+                {%config%}
+                {%scripts%}
+                {%renderer%}
+            </footer>
+        </body>
+    """

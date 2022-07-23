@@ -34,31 +34,3 @@ if os.getenv('OSRS_USE_AUTH'):
     auth_coll = connect_mongo(os.environ['OSRS_MONGO_URI'], collection='auth')
     auth_pairs = {doc['username']: doc['password'] for doc in auth_coll.find()}
     dash_auth.BasicAuth(app, username_password_list=auth_pairs)
-
-# global site tag for Google Analytics 4
-app.index_string = """<!DOCTYPE html>
-<html>
-    <head>
-        <!-- Global site tag (gtag.js) - Google Analytics -->
-        <script async src="https://www.googletagmanager.com/gtag/js?id=G-M17WECJWQW"></script>
-        <script>
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-
-          gtag('config', 'G-M17WECJWQW');
-        </script>
-        {%metas%}
-        <title>{%title%}</title>
-        {%favicon%}
-        {%css%}
-    </head>
-    <body>
-        {%app_entry%}
-        <footer>
-            {%config%}
-            {%scripts%}
-            {%renderer%}
-        </footer>
-    </body>
-"""
