@@ -21,5 +21,5 @@ def root_layout():
         [
             dbc.Row(dbc.Col(obj)) for obj in root
         ],
-        fluid=True
+        # fluid=True
     )
