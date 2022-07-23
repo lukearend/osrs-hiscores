@@ -5,6 +5,7 @@
 import argparse
 import asyncio
 import logging
+import os
 import sys
 import traceback
 
@@ -85,7 +86,9 @@ if __name__ == '__main__':
     if args.log_file:
         logging.basicConfig(format="%(asctime)s.%(msecs)03d:%(levelname)s:%(message)s",
                             datefmt="%H:%M:%S", level=getattr(logging, args.log_level.upper()),
-                            handlers=[logging.FileHandler(filename=args.log_file, mode='a')])
+                            handlers=[logging.FileHandler(
+                                filename=args.log_file,
+                                mode='a' if os.path.isfile(args.log_file) else 'w')])
     else:
         logging.disable()
 

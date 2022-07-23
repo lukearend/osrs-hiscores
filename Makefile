@@ -114,9 +114,6 @@ build-test-data:
 	@source env/bin/activate && bin/build_test_data.py \
 	--base-file $(PLAYER_STATS_FILE) --out-file test/data/test-data.csv
 
-ec2-%: # status, start, stop, connect, setup
-	@bin/ec2_instance $*
-
 help: ## Print this help.
 	@grep -E '^[0-9a-zA-Z%_-]+:.*## .*$$' $(firstword $(MAKEFILE_LIST)) | \
 	awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'

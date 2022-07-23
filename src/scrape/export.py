@@ -17,7 +17,7 @@ async def export_records(in_queue: asyncio.Queue, out_file: str, total: int):
     """ Write player records appearing on a queue to a CSV file. """
 
     exists = os.path.isfile(out_file)
-    with open(out_file, mode='a') as f:
+    with open(out_file, mode='w' if not exists else 'a') as f:
         if not exists:
             csv_header = ['username'] + csv_api_stats() + ['ts']
             csv.writer(f).writerow(csv_header)

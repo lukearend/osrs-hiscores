@@ -4,19 +4,21 @@
 
 ROOT_DIR="$(cd "$(dirname "$0")" && pwd)/.."
 
-cd $ROOT_DIR && bin/reset_vpn &&
+echo $ROOT_DIR
+cd "$ROOT_DIR" && \
+#bin/reset_vpn && \
 while :
 do
     scripts/scrape_hiscores.py --start-rank 1 --stop-rank 2000000 \
-    --out-file "$1.tmp" --log-file "$ROOT/data/raw/scrape.log";
+    --out-file "$1.tmp" --log-file "$ROOT_DIR/data/raw/scrape.log";
     retcode=$?;
     if [ $retcode -eq 0 ]
     then
         mv "$1.tmp" "$1" >/dev/null 2>&1
         exit 0
-    elif [ $retcode -eq 1 ]
-    then
-        bin/reset_vpn # request failed, reset and continue
+#    elif [ $retcode -eq 1 ]
+#    then
+#        bin/reset_vpn # request failed, reset and continue
     else
         exit 1
     fi

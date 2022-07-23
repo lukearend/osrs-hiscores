@@ -4,6 +4,7 @@
 
 sudo yum upgrade -y
 
+# Install docker.
 sudo yum install -y docker
 sudo usermod -aG docker ec2-user
 newgrp docker <<EOF # newgrp spawns a new shell - start docker daemon and exit.
@@ -11,11 +12,7 @@ sudo service docker start
 EOF
 docker run hello-world
 
-sudo yum install -y git
-if ! [ -d osrs-hiscores ]; then
-    git clone git@github.com:lukearend/osrs-hiscores.git
-fi
-
+# Install 3.9 as system python.
 sudo yum install -y gcc openssl-devel bzip2-devel libffi-devel
 cd /opt && \
 sudo wget https://www.python.org/ftp/python/3.9.6/Python-3.9.6.tgz
@@ -25,12 +22,20 @@ sudo ./configure --enable-optimizations
 sudo make install
 sudo rm -f /opt/Python-3.9.6.tgz
 
+# Install the osrs-hiscores repository.
+sudo yum install -y git
+if ! [ -d osrs-hiscores ]; then
+    git clone git@github.com:lukearend/osrs-hiscores.git
+fi
+
+# Install the AWS command line interface.
 if ! which aws >/dev/null; then
     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"
     unzip awscliv2.zip && rm awscliv2.zip
     sudo ./aws/install && rm -rf aws
 fi
 
+# Configure AWS account.
 if ! [ -f ~/.aws/config ] || ! [ -f ~/.aws/credentials ]; then
     aws configure # Requests AWS account credentials. Use region `us-east-2` and output format `json`.
 fi
