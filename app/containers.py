@@ -48,7 +48,6 @@ def lookup():
         vspace_if_nonempty(id='current-players'),
         focused_player(),
         vspace_if_nonempty(id='focused-player'),
-        vspace()
     ])
 
 
