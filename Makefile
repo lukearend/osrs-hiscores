@@ -75,34 +75,34 @@ build-app-data: $(APP_DATA_FILE)
 $(SCRAPE_OUT_FILE):
 	@bin/scrape_hiscores $@
 
-$(PLAYER_STATS_FILE):
+$(PLAYER_STATS_FILE): $(SCRAPE_OUT_FILE)
 	@source env/bin/activate && scripts/clean_raw_data.py \
-	--in-file $(SCRAPE_OUT_FILE) --out-file $@
+	--in-file $< --out-file $@
 
 
-$(CLUSTER_IDS_FILE) $(CLUSTER_CENTROIDS_FILE):
+$(CLUSTER_IDS_FILE) $(CLUSTER_CENTROIDS_FILE): $(PLAYER_STATS_FILE)
 	@source env/bin/activate && scripts/cluster_players.py \
-	--in-file $(PLAYER_STATS_FILE) --splits-file $(SPLITS_FILE) --params-file $(PARAMS_FILE) \
+	--in-file $< --splits-file $(SPLITS_FILE) --params-file $(PARAMS_FILE) \
 	--out-clusterids $(CLUSTER_IDS_FILE) --out-centroids $(CLUSTER_CENTROIDS_FILE) --verbose
 
-$(CLUSTER_QUARTILES_FILE):
+$(CLUSTER_QUARTILES_FILE): $(PLAYER_STATS_FILE) $(CLUSTER_IDS_FILE)
 	@source env/bin/activate && scripts/compute_quartiles.py \
-	--splits-file $(SPLITS_FILE) --stats-file $(PLAYER_STATS_FILE) \
-	--clusterids-file $(CLUSTER_IDS_FILE) --out-file $@
+	--splits-file $(SPLITS_FILE) --stats-file $(word 1,$^) \
+	--clusterids-file $(word 2,$^) --out-file $@
 
-$(CLUSTER_XYZ_FILE):
+$(CLUSTER_XYZ_FILE): $(CLUSTER_CENTROIDS_FILE)
 	@source env/bin/activate && scripts/dim_reduce_clusters.py \
-	--params-file $(PARAMS_FILE) --in-file $(CLUSTER_CENTROIDS_FILE) --out-file $@
+	--params-file $(PARAMS_FILE) --in-file $< --out-file $@
 
-$(APP_DATA_FILE):
+$(APP_DATA_FILE): $(CLUSTER_IDS_FILE) $(CLUSTER_CENTROIDS_FILE) $(CLUSTER_QUARTILES_FILE) $(CLUSTER_XYZ_FILE)
 	@source env/bin/activate && scripts/build_app_data.py \
-	--splits-file $(SPLITS_FILE) --clusterids-file $(CLUSTER_IDS_FILE) \
-	--centroids-file $(CLUSTER_CENTROIDS_FILE) --quartiles-file $(CLUSTER_QUARTILES_FILE) \
-	--xyz-file $(CLUSTER_XYZ_FILE) --out-file $(APP_DATA_FILE)
+	--splits-file $(SPLITS_FILE) --clusterids-file $(word 1,$^) \
+	--centroids-file $(word 2,$^) --quartiles-file $(word 3,$^) \
+	--xyz-file $(word 4,$^) --out-file $(APP_DATA_FILE)
 
-populate-app-db:
+populate-app-db: $(CLUSTER_IDS_FILE) $(PLAYER_STATS_FILE)
 	@source env/bin/activate && bin/start_mongo && scripts/build_app_db.py \
-	--stats-file $(PLAYER_STATS_FILE) --clusterids-file $(CLUSTER_IDS_FILE) \
+	--stats-file $(word 1,$^) --clusterids-file $(word 2,$^) \
 	--mongo-url $(OSRS_MONGO_URI) --collection $(OSRS_MONGO_COLL)
 
 ## ---- Other ----
