@@ -27,9 +27,8 @@ Project organization
     ├── Makefile         <- Top-level Makefile for building and running project.
     ├── README.md        <- The top-level README for developers using this project.
     │
-    ├── assets           <- Assets used by Dash application.           
+    ├── app              <- Application code and assets.
     ├── bin              <- Utility executables.
-    ├── cmd              <- Makefile command scripts.
     │
     ├── data
     │   ├── final        <- The final, canonical data set.
@@ -40,15 +39,14 @@ Project organization
     ├── scripts          <- Scripts for the stages of the data processing pipeline.
     │
     ├── src
-    │   ├── app          <- Application code.
     │   ├── analysis     <- Data science and analytics.
     │   └── scrape       <- Scraping hiscores data.
     │
-    ├── test             <- Unit and integration tests.
+    ├── test             <- Unit tests.
     │
-    ├── app.py           <- Main script for Dash application.
     ├── Procfile         <- Entry point for deployment as a Heroku application.
     ├── requirements.txt <- Dependencies file for reproducing the project environment.
+    ├── runapp.py        <- Main script for Dash application.
     └── setup.py         <- Setup file for installing this project through pip.
 
 Usage
@@ -78,11 +76,11 @@ The stages of the data pipeline are driven by a [Makefile](https://opensource.co
 4. `make postprocess`: project the cluster centroids from high-dimensional space to 3D for visualization purposes ([UMAP](https://umap-learn.readthedocs.io/en/latest/index.html#) is the algorithm used for dimensionality reduction). Compute quartiles for each cluster based on the player population it contains.
 5. `make build-app`: build application data and database using all previous analytic results. This target will launch a [MongoDB](https://www.mongodb.com/) instance inside a [Docker](https://www.docker.com/) container at the URL `localhost:27017` (by default).
 
-Steps 2 and 3 can (and should) be skipped by simply running `make download-dataset`, which fetches the scraped data and clustering results from an S3 bucket.
+Steps 2 and 3 can (and should) be skipped by simply running `make download-dataset`, which fetches the scraped data and clustering results from an S3 bucket. This requires an [AWS](https://aws.amazon.com/) account with credentials located in the `~/.aws` directory.
 
 To launch the application, run `make run-app` and visit the URL `localhost:8050` in a web browser.
 
-The final application can be built and run in one shot via `make app`, which uses pre-downloaded data rather than scraping and clustering the data from scratch. The target `make all` builds all results from scratch, including scraping and clustering the hiscores data. When attempting to scrape hiscores data, note that high usage of the API may result in your IP being blocked. **Please be sparing and respectful of Jagex's server resources in your usage of this code**.
+The final application can be built and run in one shot via `make app`, which uses pre-downloaded data rather than scraping and clustering the data from scratch. The target `make all` builds all results from scratch, including scraping and clustering the hiscores data. Note that high usage of the hiscores API may result in your IP being blocked. Please be sparing and respectful of Jagex's server resources in your usage of this code.
 
 Run `make help` to see more top-level targets.
 
@@ -104,20 +102,21 @@ Dependencies
 
 * Python 3.9+ (download [here](https://www.python.org/downloads/))
 * Docker (download [here](https://docs.docker.com/get-docker/))
+* AWS account with credentials installed in `~/.aws` directory (a free tier account can be created [here](https://aws.amazon.com/free))
 
 Methods
 -------
 
-* Data were scraped for the top 2 million players on the OSRS hiscores.
-* Account data were deduplicated, sorted and subsampled to take skill level columns only.
-* Accounts were segmented into 2000 clusters based on similarity of skills for three different splits:
+* Data were scraped for the top 2 million players on the OSRS hiscores. Data consists of xp, rank, and level in each OSRS skill as well as overall; and rank/score stats for clue scrolls, minigames and bosses.
+* Account data were deduplicated, sorted and subsampled to keep skill level columns only. After deduplication, 1999625 records remained. Each record is a length-23 vector giving an account's levels in the 23 OSRS skills.
+* Accounts were segmented into 2000 clusters based on similarity of skills for three different sets of feature columns, or 'splits', of the dataset:
   * 'all': all 23 OSRS skills
   * 'cb': the 7 combat skills
   * 'noncb': the 16 non-combat skills
-* For each split of the dataset, clustering resulted in a set of cluster centroids and a cluster ID for each player.
-* Cluster centroids were projected from their ambient dimensionality to 3D space.
-* Quartiles (the 0, 25, 50, 75 and 100th percentiles) in each skill were computed by aggregating the accounts in each cluster.
-* The clustering results were assembled into a serialized data file. Player stats were written to a database to provide quick result lookups. These two resources are used by the final application.
+* For each split of the dataset, clustering resulted in a set of 2000 cluster centroids (with dimensionality 23, 7 or 16) and a cluster ID associated with each player. Clustering was performed with a standard implementation of k-means using L2 distance.
+* Cluster centroids were projected from their ambient dimensionality to 3D space. Dimensionality was reduced using UMAP.
+* Quartiles (the 0, 25, 50, 75 and 100th percentiles) in each skill were computed by aggregating the accounts belonging to each cluster.
+* The clustering results were assembled into a serialized data file. Player stats were written to a database to provide quick result lookups. The final application makes use of these two resources.
 
 Project ideas
 -------------
