@@ -38,7 +38,7 @@ def github_link():
 def download_link():
     available = dcc.Link(
         "available for download",
-        href='https://drive.google.com/drive/u/0/folders/***REMOVED***',
+        href='https://drive.google.com/drive/u/0/folders/1sMgA5h5aYfRDgXSoWge8ICotgAzUPEDj',
         target='_blank'
     )
     content = ["The dataset is ", available, " in CSV format from Google Drive."]

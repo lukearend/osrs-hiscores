@@ -16,7 +16,7 @@ The dataset consists of the following files:
 3. `player-clusters.csv`: Cluster IDs per player for three separate clustering runs, grouping similar accounts by looking at (i) all skills, (ii) combat skills only and (iii) non-combat skills only.
 4. `player-stats-raw.csv`: Rank, level, xp, clues, minigame and boss stats for the top 2 million OSRS players. This file is the raw output from the scraping process (1.6 GB).
 
-These files are **not checked in to the repo** due to file size constraints. They can be downloaded separately from Google Drive: <https://drive.google.com/drive/folders/***REMOVED***?usp=sharing>
+These files are **not checked in to the repo** due to file size constraints. They can be downloaded separately from Google Drive: <https://drive.google.com/drive/folders/1sMgA5h5aYfRDgXSoWge8ICotgAzUPEDj?usp=sharing>
 
 Player stats were downloaded from the [official OSRS hiscores](https://secure.runescape.com/m=hiscore_oldschool/overall) over a 24-hour period on July 21, 2022.
 
