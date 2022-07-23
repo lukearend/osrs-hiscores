@@ -3,17 +3,27 @@
 # Run this script on an EC2 instance to set it up for the first time.
 
 sudo yum upgrade -y
-sudo yum install git docker -y
 
+sudo yum install -y docker
 sudo usermod -aG docker ec2-user
 newgrp docker <<EOF # newgrp spawns a new shell - start docker daemon and exit.
 sudo service docker start
 EOF
 docker run hello-world
 
+sudo yum install -y git
 if ! [ -d osrs-hiscores ]; then
     git clone git@github.com:lukearend/osrs-hiscores.git
 fi
+
+sudo yum install -y gcc openssl-devel bzip2-devel libffi-devel
+cd /opt && \
+sudo wget https://www.python.org/ftp/python/3.9.6/Python-3.9.6.tgz
+sudo tar xzf Python-3.9.6.tgz
+cd Python-3.9.6 && \
+sudo ./configure --enable-optimizations
+sudo make install
+sudo rm -f /opt/Python-3.9.6.tgz
 
 if ! which aws >/dev/null; then
     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip"

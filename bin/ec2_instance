@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 
-source "$(cd "$(dirname "$0")" && pwd)/../../.env"
+source "$(cd "$(dirname "$0")" && pwd)/../.env"
 ipaddr=$(aws ec2 describe-instances --instance-id "$EC2_INSTANCE_ID" |
     jq -r '.Reservations[0].Instances[0].PublicIpAddress')
 
