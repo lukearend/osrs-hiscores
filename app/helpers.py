@@ -106,13 +106,13 @@ def index_html() -> str:
     <html>
         <head>
             <!-- Global site tag (gtag.js) - Google Analytics -->
-            <script async src="https://www.googletagmanager.com/gtag/js?id=G-M17WECJWQW"></script>
+            <script async src="https://www.googletagmanager.com/gtag/js?id=G-B5FZG8D4BS"></script>
             <script>
               window.dataLayer = window.dataLayer || [];
               function gtag(){dataLayer.push(arguments);}
               gtag('js', new Date());
 
-              gtag('config', 'G-M17WECJWQW');
+              gtag('config', 'G-B5FZG8D4BS');
             </script>
             {%metas%}
             <title>{%title%}</title>
