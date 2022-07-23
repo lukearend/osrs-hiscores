@@ -50,7 +50,7 @@ push-app-data: ## Upload application data to production.
 	@bin/push_app_data
 
 deploy-dev: ## Deploy app to development staging area.
-	git push staging development:master
+	git push staging $$(git branch --show-current):master
 
 deploy-prod: ## Deploy app to production.
 	git push heroku master:master
