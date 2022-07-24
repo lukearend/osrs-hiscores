@@ -26,6 +26,7 @@ def stats_table(id: str, store_id: str, title_fmt_fn: Callable):
             )
             stat_container = html.Div(
                 id=f'{id}:{skill}',
+                className='table-text',
                 style={'white-space': 'pre'}  # prevents collapsing whitespace
             )
             elem = (icon, stat_container)

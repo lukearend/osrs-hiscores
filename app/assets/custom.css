@@ -52,8 +52,12 @@ body {
 }
 
 .table-icon {
-    padding-top: 0.1em;  /* empirical value, increasing pushes icons lower */
-    height: 1.25em;      /* empirical value, increases icon size (anchored on bottom) */
+    /*padding-top: 0.1em;  !* empirical value, increasing pushes icons lower *!*/
+    height: 1em;      /* empirical value, increases icon size (anchored on bottom) */
+}
+
+.table-text {
+    font-size: large;
 }
 
 .img-center {
@@ -78,11 +82,16 @@ body {
     font-size: large;
 }
 
+/* When screen is wide, wrap contents vertically rather than horizontally.
+Fixing container height forces the scatterplot to wrap to the second column.
+The container height must be large enough that the first column does not
+"overflow" when rows of blobs are added. It should also not be so large as
+to create a ton of empty space at the bottom of the page. */
 @media screen and (min-width: 991px) { /* `lg` breakpoint */
     .body-container {
         display: flex;
         flex-wrap: wrap;
         flex-direction: column;
-        height: 40em; /* supports up to five lines of blobs before layout fails */
+        height: 35em; /* compromise: fits six rows of blobs before overflow */
     }
 }

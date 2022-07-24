@@ -5,7 +5,6 @@ from dash import html, dcc, Output, Input, no_update
 
 from app import app, appdb
 from app.helpers import is_valid_username, mongodoc_to_player
-from app.styles import INPUTBOX_LAYOUT
 
 
 def username_input():

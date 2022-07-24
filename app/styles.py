@@ -13,7 +13,7 @@ BG_COLOR = bg_gray
 MENU_VARIANT = 'dark'
 PLAYER_COLOR_SEQ = px.colors.qualitative.Plotly
 
-SCATTERPLOT_HEIGHT = '28em'
+SCATTERPLOT_HEIGHT = '23em'
 SCATTERPLOT_BG_COLOR = dark_gray
 SCATTERPLOT_XAXIS_COLOR = '#222222'
 SCATTERPLOT_YAXIS_COLOR = '#262626'
@@ -28,13 +28,14 @@ SCATTERPLOT_TEXT_FONT_SIZE = 24
 TABLE_BG_COLOR = dark_gray
 TABLE_BORDER_COLOR = table_gray
 
-BOXPLOT_HEIGHT = '10em'
+BOXPLOT_HEIGHT = '8em'
 BOXPLOT_AXIS_FONTSIZE = 20
 BOXPLOT_BG_COLOR = dark_gray
 BOXPLOT_PAPER_COLOR = BG_COLOR
 
 DROPDOWN_LABEL_WIDTHS = dict(xs=12, lg='auto')
 DROPDOWN_WIDTHS = dict(xs=4, lg='auto')
+INPUTBOX_LAYOUT = dict(xs=12, sm='auto')
 LOOKUP_SECTION_LAYOUT = dict(xs=dict(order=1, size=12), lg=dict(order=1, size=5))
 TABLE_SECTION_LAYOUT = dict(xs=dict(order=2, size=12), lg=dict(order=2, size=5))
 SCATTER_SECTION_LAYOUT = dict(xs=dict(order=3, size=12), lg=dict(order=4, size=7))
