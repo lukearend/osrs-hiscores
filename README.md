@@ -78,15 +78,14 @@ Steps 2 and 3 can (and should) be skipped by simply running `make download-datas
 
 To launch the application, run `make run-app` and visit the URL `localhost:8050` in a web browser.
 
-The final application can be built and run in one shot via `make app`, which uses pre-downloaded data rather than scraping and clustering the data from scratch. The target `make all` is what was used to build results for the production app.
-If scraping data, note that high usage of the hiscores API may result in your IP being blocked. Please be sparing and respectful of Jagex's server resources in your usage of this code.
+The final application can be built and run in one shot via `make app`, which uses downloaded data rather than scraping and clustering the data from scratch. The target `make all` is what was used to build the final results for this repo. If scraping data, note that high usage of the hiscores API may result in your IP being blocked. Please be sparing and respectful of Jagex's server resources in your usage of this code.
 
 Run `make help` to see more top-level targets.
 
 Configuration
 -------------
 
-A number of environment variables are used to configure the application.
+A number of environment variables are set in order to configure the application.
 
 * `OSRS_APPDATA_URI`: path to application data .pkl file (S3 or local)
 * `OSRS_MONGO_URI`: URL at which MongoDB instance is running
@@ -94,26 +93,26 @@ A number of environment variables are used to configure the application.
 
 There are also environment variables defining filenames at each stage of the data pipeline.
 
-Defaults for these variables are defined in `.env.default` and imported whenever a `make` target is run. If a file called `.env` exists, any settings there will override those in `.env.default`.
+Defaults for all environment variables are defined in `.env.default` and imported whenever a `make` target is run. If a file called `.env` exists, any settings there will override those in `.env.default`.
 
 Dependencies
 ------------
 
 * Python 3.9 or greater (download [here](https://www.python.org/downloads/))
 * Docker (download [here](https://docs.docker.com/get-docker/))
-* AWS account with credentials installed in `~/.aws` directory (a free tier account can be created [here](https://aws.amazon.com/free))
+* AWS account with credentials installed in `~/.aws` directory (create account [here](https://aws.amazon.com/free))
 
 Methods
 -------
 
 * Data were scraped for the top 2 million players on the OSRS hiscores. Data consists of xp, rank, and level in each OSRS skill and overall, along with rank and score stats for clue scrolls, minigames and bosses.
 * Account data were deduplicated, sorted and subsampled to keep skill level columns only. After deduplication, 1999625 records remained. Each record is a length-23 vector giving an account's levels in the 23 OSRS skills.
-* Accounts were segmented into 2000 clusters based on similarity of skills for three different sets of feature columns, or 'splits', of the dataset:
+* Accounts were segmented into 2000 clusters based on similarity of skills for three different sets of feature columns, or dataset 'splits':
   * `all`: all 23 OSRS skills
   * `cb`: the 7 combat skills
   * `noncb`: the 16 non-combat skills
-* For each split of the dataset, clustering resulted in a set of 2000 cluster centroids (with dimensionality 23, 7 or 16) and a cluster ID associated with each player. Clustering was performed with a standard implementation of k-means using the L2 distance.
-* Cluster centroids were projected from their ambient dimensionality to 3D space using UMAP. Splits `all` and `noncb` used UMAP parameters `n_neighbors=10,  min_dist=0.25`; split `cb` used `n_neighbors=20, min_dist=0.25`.
+* For each split of the dataset, clustering produced a set of 2000 cluster centroids (with dimensionality 23, 7 or 16) and a cluster ID associated with each player. Clustering was performed with a standard implementation of k-means using the L2 distance.
+* Cluster centroids were projected from their ambient dimensionality to 3D space using UMAP. UMAP parameters `n_neighbors=10` and `min_dist=0.25` were used for splits `all` and `noncb`; `n_neighbors=20` and `min_dist=0.25` were used for split `cb`.
 * Quartiles (the 0, 25, 50, 75 and 100th percentiles) in each skill were computed by aggregating the accounts belonging to each cluster.
 * The clustering results were assembled into a serialized data file. Player stats were written to a database to provide quick result lookups. The final application makes use of these two resources.
 

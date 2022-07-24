@@ -35,7 +35,6 @@ BOXPLOT_PAPER_COLOR = BG_COLOR
 
 DROPDOWN_LABEL_WIDTHS = dict(xs=12, lg='auto')
 DROPDOWN_WIDTHS = dict(xs=4, lg='auto')
-INPUTBOX_LAYOUT = dict(sm=True)
 LOOKUP_SECTION_LAYOUT = dict(xs=dict(order=1, size=12), lg=dict(order=1, size=5))
 TABLE_SECTION_LAYOUT = dict(xs=dict(order=2, size=12), lg=dict(order=2, size=5))
 SCATTER_SECTION_LAYOUT = dict(xs=dict(order=3, size=12), lg=dict(order=4, size=7))
