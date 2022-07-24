@@ -7,7 +7,7 @@ This repository contributes the following:
 
 1. Code for web scraping the OSRS hiscores, along with the resulting dataset.
 2. Code for a machine learning pipeline which clusters the player population by account similarity.
-3. An interactive [web application](www.osrs-hiscores-explorer.com) for visualizing player results.
+3. An interactive [web application](https://www.osrs-hiscores-explorer.com) for visualizing player results.
 
 The dataset consists of the following files:
 
