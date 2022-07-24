@@ -15,7 +15,8 @@ def username_input():
         placeholder="e.g. 'snakeylime'",
         maxLength=12,
         debounce=True,  # don't trigger on every keystroke
-        className='input-box controls-text'
+        className='input-box controls-text',
+        style={'width': '10em'}
     )
     querytxt = html.Div(id='query-text', className='query-text')
 
@@ -28,7 +29,7 @@ def username_input():
     )
     return dbc.Col(
         [
-            dbc.Col(lookup, width='auto'),
+            dbc.Col(lookup),
             dbc.Col(querytxt)
         ],
         align='center'
