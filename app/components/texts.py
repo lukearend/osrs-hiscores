@@ -25,7 +25,7 @@ def info_blurb():
     )
     content = [
         """Each point represents a cluster of OSRS players with similar stats.
-        The closer two clusters are, the more similar are the accounts in each
+        The closer two clusters are, the more similar the accounts are in each
         of those two clusters. The size of each point corresponds to the number
         of players in that cluster. Axes have no meaningful interpretation. Player
         stats were downloaded from the """, hiscores_link, """ on July 21, 2022.
