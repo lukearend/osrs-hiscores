@@ -54,15 +54,15 @@ Usage
 
 At a high level, this repository implements a data science pipeline:
 
-    ```
-    scrape OSRS hiscores data
-             ↓
-    cluster players by stats
-             ↓
-    project clusters to 3D
-             ↓
-    build application data
-    ```
+```
+scrape OSRS hiscores data
+         ↓
+cluster players by stats
+         ↓
+project clusters to 3D
+         ↓
+build application data
+```
 
 along with a [Dash](https://plotly.com/dash/) application for visualizing the results.
 
