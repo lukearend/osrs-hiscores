@@ -5,6 +5,7 @@ from dash import html, dcc, Output, Input, no_update
 
 from app import app, appdb
 from app.helpers import is_valid_username, mongodoc_to_player
+from app.styles import INPUTBOX_WIDTH
 
 
 def username_input():
@@ -16,7 +17,7 @@ def username_input():
         maxLength=12,
         debounce=True,  # don't trigger on every keystroke
         className='input-box controls-text',
-        style={'width': '10em'}
+        style={'width': INPUTBOX_WIDTH}
     )
     querytxt = html.Div(id='query-text', className='query-text')
 

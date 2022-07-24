@@ -13,6 +13,8 @@ BG_COLOR = bg_gray
 MENU_VARIANT = 'dark'
 PLAYER_COLOR_SEQ = px.colors.qualitative.Plotly
 
+INPUTBOX_WIDTH = '8em'
+
 SCATTERPLOT_HEIGHT = '23em'
 SCATTERPLOT_BG_COLOR = dark_gray
 SCATTERPLOT_XAXIS_COLOR = '#222222'
