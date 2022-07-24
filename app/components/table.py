@@ -1,5 +1,5 @@
 """ Tables containing player/cluster stats for all skills. """
-
+import os
 from typing import Dict, Any, Callable
 
 import dash_bootstrap_components as dbc
@@ -7,7 +7,7 @@ from dash import html, Output, Input, no_update
 
 from app import app
 from app import styles
-from app.helpers import load_icon_b64, load_table_layout
+from app.helpers import load_icon_b64, load_table_layout, assets_dir
 
 
 def stats_table(id: str, store_id: str, title_fmt_fn: Callable):
@@ -18,8 +18,9 @@ def stats_table(id: str, store_id: str, title_fmt_fn: Callable):
     for row_i, row_skills in enumerate(table_skills):
         row = []
         for col_i, skill in enumerate(row_skills):
+            path = os.path.join(assets_dir(), 'icons', f'{skill}.png')
             icon = html.Img(
-                src='data:image/png;base64,' + load_icon_b64(skill),
+                src='data:image/png;base64,' + load_icon_b64(path),
                 title=skill.capitalize(),
                 className='table-icon img-center'
             )

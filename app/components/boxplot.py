@@ -1,5 +1,5 @@
 """ A boxplot displaying cluster stat quartiles. """
-
+import os
 from typing import Dict, Any
 
 import dash_bootstrap_components as dbc
@@ -8,14 +8,13 @@ from dash import State, Input, Output, html, dcc, no_update
 from plotly import graph_objects as go
 
 from app import app, styles
-from app.helpers import load_icon_b64, load_boxplot_layout
+from app.helpers import load_icon_b64, load_boxplot_layout, assets_dir
 
 
 def boxplot():
     title = html.Div(id='boxplot-title', className='label-text')
     figure = dcc.Graph(
         id='boxplot',
-        figure={},  # figure must be explicitly initialized to an empty value (Dash bug) todo: still true?
         config={'displayModeBar': False},
         className='boxplot-graph',
         style={
@@ -104,8 +103,9 @@ def redraw_boxplot(split: str) -> go.Figure:
         yaxis_tickfont_family='OSRS Chat',
     ))
     for i, skill in enumerate(skills):
+        path = os.path.join(assets_dir(), 'icons', f'{skill}.png')
         fig.add_layout_image(
-            source='data:image/png;base64,' + load_icon_b64(skill),
+            source='data:image/png;base64,' + load_icon_b64(path),
             layer='above',
             xanchor='center',  # center image horizontally on xtick
             yanchor='top',     # dangle image below horizontal baseline

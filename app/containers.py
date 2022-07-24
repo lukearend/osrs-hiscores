@@ -1,7 +1,6 @@
 """ Top-level containers for front-end contents. """
 
 import dash_bootstrap_components as dbc
-from dash import html
 
 from app.components.blobs import username_blobs
 from app.components.boxplot import boxplot
@@ -12,30 +11,24 @@ from app.components.slider import level_range_slider
 from app.components.scatterplot import scatterplot
 from app.components.space import vspace, vspace_if_nonempty
 from app.components.table import player_stats_table, cluster_stats_table
-from app.components.texts import page_title, info_blurb, github_link, download_link, support_msg
+from app.components.texts import page_title, info_blurb, top_buttons, watermark
 from app.styles import (
     DROPDOWN_WIDTHS,
     LOOKUP_SECTION_LAYOUT,
     TABLE_SECTION_LAYOUT,
     BOXPLOT_SECTION_LAYOUT,
-    SCATTER_SECTION_LAYOUT
+    SCATTER_SECTION_LAYOUT,
+    WATERMARK_SECTION_LAYOUT,
+    FLOATING_BREAK1_LAYOUT,
+    FLOATING_BREAK2_LAYOUT
 )
 
 
-def header():
+def frontmatter():
     return dbc.Col([
+        top_buttons(),
         page_title(),
         info_blurb(),
-        vspace()
-    ])
-
-
-def footer():
-    return dbc.Col([
-        github_link(),
-        download_link(),
-        html.Hr(),
-        support_msg(),
         vspace()
     ])
 
@@ -78,14 +71,6 @@ def scatter():
     return dbc.Col([
         controls(),
         scatterplot(),
-        vspace()
-    ])
-
-
-def box():
-    return dbc.Col([
-        boxplot(),
-        vspace()
     ])
 
 
@@ -94,7 +79,10 @@ def body():
         dbc.Col(lookup(), **LOOKUP_SECTION_LAYOUT),
         dbc.Col(tables(), **TABLE_SECTION_LAYOUT),
         dbc.Col(scatter(), **SCATTER_SECTION_LAYOUT),
-        dbc.Col(box(), **BOXPLOT_SECTION_LAYOUT)
+        dbc.Col(vspace(), **FLOATING_BREAK1_LAYOUT),
+        dbc.Col(boxplot(), **BOXPLOT_SECTION_LAYOUT),
+        dbc.Col(vspace(), **FLOATING_BREAK2_LAYOUT),
+        dbc.Col(watermark(), **WATERMARK_SECTION_LAYOUT),
     ],
     className='body-container'
 )

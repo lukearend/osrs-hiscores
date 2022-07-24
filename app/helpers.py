@@ -37,10 +37,10 @@ def assets_dir() -> Path:
 
 
 @lru_cache()
-def load_icon_b64(skill: str) -> str:
+def load_icon_b64(path: str) -> str:
     """ Load the icon for a skill as a base64-encoded string. """
 
-    file = os.path.join(assets_dir(), 'icons', f'{skill}.png')
+    file = os.path.join(path)
     with open(file, 'rb') as f:
         return base64.b64encode(f.read()).decode('utf-8')
 
