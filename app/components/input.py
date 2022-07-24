@@ -28,7 +28,7 @@ def username_input():
     )
     return dbc.Col(
         [
-            dbc.Col(lookup),
+            dbc.Col(lookup, width='auto'),
             dbc.Col(querytxt)
         ],
         align='center'
