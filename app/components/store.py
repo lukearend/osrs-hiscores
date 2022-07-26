@@ -6,6 +6,7 @@ from dash import Output, Input
 from app import app
 from app.backend import STORE_VARS
 
+
 def store(show_inds: List[int] = None):
     if show_inds is None:
         return dbc.Col([v for v in STORE_VARS])

@@ -1,4 +1,5 @@
 """ A boxplot displaying cluster stat quartiles. """
+
 import os
 from typing import Dict, Any
 
